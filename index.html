@@ -140,10 +140,6 @@
   .msg-meta{display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-dim); margin-top:2px;}
   .msg-status.seen{color:var(--teal); font-weight:bold;}
 
-  .chat-input-row{display:flex; gap:4px; padding:8px; border-top:1px solid var(--line-soft); background:var(--surface-solid); align-items:center;}
-  .chat-input-row input{flex:1; margin:0; padding:8px 10px; font-size:12.5px; border-radius:8px;}
-  .chat-input-row button{padding:8px 12px; border:none; border-radius:8px; background:linear-gradient(135deg,var(--gold),var(--teal)); color:#060911; font-weight:700; cursor:pointer;}
-
   footer{text-align:center; color:var(--text-dim); font-size:11.5px; padding:16px;}
 </style>
 </head>
@@ -338,7 +334,7 @@ function renderPending(profile){ app.innerHTML = "<div class='center-wrap'><div 
 function renderRejected(profile){ app.innerHTML = "<div class='center-wrap'><div class='card'><h1 class='page-title'>Application Rejected</h1></div></div>"; }
 function renderSuspended(profile){ app.innerHTML = "<div class='center-wrap'><div class='card'><h1 class='page-title'>Account Suspended</h1></div></div>"; }
 
-// ---------------- USER DASHBOARD WITH WITHDRAW & CHARTS ----------------
+// ---------------- USER DASHBOARD ----------------
 async function renderDashboard(profile, isImpersonating){
   var offersRes = await sb.from("offers").select("*");
   var offers = offersRes.data || [];
@@ -414,7 +410,7 @@ async function renderDashboard(profile, isImpersonating){
   });
 }
 
-// ---------------- WITHDRAW MODAL ----------------
+// ---------------- FIXED WITHDRAW MODAL ----------------
 function openWithdrawModal(profile, payout){
   var modalSlot = document.getElementById("modalContainer");
   modalSlot.innerHTML =
@@ -437,19 +433,27 @@ function openWithdrawModal(profile, payout){
 
   document.getElementById("wCloseBtn").onclick = function(){ modalSlot.innerHTML = ""; };
   document.getElementById("wSubmitBtn").onclick = async function(){
+    var btn = this;
     var method = document.getElementById("wMethod").value;
     var acc = document.getElementById("wAccount").value.trim();
     var amt = parseFloat(document.getElementById("wAmount").value) || 0;
 
-    if (!acc || amt <= 0){ alert("Fill all details."); return; }
+    if (!acc || amt <= 0){ alert("Fill all details correctly."); return; }
 
-    await sb.from("payouts").insert({ user_id: profile.id, username: profile.username, method: method, account: acc, amount: amt, status: "pending" });
-    alert("Payout request submitted successfully!");
-    modalSlot.innerHTML = "";
+    btn.disabled = true; btn.textContent = "Sending…";
+    var res = await sb.from("payouts").insert({ user_id: profile.id, username: profile.username, method: method, account: acc, amount: amt, status: "pending" });
+    
+    btn.disabled = false; btn.textContent = "Submit Request";
+    if (res.error){
+      alert("Error: " + res.error.message);
+    } else {
+      alert("Payout request submitted successfully!");
+      modalSlot.innerHTML = "";
+    }
   };
 }
 
-// ---------------- ADMIN PANEL ----------------
+// ---------------- ADMIN PANEL WITH FIXED NOTICE PUBLISH ----------------
 async function renderAdmin(adminProfile){
   var usersRes = await sb.from("profiles").select("*").order("created_at", { ascending: false });
   var offersRes = await sb.from("offers").select("*");
@@ -542,9 +546,20 @@ async function renderAdmin(adminProfile){
   ensureChatWidget("admin", adminProfile.id, adminProfile.username);
 
   document.getElementById("saveNoticeBtn").onclick = async function(){
+    var btn = this;
     var txt = document.getElementById("adminNoticeInput").value.trim();
-    await sb.from("profiles").update({ notice_text: txt }).neq("is_admin", true);
-    alert("Notice Published to All Users!");
+    btn.disabled = true; btn.textContent = "Publishing…";
+    
+    // Broadcast notice to profiles table safely
+    var res1 = await sb.from("profiles").update({ notice_text: txt }).neq("id", "00000000-0000-0000-0000-000000000000");
+    btn.disabled = false; btn.textContent = "Publish Notice";
+    
+    if (res1.error){
+      alert("Error publishing notice: " + res1.error.message);
+    } else {
+      alert("Notice Published to All Users Successfully!");
+      renderAdmin(adminProfile);
+    }
   };
 
   document.querySelectorAll("[data-pay-id]").forEach(function(btn){
