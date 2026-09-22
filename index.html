@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>LinkFlow Ultimate Network Portal</title>
+<title>LinkFlow Network Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --bg-dark: #07090e;
@@ -67,7 +66,6 @@
   .btn-primary:active { transform: scale(0.98); }
   .btn-sm { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
   .btn-success { background: var(--accent-green); color: #000; border: none; }
-  .btn-purple { background: var(--accent-purple); color: #fff; border: none; }
 
   .offer-item { background: var(--card-solid); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; position: relative; }
   .tag-hot { position: absolute; top: 14px; right: 14px; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; }
@@ -94,20 +92,6 @@
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
   .modal-body { background: var(--card-solid); border: 1px solid var(--border-bright); border-radius: 20px; width: 100%; max-width: 440px; padding: 22px; }
 
-  .chat-widget { position: fixed; bottom: 70px; right: 14px; z-index: 45; width: 340px; max-width: calc(100vw - 28px); height: 420px; background: var(--card-solid); border: 1px solid var(--border-bright); border-radius: 18px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-  .chat-widget.open { display: flex; }
-  .chat-head { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; }
-  .chat-body { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
-  .chat-chips { display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto; background: var(--bg-dark); border-top: 1px solid var(--border); }
-  .chip { padding: 4px 10px; border-radius: 12px; background: var(--surface); color: var(--text-secondary); font-size: 11px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
-  .chat-footer { padding: 10px; display: flex; gap: 6px; border-top: 1px solid var(--border); background: var(--card-solid); }
-  .chat-footer input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: #fff; }
-
-  .msg-bubble { padding: 8px 12px; border-radius: 12px; max-width: 80%; line-height: 1.4; }
-  .msg-mine { align-self: flex-end; background: var(--gradient-green); color: #000; font-weight: 600; border-bottom-right-radius: 2px; }
-  .msg-theirs { align-self: flex-start; background: var(--surface); color: #fff; border-bottom-left-radius: 2px; }
-
-  /* Leaderboard Styling */
   .rank-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); }
   .rank-num { font-weight: 800; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface); color: #fff; font-size: 12px; }
 </style>
@@ -119,15 +103,13 @@
   <button class="logout-btn" id="logoutBtn" style="display:none;">Sign Out</button>
 </header>
 
-<main id="app"><div style="text-align:center; padding:50px; color:var(--text-secondary);">Connecting to Portal…</div></main>
+<main id="app"><div style="text-align:center; padding:50px; color:var(--text-secondary);">Loading Portal…</div></main>
 
 <nav class="bottom-nav" id="bottomNav" style="display:none;">
   <button class="nav-tab active" data-tab="dashboard"><span>📊</span>Home</button>
   <button class="nav-tab" data-tab="offers"><span>🔥</span>Offers</button>
-  <button class="nav-tab" data-tab="reports"><span>📈</span>Reports</button>
   <button class="nav-tab" data-tab="ranks"><span>🏆</span>Ranks</button>
   <button class="nav-tab" data-tab="wallet"><span>💸</span>Wallet</button>
-  <button class="nav-tab" data-tab="chat"><span>💬</span>Chat</button>
 </nav>
 
 <div id="modalContainer"></div>
@@ -140,7 +122,13 @@ var SUPABASE_URL = "https://kvgjstwgxnpendfkfkny.supabase.co";
 var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Z2pzdHdneG5wZW5kZmtma255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDU4NjMsImV4cCI6MjEwNTU4MTg2M30.SZpDrx39-ZgUzgBLEun1lhedu1ANxr06ea2ae7_84uQ";
 var MIN_WITHDRAW = 500;
 
-var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var sb = null;
+try {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {
+  console.error("Supabase Error:", e);
+}
+
 var app = document.getElementById("app");
 var logoutBtn = document.getElementById("logoutBtn");
 var bottomNav = document.getElementById("bottomNav");
@@ -148,44 +136,53 @@ var bottomNav = document.getElementById("bottomNav");
 var currentProfile = null;
 var activeViewTab = "dashboard";
 
-function hapticTouch(){ if (navigator.vibrate) navigator.vibrate(15); }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
 logoutBtn.addEventListener("click", async function(){
-  await sb.auth.signOut();
+  if (sb) await sb.auth.signOut();
   window.location.reload();
 });
 
 async function init(){
-  var sessionRes = await sb.auth.getSession();
-  var session = sessionRes.data ? sessionRes.data.session : null;
-
-  if (!session){
-    logoutBtn.style.display = "none";
-    bottomNav.style.display = "none";
-    renderAuth();
+  if (!sb) {
+    app.innerHTML = "<div style='text-align:center; padding:50px; color:var(--accent-red);'>Connection Error. Please refresh.</div>";
     return;
   }
 
-  logoutBtn.style.display = "block";
-  var user = session.user;
-  var profRes = await sb.from("profiles").select("*").eq("id", user.id).single();
+  try {
+    var sessionRes = await sb.auth.getSession();
+    var session = sessionRes.data ? sessionRes.data.session : null;
 
-  if (!profRes.data){
-    var uname = user.email.split("@")[0];
-    var newP = { id: user.id, username: uname, email: user.email, status: "pending", per_lead_rate: 0 };
-    await sb.from("profiles").upsert(newP);
-    currentProfile = newP;
-  } else {
-    currentProfile = profRes.data;
-  }
+    if (!session){
+      logoutBtn.style.display = "none";
+      bottomNav.style.display = "none";
+      renderAuth();
+      return;
+    }
 
-  if (currentProfile.is_admin){
-    renderAdmin();
-  } else {
-    bottomNav.style.display = "flex";
-    setupNavListeners();
-    renderUserView();
+    logoutBtn.style.display = "block";
+    var user = session.user;
+    var profRes = await sb.from("profiles").select("*").eq("id", user.id).single();
+
+    if (!profRes.data){
+      var uname = user.email.split("@")[0];
+      var newP = { id: user.id, username: uname, email: user.email, status: "pending", per_lead_rate: 0 };
+      await sb.from("profiles").upsert(newP);
+      currentProfile = newP;
+    } else {
+      currentProfile = profRes.data;
+    }
+
+    if (currentProfile.is_admin){
+      renderAdmin();
+    } else {
+      bottomNav.style.display = "flex";
+      setupNavListeners();
+      renderUserView();
+    }
+  } catch(err) {
+    console.error(err);
+    app.innerHTML = "<div style='text-align:center; padding:50px; color:var(--accent-red);'>Unable to load portal. Refreshing...</div>";
   }
 }
 
@@ -204,7 +201,6 @@ function renderAuth(){
     "</div>";
 
   document.getElementById("lBtn").onclick = async function(){
-    hapticTouch();
     var e = document.getElementById("lEmail").value.trim();
     var p = document.getElementById("lPass").value;
     if (!e || !p) return alert("Fill all fields");
@@ -217,7 +213,6 @@ function renderAuth(){
 function setupNavListeners(){
   document.querySelectorAll(".nav-tab").forEach(function(btn){
     btn.onclick = function(){
-      hapticTouch();
       document.querySelectorAll(".nav-tab").forEach(function(b){ b.classList.remove("active"); });
       btn.classList.add("active");
       activeViewTab = btn.getAttribute("data-tab");
@@ -254,24 +249,14 @@ async function renderUserView(){
         "<button class='btn-primary' id='quickWithdrawBtn' style='width:auto; padding:8px 18px;'>Request Payout 💸</button>" +
       "</div>" +
 
-      "<div class='card' style='background:rgba(139,92,246,0.1); border-color:var(--accent-purple);'>" +
-        "<div style='font-size:12px; color:var(--text-secondary);'>Your Referral Link (Earn Commission)</div>" +
-        "<div style='font-family:var(--font-mono); font-size:12px; color:#fff; word-break:break-all; margin-top:4px;'>https://gemini-code-1790101773395.vercel.app/?ref=" + currentProfile.id + "</div>" +
-      "</div>" +
-
       "<div class='stats-grid'>" +
         "<div class='stat-card'><div class='stat-label'>Clicks</div><div class='stat-val'>" + (currentProfile.custom_visitors || 0) + "</div></div>" +
         "<div class='stat-card'><div class='stat-label'>Leads</div><div class='stat-val' style='color:var(--accent-green);'>" + (currentProfile.custom_conversions || 0) + "</div></div>" +
         "<div class='stat-card'><div class='stat-label'>Rate</div><div class='stat-val' style='color:var(--accent-gold);'>৳" + leadRate + "</div></div>" +
         "<div class='stat-card'><div class='stat-label'>Total Paid</div><div class='stat-val' style='color:var(--accent-green);'>৳" + paidTotal + "</div></div>" +
-      "</div>" +
-
-      "<div class='card'><h4 style='margin:0 0 12px; color:#fff;'>Smartlink Rotator</h4>" +
-        "<div style='font-size:12px; color:var(--text-secondary); margin-bottom:8px;'>Auto-detects best converting offer for your traffic</div>" +
-        "<input readonly value='https://gemini-code-1790101773395.vercel.app/smartlink?sub8=" + currentProfile.id + "' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:var(--accent-green); font-family:var(--font-mono); font-size:11px;'>" +
       "</div>";
 
-    document.getElementById("quickWithdrawBtn").onclick = function(){ hapticTouch(); openWithdrawModal(availBalance); };
+    document.getElementById("quickWithdrawBtn").onclick = function(){ openWithdrawModal(availBalance); };
 
   } else if (activeViewTab === "offers") {
     app.innerHTML = "<h3 style='color:#fff; margin:0 0 14px;'>Available Offers</h3>" +
@@ -283,7 +268,6 @@ async function renderUserView(){
             "<div class='link-input-group'>" +
               "<input type='text' id='sub-" + o.id + "' placeholder='Enter Sub ID / Name'>" +
               "<button class='btn-sm btn-success' data-gen='" + o.id + "'>Get Link</button>" +
-              "<button class='btn-sm btn-purple' data-qr='" + o.id + "'>QR Code</button>" +
             "</div>" +
             "<div class='copy-box' id='box-" + o.id + "'></div>" +
           "</div>"
@@ -292,38 +276,18 @@ async function renderUserView(){
 
     offers.forEach(function(o){
       var btn = document.querySelector("[data-gen='" + o.id + "']");
-      var qrBtn = document.querySelector("[data-qr='" + o.id + "']");
-
       if (btn){
         btn.onclick = function(){
-          hapticTouch();
           var sub = document.getElementById("sub-" + o.id).value.trim();
           if (!sub) return alert("Enter Sub ID first");
           var finalUrl = o.url + (o.url.includes("?") ? "&" : "?") + "sub8=" + encodeURIComponent(sub);
           var box = document.getElementById("box-" + o.id);
           box.className = "copy-box active";
           box.innerHTML = "🔗 <strong>Click to Copy Tracking Link:</strong><br>" + finalUrl;
-          box.onclick = function(){ hapticTouch(); navigator.clipboard.writeText(finalUrl); alert("Copied to Clipboard! 🎉"); };
-        };
-      }
-
-      if (qrBtn){
-        qrBtn.onclick = function(){
-          hapticTouch();
-          var sub = document.getElementById("sub-" + o.id).value.trim() || "default";
-          var finalUrl = o.url + (o.url.includes("?") ? "&" : "?") + "sub8=" + encodeURIComponent(sub);
-          openQrModal(finalUrl);
+          box.onclick = function(){ navigator.clipboard.writeText(finalUrl); alert("Copied to Clipboard! 🎉"); };
         };
       }
     });
-
-  } else if (activeViewTab === "reports") {
-    app.innerHTML =
-      "<div class='card'>" +
-        "<h3 style='margin:0 0 12px; color:#fff;'>Sub-ID Traffic Report</h3>" +
-        "<div style='font-size:12px; color:var(--text-secondary); margin-bottom:12px;'>Track performance by Campaign Name</div>" +
-        "<div class='rank-row'><span><strong>Default Campaign</strong></span><span style='color:var(--accent-green);'>" + (currentProfile.custom_conversions || 0) + " Leads</span></div>" +
-      "</div>";
 
   } else if (activeViewTab === "ranks") {
     app.innerHTML =
@@ -342,68 +306,31 @@ async function renderUserView(){
   } else if (activeViewTab === "wallet") {
     app.innerHTML =
       "<div class='card'>" +
-        "<h3 style='margin:0 0 12px; color:#fff;'>Payout History & Receipts</h3>" +
+        "<h3 style='margin:0 0 12px; color:#fff;'>Payout History</h3>" +
         (payouts.length === 0 ? "<div style='font-size:12px; color:var(--text-secondary);'>No payouts found</div>" :
           payouts.map(function(p){
             return "<div style='display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);'>" +
               "<div><strong>৳" + p.amount + "</strong> (" + esc(p.method) + ")<br><small style='color:var(--text-secondary);'>" + new Date(p.created_at).toLocaleDateString() + "</small></div>" +
-              "<div style='display:flex; gap:6px; align-items:center;'>" +
-                "<span class='badge badge-" + p.status + "'>" + p.status + "</span>" +
-                (p.status === 'approved' ? "<button class='btn-sm' onclick='printInvoice(\"" + p.id + "\", \"" + p.amount + "\", \"" + p.method + "\")'>Receipt 📄</button>" : "") +
-              "</div>" +
+              "<div><span class='badge badge-" + p.status + "'>" + p.status + "</span></div>" +
             "</div>";
           }).join("")) +
       "</div>";
-
-  } else if (activeViewTab === "chat") {
-    renderChatView();
   }
 }
 
-// QR Code Modal
-function openQrModal(url){
-  var modalSlot = document.getElementById("modalContainer");
-  modalSlot.innerHTML =
-    "<div class='modal-bg'><div class='modal-body' style='text-align:center;'>" +
-      "<h3 style='margin:0 0 14px; color:#fff;'>Campaign QR Code</h3>" +
-      "<div id='qrCanvas' style='display:inline-block; padding:12px; background:#fff; border-radius:12px;'></div>" +
-      "<button class='btn-sm' id='qrClose' style='width:100%; margin-top:16px;'>Close</button>" +
-    "</div></div>";
-
-  new QRCode(document.getElementById("qrCanvas"), { text: url, width: 160, height: 160 });
-  document.getElementById("qrClose").onclick = function(){ modalSlot.innerHTML = ""; };
-}
-
-// Printable Invoice
-window.printInvoice = function(id, amt, meth){
-  var win = window.open("", "_blank");
-  win.document.write("<html><head><title>Payment Receipt</title></head><body style='font-family:sans-serif; padding:30px; border:2px solid #000;'>" +
-    "<h2>LinkFlow Network — Official Receipt</h2><hr>" +
-    "<p><strong>Transaction ID:</strong> " + id + "</p>" +
-    "<p><strong>Amount Paid:</strong> ৳" + amt + "</p>" +
-    "<p><strong>Payment Method:</strong> " + meth + "</p>" +
-    "<p><strong>Status:</strong> Completed / Paid</p>" +
-    "<br><p>Thank you for working with LinkFlow!</p>" +
-    "<script>window.print();<\/script></body></html>");
-};
-
-// Withdraw Modal
 function openWithdrawModal(avail){
   if (avail < MIN_WITHDRAW) return alert("Minimum withdrawal limit is ৳" + MIN_WITHDRAW);
   var modalSlot = document.getElementById("modalContainer");
-  
-  var savedAcc = localStorage.getItem("saved_wallet_acc") || "";
-  var savedMeth = localStorage.getItem("saved_wallet_meth") || "Bkash";
 
   modalSlot.innerHTML =
     "<div class='modal-bg'><div class='modal-body'>" +
       "<h3 style='margin:0 0 14px; color:#fff;'>Request Payout</h3>" +
       "<label style='font-size:11px; color:var(--text-secondary);'>Select Payment Method</label>" +
       "<select id='wMeth' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;'>" +
-        "<option " + (savedMeth==='Bkash'?'selected':'') + ">Bkash</option><option " + (savedMeth==='Nagad'?'selected':'') + ">Nagad</option><option " + (savedMeth==='Rocket'?'selected':'') + ">Rocket</option><option " + (savedMeth==='Bank'?'selected':'') + ">Bank Transfer</option>" +
+        "<option>Bkash</option><option>Nagad</option><option>Rocket</option><option>Bank Transfer</option>" +
       "</select>" +
-      "<label style='font-size:11px; color:var(--text-secondary);'>Account Number (Auto-Saved)</label>" +
-      "<input id='wAcc' value='" + savedAcc + "' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;' placeholder='017XXXXXXXX'>" +
+      "<label style='font-size:11px; color:var(--text-secondary);'>Account Number</label>" +
+      "<input id='wAcc' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;' placeholder='017XXXXXXXX'>" +
       "<label style='font-size:11px; color:var(--text-secondary);'>Amount (৳)</label>" +
       "<input id='wAmt' type='number' value='" + avail + "' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 16px;'>" +
       "<button class='btn-primary' id='wSubmit'>Submit Request</button>" +
@@ -412,14 +339,10 @@ function openWithdrawModal(avail){
 
   document.getElementById("wClose").onclick = function(){ modalSlot.innerHTML = ""; };
   document.getElementById("wSubmit").onclick = async function(){
-    hapticTouch();
     var m = document.getElementById("wMeth").value;
     var a = document.getElementById("wAcc").value.trim();
     var amt = parseFloat(document.getElementById("wAmt").value) || 0;
     if (!a || amt < MIN_WITHDRAW || amt > avail) return alert("Invalid amount or account");
-
-    localStorage.setItem("saved_wallet_acc", a);
-    localStorage.setItem("saved_wallet_meth", m);
 
     await sb.from("payouts").insert({ user_id: currentProfile.id, username: currentProfile.username, method: m, account: a, amount: amt, status: "pending" });
     alert("Payout request submitted!");
@@ -428,49 +351,6 @@ function openWithdrawModal(avail){
   };
 }
 
-// Chat Component
-function renderChatView(){
-  app.innerHTML =
-    "<div class='card' style='height:440px; display:flex; flex-direction:column; padding:0; overflow:hidden;'>" +
-      "<div class='chat-head'><span>Admin Support</span><span style='font-size:11px; color:var(--accent-green);'>● Online</span></div>" +
-      "<div class='chat-body' id='cBody'>Loading messages…</div>" +
-      "<div class='chat-chips'>" +
-        "<div class='chip' onclick='sendQuickMsg(\"পেমেন্ট আপডেট পাবো কখন?\")'>💳 পেমেন্ট আপডেট?</div>" +
-        "<div class='chip' onclick='sendQuickMsg(\"রেট বাড়ানো যাবে স্যার?\")'>📈 রেট আপডেট?</div>" +
-        "<div class='chip' onclick='sendQuickMsg(\"নতুন অফার লাগবে\")'>🔥 নতুন অফার?</div>" +
-      "</div>" +
-      "<div class='chat-footer'>" +
-        "<input id='cInput' placeholder='Write a message…'>" +
-        "<button class='btn-sm btn-success' id='cSend'>Send</button>" +
-      "</div>" +
-    "</div>";
-
-  loadChatMessages();
-  document.getElementById("cSend").onclick = function(){
-    var txt = document.getElementById("cInput").value.trim();
-    if (txt) sendQuickMsg(txt);
-  };
-}
-
-window.sendQuickMsg = async function(msgText){
-  hapticTouch();
-  document.getElementById("cInput").value = "";
-  await sb.from("messages").insert({ user_id: currentProfile.id, sender_role: "user", body: msgText, is_seen: false });
-  loadChatMessages();
-};
-
-async function loadChatMessages(){
-  var box = document.getElementById("cBody");
-  var res = await sb.from("messages").select("*").eq("user_id", currentProfile.id).order("created_at", { ascending: true });
-  var msgs = res.data || [];
-  box.innerHTML = msgs.map(function(m){
-    var mine = m.sender_role === "user";
-    return "<div class='msg-bubble " + (mine ? "msg-mine" : "msg-theirs") + "'>" + esc(m.body) + "</div>";
-  }).join("");
-  box.scrollTop = box.scrollHeight;
-}
-
-// Admin Panel View
 async function renderAdmin(){
   bottomNav.style.display = "none";
   var usersRes = await sb.from("profiles").select("*").neq("is_admin", true);
@@ -494,21 +374,10 @@ async function renderAdmin(){
           "<div>" + (p.status === "pending" ? "<button class='btn-sm btn-success' data-paid='" + p.id + "'>Mark Paid</button>" : "<span class='badge badge-approved'>Paid</span>") + "</div>" +
         "</div>";
       }).join("")) +
-    "</div>" +
-
-    "<div class='card'>" +
-      "<h4 style='margin:0 0 12px; color:#fff;'>Affiliate Users Management</h4>" +
-      users.map(function(u){
-        return "<div style='display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);'>" +
-          "<div><strong>" + esc(u.username) + "</strong> (" + esc(u.email) + ")<br><small style='color:var(--text-secondary);'>Conversions: " + (u.custom_conversions||0) + "</small></div>" +
-          "<div><span class='badge badge-" + u.status + "'>" + u.status + "</span></div>" +
-        "</div>";
-      }).join("") +
     "</div>";
 
   document.querySelectorAll("[data-paid]").forEach(function(btn){
     btn.onclick = async function(){
-      hapticTouch();
       var pid = btn.getAttribute("data-paid");
       await sb.from("payouts").update({ status: "approved" }).eq("id", pid);
       renderAdmin();
