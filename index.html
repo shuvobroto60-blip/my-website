@@ -3,157 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>LinkFlow Portal</title>
+<title>LinkFlow Network Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  :root{
-    --ink:#060911;
-    --surface:rgba(18, 26, 43, 0.75);
-    --surface-solid:#111927;
-    --surface-2:#1c273c;
-    --line:rgba(255, 255, 255, 0.1);
-    --line-soft:rgba(255, 255, 255, 0.05);
-    --text:#f3f4f6;
-    --text-muted:#9ca3af;
-    --text-dim:#6b7280;
-    --gold:#f59e0b;
-    --teal:#10b981;
-    --teal-soft:#064e3b;
-    --coral:#ef4444;
-    --coral-soft:#451a1a;
-    --purple:#8b5cf6;
-    --purple-soft:#2e1065;
-    --font-ui:"Hind Siliguri","Space Grotesk",system-ui,sans-serif;
-    --font-mono:"JetBrains Mono",ui-monospace,monospace;
-    box-sizing:border-box;
+  :root {
+    --bg-dark: #07090e;
+    --card-bg: rgba(18, 25, 38, 0.7);
+    --card-solid: #0f172a;
+    --surface: #1e293b;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(255, 255, 255, 0.18);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-gold: #f59e0b;
+    --accent-green: #10b981;
+    --accent-purple: #8b5cf6;
+    --accent-red: #ef4444;
+    --gradient-gold: linear-gradient(135deg, #f59e0b, #d97706);
+    --gradient-green: linear-gradient(135deg, #10b981, #059669);
+    --font-sans: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
-  *,*::before,*::after{box-sizing:inherit;}
-  html, body{margin:0; padding:0; min-height:100%; background:var(--ink); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; overflow-x:hidden;}
-  a{color:inherit; text-decoration:none;} button{font-family:inherit;}
-  ::-webkit-scrollbar{height:4px;width:4px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
 
-  header{display:flex; align-items:center; justify-content:space-between; padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(6,9,17,0.85); backdrop-filter:blur(16px); z-index:30;}
-  .brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px; color:#fff;}
-  .brand-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--gold),var(--teal));display:flex;align-items:center;justify-content:center;color:#060911;font-size:15px;font-weight:bold;flex:none;}
-  .logout-btn{padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--text-muted); font-size:12.5px; cursor:pointer;}
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; background: var(--bg-dark); color: var(--text-primary); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button, input, select { font-family: inherit; }
 
-  main{max-width:1080px; margin:0 auto; padding:16px 12px 80px;}
-  .center-wrap{max-width:400px; margin:20px auto; padding:0 4px;}
-
-  .card{border:1px solid var(--line); border-radius:16px; background:var(--surface); backdrop-filter:blur(12px); padding:20px 18px; box-shadow:0 10px 30px rgba(0,0,0,0.5);}
-  .card + .card{margin-top:16px;}
-
-  .notice-banner{background:linear-gradient(135deg, rgba(245,158,11,0.2), rgba(139,92,246,0.2)); border:1px solid var(--gold); border-radius:12px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#fef08a; display:flex; align-items:center; gap:8px;}
-
-  h1.page-title{font-size:20px; margin:0 0 4px; color:#fff;}
-  p.page-sub{color:var(--text-muted); font-size:12.5px; margin:0 0 16px; line-height:1.5;}
-
-  .tabs{display:flex; gap:4px; margin-bottom:16px; border:1px solid var(--line); border-radius:10px; padding:3px; background:var(--surface-2);}
-  .tab-btn{flex:1; padding:8px; border-radius:7px; border:none; background:transparent; color:var(--text-muted); font-size:13px; font-weight:600; cursor:pointer;}
-  .tab-btn.active{background:var(--surface-solid); color:var(--gold);}
-
-  label{display:block; font-size:12px; color:var(--text-muted); margin:10px 0 4px;}
-  label:first-of-type{margin-top:0;}
-  input, select{width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--ink); color:var(--text); font-size:13.5px; font-family:var(--font-ui);}
-  input:focus, select:focus{outline:none; border-color:var(--gold);}
-
-  .btn-primary{width:100%; margin-top:16px; padding:11px; border:none; border-radius:8px; background:linear-gradient(135deg,var(--gold),#d97706); color:#1a0c00; font-size:14px; font-weight:700; cursor:pointer;}
-  .btn-secondary{padding:6px 10px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); font-size:11.5px; cursor:pointer; white-space:nowrap;}
-  .btn-danger{border-color:rgba(239,68,68,0.4); color:var(--coral); background:var(--coral-soft);}
-  .btn-ok{border-color:rgba(16,185,129,0.4); color:var(--teal); background:var(--teal-soft);}
-
-  .status-badge{display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; font-size:11px; font-weight:600;}
-  .status-badge.pending{background:var(--surface-2); color:var(--gold); border:1px solid var(--line);}
-  .status-badge.approved{background:var(--teal-soft); color:var(--teal);}
-  .status-badge.rejected{background:var(--coral-soft); color:var(--coral);}
-
-  .dash-hero{
-    padding:20px; margin-bottom:16px; border:1px solid var(--line); border-radius:16px;
-    background:radial-gradient(120% 140% at 0% 0%, rgba(245,158,11,0.15), transparent 60%), var(--surface-solid);
-    display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden;
+  /* Header Header */
+  header {
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(16px);
+    background: rgba(7, 9, 14, 0.8); border-bottom: 1px solid var(--border);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
   }
-  .dash-hero-figure{font-family:var(--font-mono); font-weight:700; font-size:34px; color:var(--gold); margin:0;}
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: #fff; letter-spacing: -0.5px; }
+  .brand-logo { width: 34px; height: 34px; border-radius: 10px; background: var(--gradient-gold); display: flex; align-items: center; justify-content: center; color: #000; font-weight: 900; }
+  .logout-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .logout-btn:hover { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
 
-  .stat-rail{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:18px;}
-  @media(min-width:600px){ .stat-rail{grid-template-columns:repeat(4,1fr);} }
-  .stat{padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--surface-solid);}
-  .stat-name{font-size:11.5px; color:var(--text-muted); margin-bottom:4px;}
-  .stat-value{font-family:var(--font-mono); font-size:18px; font-weight:600;}
+  main { max-width: 1000px; margin: 0 auto; padding: 16px 14px 100px; }
+  .center-wrap { max-width: 400px; margin: 30px auto; }
 
-  .offer-card{border:1px solid var(--line); border-radius:12px; background:var(--surface-solid); padding:16px; margin-bottom:12px; position:relative;}
-  .hot-tag{position:absolute; top:12px; right:12px; background:linear-gradient(135deg,#ef4444,#f59e0b); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;}
+  /* Card Glassmorphism */
+  .card { border: 1px solid var(--border); border-radius: 18px; background: var(--card-bg); backdrop-filter: blur(12px); padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); margin-bottom: 16px; }
 
-  .link-builder{display:flex; gap:6px; margin-top:10px; flex-direction:column;}
-  @media(min-width:480px){ .link-builder{flex-direction:row;} }
-  .link-builder input{flex:1;}
-  .link-builder button{padding:9px 14px; border-radius:8px; border:none; background:var(--teal); color:#022c22; font-weight:700; font-size:13px; cursor:pointer;}
-  .result-box{margin-top:8px; padding:8px 10px; border-radius:6px; background:var(--ink); border:1px dashed var(--line); font-family:var(--font-mono); font-size:11.5px; word-break:break-all; display:none; color:var(--teal); cursor:pointer;}
-  .result-box.show{display:block;}
-
-  .user-row{display:flex; flex-direction:column; gap:8px; padding:12px 0; border-bottom:1px solid var(--line-soft);}
-  @media(min-width:640px){ .user-row{flex-direction:row; align-items:center; justify-content:space-between;} }
-
-  .modal-overlay{position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); z-index:100; display:flex; align-items:center; justify-content:center; padding:12px;}
-  .modal-card{background:var(--surface-solid); border:1px solid var(--line); border-radius:16px; width:100%; max-width:500px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,0.6); max-height:85vh; overflow-y:auto;}
-
-  /* Chat Box */
-  .chat-toggle-btn{
-    position:fixed; bottom:16px; right:16px; z-index:40; width:52px; height:52px; border-radius:50%;
-    border:none; cursor:pointer; background:linear-gradient(135deg,#f59e0b,#10b981,#8b5cf6); color:#060911; font-size:22px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;
+  /* Hero Section */
+  .hero-balance {
+    background: radial-gradient(130% 140% at 0% 0%, rgba(245, 158, 11, 0.15), transparent 70%), var(--card-solid);
+    border: 1px solid var(--border-bright); border-radius: 20px; padding: 22px; position: relative; overflow: hidden; margin-bottom: 16px;
   }
-  .chat-badge{
-    position:absolute; top:-2px; right:-2px; background:var(--coral); color:#fff; font-size:10px; font-weight:700;
-    border-radius:999px; padding:2px 6px; border:2px solid var(--ink); display:none;
+  .hero-title { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin: 0 0 4px; }
+  .hero-amount { font-family: var(--font-mono); font-size: 38px; font-weight: 800; color: var(--accent-gold); margin: 0 0 14px; }
+
+  /* Stats Grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media(min-width: 640px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+  .stat-card { background: var(--card-solid); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+  .stat-val { font-family: var(--font-mono); font-size: 19px; font-weight: 700; color: #fff; }
+
+  /* Buttons */
+  .btn-primary { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--gradient-gold); color: #000; font-weight: 800; font-size: 14px; cursor: pointer; transition: transform 0.1s; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-sm { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-success { background: var(--accent-green); color: #000; border: none; }
+  .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+  /* Offer Card */
+  .offer-item { background: var(--card-solid); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; position: relative; }
+  .tag-hot { position: absolute; top: 14px; right: 14px; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; }
+
+  .link-input-group { display: flex; gap: 8px; margin-top: 12px; }
+  .link-input-group input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: #fff; font-size: 13px; }
+
+  .copy-box { margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(16, 185, 129, 0.08); border: 1px dashed var(--accent-green); font-family: var(--font-mono); font-size: 12px; color: var(--accent-green); cursor: pointer; display: none; word-break: break-all; }
+  .copy-box.active { display: block; }
+
+  /* Mobile Bottom Navigation */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+    background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   }
-  .chat-badge.show{display:block;}
+  .nav-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text-secondary); font-size: 10px; font-weight: 700; border: none; background: transparent; cursor: pointer; flex: 1; }
+  .nav-tab.active { color: var(--accent-gold); }
+  .nav-tab span { font-size: 18px; }
 
-  .chat-panel{
-    position:fixed; bottom:76px; right:12px; z-index:40; width:340px; max-width:calc(100vw - 24px); height:460px; max-height:75vh;
-    background:var(--surface-solid); border:1px solid var(--line); border-radius:16px; display:none; flex-direction:column; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.6);
-  }
-  .chat-panel.open{display:flex;}
-  .chat-header{padding:10px 14px; border-bottom:1px solid var(--line-soft); background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(139,92,246,0.15)); display:flex; align-items:center; justify-content:space-between; color:#fff;}
-  .chat-header button{background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer;}
-  
-  .chat-tabs{display:flex; border-bottom:1px solid var(--line-soft); background:var(--surface-2);}
-  .chat-tab{flex:1; padding:8px; border:none; background:transparent; color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; text-align:center;}
-  .chat-tab.active{color:var(--gold); border-bottom:2px solid var(--gold); background:var(--surface-solid);}
+  /* Status Badges */
+  .badge { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block; }
+  .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); }
+  .badge-approved { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+  .badge-rejected { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
 
-  .chat-user-list{flex:1; overflow-y:auto; padding:4px 0;}
-  .chat-user-item{padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--line-soft); display:flex; align-items:center; justify-content:space-between;}
-  .chat-user-item:hover{background:var(--surface-2);}
-  .chat-back{padding:6px 12px; font-size:12px; color:var(--teal); cursor:pointer; border-bottom:1px solid var(--line-soft); background:var(--surface-2);}
-  .chat-messages{flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; background:rgba(6,9,17,0.6);}
-  
-  .msg-wrapper{display:flex; flex-direction:column; max-width:85%; position:relative;}
-  .msg-wrapper.mine{align-self:flex-end; align-items:flex-end;}
-  .msg-wrapper.theirs{align-self:flex-start; align-items:flex-start;}
-  .msg-sender-name{font-size:10px; color:var(--gold); margin-bottom:2px; font-weight:600;}
-  .msg{padding:8px 11px; border-radius:12px; font-size:12.5px; line-height:1.4; word-break:break-word;}
-  .msg-wrapper.mine .msg{background:linear-gradient(135deg,#064e3b,#047857); color:#a7f3d0; border:1px solid rgba(16,185,129,0.3); border-bottom-right-radius:2px;}
-  .msg-wrapper.theirs .msg{background:var(--surface-2); color:var(--text); border:1px solid var(--line-soft); border-bottom-left-radius:2px;}
-  .msg-meta{display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-dim); margin-top:2px;}
-  .msg-status.seen{color:var(--teal); font-weight:bold;}
+  /* Modal & Overlay */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal-body { background: var(--card-solid); border: 1px solid var(--border-bright); border-radius: 20px; width: 100%; max-width: 440px; padding: 22px; }
 
-  footer{text-align:center; color:var(--text-dim); font-size:11.5px; padding:16px;}
+  /* Chat Box Overlay */
+  .chat-widget { position: fixed; bottom: 70px; right: 14px; z-index: 45; width: 340px; max-width: calc(100vw - 28px); height: 420px; background: var(--card-solid); border: 1px solid var(--border-bright); border-radius: 18px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+  .chat-widget.open { display: flex; }
+  .chat-head { padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; }
+  .chat-body { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+  .chat-chips { display: flex; gap: 6px; padding: 6px 12px; overflow-x: auto; background: var(--bg-dark); border-top: 1px solid var(--border); }
+  .chip { padding: 4px 10px; border-radius: 12px; background: var(--surface); color: var(--text-secondary); font-size: 11px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); }
+  .chat-footer { padding: 10px; display: flex; gap: 6px; border-top: 1px solid var(--border); background: var(--card-solid); }
+  .chat-footer input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: #fff; }
+
+  .msg-bubble { padding: 8px 12px; border-radius: 12px; max-width: 80%; line-height: 1.4; }
+  .msg-mine { align-self: flex-end; background: var(--gradient-green); color: #000; font-weight: 600; border-bottom-right-radius: 2px; }
+  .msg-theirs { align-self: flex-start; background: var(--surface); color: #fff; border-bottom-left-radius: 2px; }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="brand"><div class="brand-mark">↗</div>LinkFlow Portal</div>
-  <button class="logout-btn" id="logoutBtn" style="display:none;">Logout</button>
+  <div class="brand"><div class="brand-logo">⚡</div>LinkFlow</div>
+  <button class="logout-btn" id="logoutBtn" style="display:none;">Sign Out</button>
 </header>
 
-<main id="app"><div style="text-align:center; padding:30px; color:var(--text-dim);">Loading Portal…</div></main>
-<div id="modalContainer"></div>
+<main id="app"><div style="text-align:center; padding:50px; color:var(--text-secondary);">Connecting to Portal…</div></main>
 
-<footer>© LinkFlow Portal — Secured Realtime Network</footer>
+<nav class="bottom-nav" id="bottomNav" style="display:none;">
+  <button class="nav-tab active" data-tab="dashboard"><span>📊</span>Home</button>
+  <button class="nav-tab" data-tab="offers"><span>🔥</span>Offers</button>
+  <button class="nav-tab" data-tab="wallet"><span>💸</span>Wallet</button>
+  <button class="nav-tab" data-tab="chat"><span>💬</span>Chat</button>
+</nav>
+
+<div id="modalContainer"></div>
 
 <script>
 (function(){
@@ -161,845 +142,311 @@
 
 var SUPABASE_URL = "https://kvgjstwgxnpendfkfkny.supabase.co";
 var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2Z2pzdHdneG5wZW5kZmtma255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDU4NjMsImV4cCI6MjEwNTU4MTg2M30.SZpDrx39-ZgUzgBLEun1lhedu1ANxr06ea2ae7_84uQ";
-
-var MINIMUM_WITHDRAWAL_LIMIT = 500; // 1. MINIMUM WITHDRAWAL LIMIT
+var MIN_WITHDRAW = 500;
 
 var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var app = document.getElementById("app");
 var logoutBtn = document.getElementById("logoutBtn");
-var impersonatedUserId = null;
-var unreadCount = 0;
+var bottomNav = document.getElementById("bottomNav");
 
-var popSound = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUtvAACBhYqFbF1Aal14mI2Sgnpwc3d7eX52eXZxeXR6f3x4eXR5f4CBgoN8dnl6f3p5fHl9fXl7e3p5fHp4enZ3eXh3eXp4eXd5fHh2d3d3d3h4eHh3d3h3");
+var currentProfile = null;
+var activeViewTab = "dashboard";
 
-// 3. ADMIN LIVE PAYOUT ALERT SOUND
-var alertSound = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1Aal14mI2Sgnpwc3d7eX52eXZxeXR6f3x4eXR5f4CBgoN8dnl6f3p5fHl9fXl7e3p5fHp4enZ3eXh3eXp4eXd5fHh2d3d3d3h4eHh3d3h3");
-
-function playPopSound(){ try { popSound.play().catch(function(e){}); } catch(e){} }
-function playAlertSound(){ try { alertSound.play().catch(function(e){}); } catch(e){} }
-
-function esc(s){
-  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
-    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
-  });
-}
-
-// 2. AUTO POSTBACK LISTENER
-async function handleUrlPostback(){
-  var urlParams = new URLSearchParams(window.location.search);
-  var postbackSub8 = urlParams.get("sub8");
-  if (postbackSub8 && window.location.pathname.includes("/postback")){
-    await sb.rpc("handle_postback_lead", { sub8_val: postbackSub8 });
-    document.body.innerHTML = "<div style='color:#10b981; font-family:sans-serif; text-align:center; padding:50px;'><h1>OK - Postback Lead Received</h1></div>";
-    return true;
-  }
-  return false;
-}
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
 logoutBtn.addEventListener("click", async function(){
-  impersonatedUserId = null;
   await sb.auth.signOut();
-  render();
+  window.location.reload();
 });
 
-async function getCurrentProfile(){
-  try {
-    var sessionRes = await sb.auth.getSession();
-    var session = sessionRes.data ? sessionRes.data.session : null;
-    if (!session) return null;
+async function init(){
+  var sessionRes = await sb.auth.getSession();
+  var session = sessionRes.data ? sessionRes.data.session : null;
 
-    var user = session.user;
-    var profRes = await sb.from("profiles").select("*").eq("id", user.id).single();
-
-    if (profRes.error || !profRes.data){
-      var uname = user.user_metadata && user.user_metadata.username ? user.user_metadata.username : user.email.split("@")[0];
-      var phone = user.user_metadata && user.user_metadata.phone ? user.user_metadata.phone : "";
-      var newProf = { id: user.id, username: uname, email: user.email, phone: phone, status: "pending", per_lead_rate: 0 };
-      await sb.from("profiles").upsert(newProf);
-      return { profile: newProf, user: user };
-    }
-
-    return { profile: profRes.data, user: user };
-  } catch(e) {
-    console.error(e);
-    return null;
-  }
-}
-
-async function render(){
-  if (await handleUrlPostback()) return;
-
-  removeChatWidget();
-  app.innerHTML = "<div style='text-align:center; padding:30px; color:var(--text-dim);'>Loading Portal…</div>";
-  var current = await getCurrentProfile();
-
-  if (!current){
+  if (!session){
     logoutBtn.style.display = "none";
+    bottomNav.style.display = "none";
     renderAuth();
     return;
   }
 
-  logoutBtn.style.display = "inline-block";
-  var profile = current.profile;
+  logoutBtn.style.display = "block";
+  var user = session.user;
+  var profRes = await sb.from("profiles").select("*").eq("id", user.id).single();
 
-  if (profile.is_admin && impersonatedUserId){
-    var targetRes = await sb.from("profiles").select("*").eq("id", impersonatedUserId).single();
-    if (targetRes.data){
-      renderDashboard(targetRes.data, true);
-      return;
-    }
+  if (!profRes.data){
+    var uname = user.email.split("@")[0];
+    var newP = { id: user.id, username: uname, email: user.email, status: "pending", per_lead_rate: 0 };
+    await sb.from("profiles").upsert(newP);
+    currentProfile = newP;
+  } else {
+    currentProfile = profRes.data;
   }
 
-  if (profile.is_admin){ renderAdmin(profile); return; }
-  if (profile.status === "pending"){ renderPending(profile); return; }
-  if (profile.status === "rejected"){ renderRejected(profile); return; }
-  if (profile.status === "suspended"){ renderSuspended(profile); return; }
-  renderDashboard(profile, false);
+  if (currentProfile.is_admin){
+    renderAdmin();
+  } else {
+    bottomNav.style.display = "flex";
+    setupNavListeners();
+    renderUserView();
+  }
 }
 
-// ---------------- AUTH ----------------
 function renderAuth(){
   app.innerHTML =
     "<div class='center-wrap'>" +
       "<div class='card'>" +
-        "<div class='tabs'>" +
-          "<button class='tab-btn active' id='tabLogin'>Login</button>" +
-          "<button class='tab-btn' id='tabRegister'>Register</button>" +
-        "</div>" +
-        "<div id='authBody'></div>" +
+        "<h2 style='margin:0 0 6px; font-weight:800; color:#fff;'>LinkFlow Portal</h2>" +
+        "<p style='margin:0 0 20px; font-size:12.5px; color:var(--text-secondary);'>Sign in to manage your affiliate campaigns</p>" +
+        "<label style='font-size:11px; color:var(--text-secondary);'>Email Address</label>" +
+        "<input id='lEmail' type='email' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;'>" +
+        "<label style='font-size:11px; color:var(--text-secondary);'>Password</label>" +
+        "<input id='lPass' type='password' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 16px;'>" +
+        "<button class='btn-primary' id='lBtn'>Sign In</button>" +
       "</div>" +
     "</div>";
 
-  document.getElementById("tabLogin").onclick = function(){ setActiveTab(this); renderLoginForm(); };
-  document.getElementById("tabRegister").onclick = function(){ setActiveTab(this); renderRegisterForm(); };
-
-  function setActiveTab(btn){
-    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
-    btn.classList.add("active");
-  }
-  renderLoginForm();
-}
-
-function renderLoginForm(){
-  var body = document.getElementById("authBody");
-  body.innerHTML =
-    "<h1 class='page-title'>Sign In</h1>" +
-    "<label>Email</label><input id='liEmail' type='email' placeholder='name@example.com'>" +
-    "<label>Password</label><input id='liPass' type='password' placeholder='••••••••'>" +
-    "<button class='btn-primary' id='liSubmit'>Login</button>" +
-    "<div class='form-msg' id='liMsg'></div>";
-
-  document.getElementById("liSubmit").onclick = async function(){
-    var btn = this;
-    var email = document.getElementById("liEmail").value.trim();
-    var pass = document.getElementById("liPass").value;
-    var msg = document.getElementById("liMsg");
-
-    if (!email || !pass){ msg.className = "form-msg show error"; msg.textContent = "Enter email & password."; return; }
-
-    btn.disabled = true; btn.textContent = "Logging in…";
-    var res = await sb.auth.signInWithPassword({ email: email, password: pass });
-    btn.disabled = false; btn.textContent = "Login";
-
-    if (res.error){ msg.className = "form-msg show error"; msg.textContent = "Invalid email or password."; return; }
-    render();
+  document.getElementById("lBtn").onclick = async function(){
+    var e = document.getElementById("lEmail").value.trim();
+    var p = document.getElementById("lPass").value;
+    if (!e || !p) return alert("Fill all fields");
+    var res = await sb.auth.signInWithPassword({ email: e, password: p });
+    if (res.error) alert("Invalid Email or Password");
+    else init();
   };
 }
 
-function renderRegisterForm(){
-  var body = document.getElementById("authBody");
-  body.innerHTML =
-    "<h1 class='page-title'>Register Account</h1>" +
-    "<label>Username</label><input id='riUser' type='text'>" +
-    "<label>Email</label><input id='riEmail' type='email'>" +
-    "<label>Phone</label><input id='riPhone' type='tel'>" +
-    "<label>Password</label><input id='riPass' type='password'>" +
-    "<button class='btn-primary' id='riSubmit'>Submit Application</button>" +
-    "<div class='form-msg' id='riMsg'></div>";
-
-  document.getElementById("riSubmit").onclick = async function(){
-    var btn = this;
-    var uname = document.getElementById("riUser").value.trim();
-    var email = document.getElementById("riEmail").value.trim();
-    var phone = document.getElementById("riPhone").value.trim();
-    var pass = document.getElementById("riPass").value;
-    var msg = document.getElementById("riMsg");
-
-    if (!uname || !email || !phone || !pass){ msg.className = "form-msg show error"; msg.textContent = "Fill all fields."; return; }
-
-    btn.disabled = true; btn.textContent = "Submitting…";
-    var signUpRes = await sb.auth.signUp({
-      email: email,
-      password: pass,
-      options: { data: { username: uname, phone: phone } }
-    });
-
-    if (signUpRes.error){
-      btn.disabled = false; btn.textContent = "Submit Application";
-      msg.className = "form-msg show error"; msg.textContent = signUpRes.error.message;
-      return;
-    }
-
-    var newUserId = signUpRes.data.user ? signUpRes.data.user.id : null;
-    if (newUserId){
-      await sb.from("profiles").upsert({ id: newUserId, username: uname, phone: phone, email: email, status: "pending", per_lead_rate: 0 });
-    }
-
-    btn.disabled = false; btn.textContent = "Submit Application";
-    render();
-  };
+// Mobile Tab Controller
+function setupNavListeners(){
+  document.querySelectorAll(".nav-tab").forEach(function(btn){
+    btn.onclick = function(){
+      document.querySelectorAll(".nav-tab").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      activeViewTab = btn.getAttribute("data-tab");
+      renderUserView();
+    };
+  });
 }
 
-function renderPending(profile){ app.innerHTML = "<div class='center-wrap'><div class='card' style='text-align:center;'><span class='status-badge pending'>Under Review</span><h1 class='page-title' style='margin-top:12px;'>Welcome, " + esc(profile.username) + "</h1><p>Your account is under review by admin.</p></div></div>"; }
-function renderRejected(profile){ app.innerHTML = "<div class='center-wrap'><div class='card'><h1 class='page-title'>Application Rejected</h1></div></div>"; }
-function renderSuspended(profile){ app.innerHTML = "<div class='center-wrap'><div class='card'><h1 class='page-title'>Account Suspended</h1></div></div>"; }
-
-// ---------------- USER DASHBOARD (WITH DEVICE & GEO ANALYTICS) ----------------
-async function renderDashboard(profile, isImpersonating){
+async function renderUserView(){
+  var payoutsRes = await sb.from("payouts").select("*").eq("user_id", currentProfile.id);
   var offersRes = await sb.from("offers").select("*");
-  var payoutsRes = await sb.from("payouts").select("*").eq("user_id", profile.id).order("created_at", { ascending: false });
-  
+
+  var payouts = payoutsRes.data || [];
   var offers = offersRes.data || [];
-  var myPayouts = payoutsRes.data || [];
 
-  var allowedOffers = offers.filter(function(o){
-    if (!profile.allowed_offers) return true;
-    return profile.allowed_offers.includes(o.id);
+  var leadRate = currentProfile.per_lead_rate || 0;
+  var gross = currentProfile.custom_payout || ((currentProfile.custom_conversions || 0) * leadRate);
+
+  var requestedOrPaid = 0, paidTotal = 0;
+  payouts.forEach(function(p){
+    if (p.status === "pending" || p.status === "approved") requestedOrPaid += parseFloat(p.amount) || 0;
+    if (p.status === "approved") paidTotal += parseFloat(p.amount) || 0;
   });
 
-  var leadRate = profile.per_lead_rate || 0;
-  var totalGrossEarnings = profile.custom_payout || (profile.custom_conversions * leadRate);
+  var availBalance = Math.max(0, gross - requestedOrPaid);
 
-  var totalRequestedOrPaid = 0;
-  var totalPaidOut = 0;
-
-  myPayouts.forEach(function(p){
-    if (p.status === "pending" || p.status === "approved"){ totalRequestedOrPaid += parseFloat(p.amount) || 0; }
-    if (p.status === "approved"){ totalPaidOut += parseFloat(p.amount) || 0; }
-  });
-
-  var availableBalance = totalGrossEarnings - totalRequestedOrPaid;
-  if (availableBalance < 0) availableBalance = 0;
-
-  var noticeHtml = profile.notice_text ? "<div class='notice-banner'>📢 <strong>Notice:</strong> " + esc(profile.notice_text) + "</div>" : "";
-
-  var impersonateBannerHtml = isImpersonating ?
-    "<div style='background:var(--purple-soft); border:1px solid var(--purple); color:#e9d5ff; padding:10px 14px; border-radius:10px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;'><span>👁️ Viewing as <strong>" + esc(profile.username) + "</strong></span><button class='btn-secondary' id='exitImpersonateBtn'>Return to Admin ↵</button></div>" : "";
-
-  app.innerHTML = impersonateBannerHtml + noticeHtml +
-    "<h1 class='page-title'>Dashboard — " + esc(profile.username) + "</h1>" +
-    "<div class='dash-hero'>" +
-      "<div><p style='margin:0; font-size:12px; color:var(--text-muted);'>Available Balance (Gross: ৳" + totalGrossEarnings + ")</p><p class='dash-hero-figure'>৳" + availableBalance + "</p></div>" +
-      "<button class='btn-primary' id='withdrawBtn' style='width:auto; align-self:flex-start; margin-top:0; padding:8px 16px;'>Request Payout 💸 (Min ৳" + MINIMUM_WITHDRAWAL_LIMIT + ")</button>" +
-    "</div>" +
-
-    "<div class='stat-rail'>" +
-      "<div class='stat'><div class='stat-name'>Total Clicks</div><div class='stat-value'>" + (profile.custom_visitors || 0) + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Total Leads</div><div class='stat-value' style='color:var(--teal);'>" + (profile.custom_conversions || 0) + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Lead Rate</div><div class='stat-value' style='color:var(--gold);'>৳" + leadRate + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Total Paid Payout</div><div class='stat-value' style='color:var(--teal);'>৳" + totalPaidOut + "</div></div>" +
-    "</div>" +
-
-    // 4. DEVICE & GEO ANALYTICS CHARTS
-    "<div style='display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:18px;'>" +
-      "<div class='card'><h3 style='margin:0 0 12px; font-size:14px; color:#fff;'>Clicks vs Conversions</h3><canvas id='userChart' height='90'></canvas></div>" +
-      "<div style='display:grid; grid-template-columns:1fr 1fr; gap:12px;'>" +
-        "<div class='card'><h3 style='margin:0 0 8px; font-size:12.5px; color:#fff;'>Device Breakdown</h3><canvas id='deviceChart' height='120'></canvas></div>" +
-        "<div class='card'><h3 style='margin:0 0 8px; font-size:12.5px; color:#fff;'>Top GEO (Countries)</h3><canvas id='geoChart' height='120'></canvas></div>" +
+  if (activeViewTab === "dashboard") {
+    app.innerHTML =
+      "<div class='hero-balance'>" +
+        "<div class='hero-title'>Available Balance</div>" +
+        "<div class='hero-amount'>৳" + availBalance + "</div>" +
+        "<button class='btn-primary' id='quickWithdrawBtn' style='width:auto; padding:8px 18px;'>Request Payout 💸</button>" +
       "</div>" +
-    "</div>" +
+      "<div class='stats-grid'>" +
+        "<div class='stat-card'><div class='stat-label'>Clicks</div><div class='stat-val'>" + (currentProfile.custom_visitors || 0) + "</div></div>" +
+        "<div class='stat-card'><div class='stat-label'>Leads</div><div class='stat-val' style='color:var(--accent-green);'>" + (currentProfile.custom_conversions || 0) + "</div></div>" +
+        "<div class='stat-card'><div class='stat-label'>Rate</div><div class='stat-val' style='color:var(--accent-gold);'>৳" + leadRate + "</div></div>" +
+        "<div class='stat-card'><div class='stat-label'>Total Paid</div><div class='stat-val' style='color:var(--accent-green);'>৳" + paidTotal + "</div></div>" +
+      "</div>" +
+      "<div class='card'><h4 style='margin:0 0 12px; color:#fff;'>Performance Overview</h4><canvas id='dashChart' height='100'></canvas></div>";
 
-    "<div class='card' style='margin-bottom:18px;'><h3 style='margin:0 0 12px; font-size:14px; color:#fff;'>Payout Request History</h3>" +
-      (myPayouts.length === 0 ? "<div style='color:var(--text-dim); font-size:12px;'>No payout history found.</div>" : myPayouts.map(function(p){
+    renderChart(currentProfile.custom_visitors || 0, currentProfile.custom_conversions || 0);
+    document.getElementById("quickWithdrawBtn").onclick = function(){ openWithdrawModal(availBalance); };
+
+  } else if (activeViewTab === "offers") {
+    app.innerHTML = "<h3 style='color:#fff; margin:0 0 14px;'>Available Offers</h3>" +
+      offers.map(function(o){
         return (
-          "<div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line-soft);'>" +
-            "<div><strong>৳" + p.amount + "</strong> (" + esc(p.method) + " - " + esc(p.account) + ")<br><small style='color:var(--text-dim);'>" + new Date(p.created_at).toLocaleDateString() + "</small></div>" +
-            "<div><span class='status-badge " + p.status + "'>" + p.status + "</span></div>" +
+          "<div class='offer-item'>" +
+            "<span class='tag-hot'>HOT OFFER</span>" +
+            "<div style='font-weight:700; color:#fff; font-size:15px;'>" + esc(o.name) + "</div>" +
+            "<div class='link-input-group'>" +
+              "<input type='text' id='sub-" + o.id + "' placeholder='Enter Sub ID / Name'>" +
+              "<button class='btn-sm btn-success' data-gen='" + o.id + "'>Get Link</button>" +
+            "</div>" +
+            "<div class='copy-box' id='box-" + o.id + "'></div>" +
           "</div>"
         );
+      }).join("");
+
+    offers.forEach(function(o){
+      var btn = document.querySelector("[data-gen='" + o.id + "']");
+      if (btn){
+        btn.onclick = function(){
+          var sub = document.getElementById("sub-" + o.id).value.trim();
+          if (!sub) return alert("Enter Sub ID first");
+          var finalUrl = o.url + (o.url.includes("?") ? "&" : "?") + "sub8=" + encodeURIComponent(sub);
+          var box = document.getElementById("box-" + o.id);
+          box.className = "copy-box active";
+          box.innerHTML = "🔗 <strong>Click to Copy Tracking Link:</strong><br>" + finalUrl;
+          box.onclick = function(){ navigator.clipboard.writeText(finalUrl); alert("Copied to Clipboard! 🎉"); };
+        };
+      }
+    });
+
+  } else if (activeViewTab === "wallet") {
+    app.innerHTML =
+      "<div class='card'>" +
+        "<h3 style='margin:0 0 12px; color:#fff;'>Payout History</h3>" +
+        (payouts.length === 0 ? "<div style='font-size:12px; color:var(--text-secondary);'>No payouts found</div>" :
+          payouts.map(function(p){
+            return "<div style='display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);'>" +
+              "<div><strong>৳" + p.amount + "</strong> (" + esc(p.method) + ")<br><small style='color:var(--text-secondary);'>" + new Date(p.created_at).toLocaleDateString() + "</small></div>" +
+              "<div><span class='badge badge-" + p.status + "'>" + p.status + "</span></div>" +
+            "</div>";
+          }).join("")) +
+      "</div>";
+
+  } else if (activeViewTab === "chat") {
+    renderChatView();
+  }
+}
+
+// Withdraw Modal
+function openWithdrawModal(avail){
+  if (avail < MIN_WITHDRAW) return alert("Minimum withdrawal limit is ৳" + MIN_WITHDRAW);
+  var modalSlot = document.getElementById("modalContainer");
+  modalSlot.innerHTML =
+    "<div class='modal-bg'><div class='modal-body'>" +
+      "<h3 style='margin:0 0 14px; color:#fff;'>Request Payout</h3>" +
+      "<label style='font-size:11px; color:var(--text-secondary);'>Select Payment Method</label>" +
+      "<select id='wMeth' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;'>" +
+        "<option>Bkash</option><option>Nagad</option><option>Rocket</option><option>Bank Transfer</option>" +
+      "</select>" +
+      "<label style='font-size:11px; color:var(--text-secondary);'>Account Number</label>" +
+      "<input id='wAcc' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 12px;' placeholder='017XXXXXXXX'>" +
+      "<label style='font-size:11px; color:var(--text-secondary);'>Amount (৳)</label>" +
+      "<input id='wAmt' type='number' value='" + avail + "' style='width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-dark); color:#fff; margin:4px 0 16px;'>" +
+      "<button class='btn-primary' id='wSubmit'>Submit Request</button>" +
+      "<button class='btn-sm' id='wClose' style='width:100%; margin-top:8px;'>Cancel</button>" +
+    "</div></div>";
+
+  document.getElementById("wClose").onclick = function(){ modalSlot.innerHTML = ""; };
+  document.getElementById("wSubmit").onclick = async function(){
+    var m = document.getElementById("wMeth").value;
+    var a = document.getElementById("wAcc").value.trim();
+    var amt = parseFloat(document.getElementById("wAmt").value) || 0;
+    if (!a || amt < MIN_WITHDRAW || amt > avail) return alert("Invalid amount or account");
+
+    await sb.from("payouts").insert({ user_id: currentProfile.id, username: currentProfile.username, method: m, account: a, amount: amt, status: "pending" });
+    alert("Payout request submitted!");
+    modalSlot.innerHTML = "";
+    renderUserView();
+  };
+}
+
+// Chat Component with Quick Chips
+function renderChatView(){
+  app.innerHTML =
+    "<div class='card' style='height:440px; display:flex; flex-direction:column; padding:0; overflow:hidden;'>" +
+      "<div class='chat-head'><span>Admin Support</span><span style='font-size:11px; color:var(--accent-green);'>● Online</span></div>" +
+      "<div class='chat-body' id='cBody'>Loading messages…</div>" +
+      "<div class='chat-chips'>" +
+        "<div class='chip' onclick='sendQuickMsg(\"পেমেন্ট আপডেট পাবো কখন?\")'>💳 পেমেন্ট আপডেট?</div>" +
+        "<div class='chip' onclick='sendQuickMsg(\"রেট বাড়ানো যাবে স্যার?\")'>📈 রেট আপডেট?</div>" +
+        "<div class='chip' onclick='sendQuickMsg(\"নতুন অফার লাগবে\")'>🔥 নতুন অফার?</div>" +
+      "</div>" +
+      "<div class='chat-footer'>" +
+        "<input id='cInput' placeholder='Write a message…'>" +
+        "<button class='btn-sm btn-success' id='cSend'>Send</button>" +
+      "</div>" +
+    "</div>";
+
+  loadChatMessages();
+  document.getElementById("cSend").onclick = function(){
+    var txt = document.getElementById("cInput").value.trim();
+    if (txt) sendQuickMsg(txt);
+  };
+}
+
+window.sendQuickMsg = async function(msgText){
+  document.getElementById("cInput").value = "";
+  await sb.from("messages").insert({ user_id: currentProfile.id, sender_role: "user", body: msgText, is_seen: false });
+  loadChatMessages();
+};
+
+async function loadChatMessages(){
+  var box = document.getElementById("cBody");
+  var res = await sb.from("messages").select("*").eq("user_id", currentProfile.id).order("created_at", { ascending: true });
+  var msgs = res.data || [];
+  box.innerHTML = msgs.map(function(m){
+    var mine = m.sender_role === "user";
+    return "<div class='msg-bubble " + (mine ? "msg-mine" : "msg-theirs") + "'>" + esc(m.body) + "</div>";
+  }).join("");
+  box.scrollTop = box.scrollHeight;
+}
+
+// Admin Panel View
+async function renderAdmin(){
+  bottomNav.style.display = "none";
+  var usersRes = await sb.from("profiles").select("*").neq("is_admin", true);
+  var payoutsRes = await sb.from("payouts").select("*").order("created_at", { ascending: false });
+
+  var users = usersRes.data || [];
+  var payouts = payoutsRes.data || [];
+
+  app.innerHTML =
+    "<h2 style='color:#fff; margin:0 0 16px;'>Admin Control Hub</h2>" +
+    "<div class='stats-grid'>" +
+      "<div class='stat-card'><div class='stat-label'>Total Affiliates</div><div class='stat-val'>" + users.length + "</div></div>" +
+      "<div class='stat-card'><div class='stat-label'>Pending Payouts</div><div class='stat-val' style='color:var(--accent-gold);'>" + payouts.filter(p=>p.status==='pending').length + "</div></div>" +
+    "</div>" +
+
+    "<div class='card'>" +
+      "<h4 style='margin:0 0 12px; color:#fff;'>Pending Payout Requests</h4>" +
+      (payouts.length === 0 ? "No pending requests" : payouts.map(function(p){
+        return "<div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border);'>" +
+          "<div><strong>" + esc(p.username) + "</strong> — ৳" + p.amount + "<br><small style='color:var(--text-secondary);'>" + esc(p.method) + ": " + esc(p.account) + "</small></div>" +
+          "<div>" + (p.status === "pending" ? "<button class='btn-sm btn-success' data-paid='" + p.id + "'>Mark Paid</button>" : "<span class='badge badge-approved'>Paid</span>") + "</div>" +
+        "</div>";
       }).join("")) +
     "</div>" +
 
-    "<div class='section-title' style='font-size:15px; margin-bottom:10px; color:#fff;'>Available Offers & Links</div>" +
-    (allowedOffers.length === 0 ? "<div style='color:var(--text-dim); font-size:12px;'>No active offers assigned.</div>" : allowedOffers.map(function(o){
-      return (
-        "<div class='offer-card'>" +
-          "<span class='hot-tag'>🔥 HOT OFFER</span>" +
-          "<div style='font-weight:600; color:#fff; font-size:14px;'>" + esc(o.name) + "</div>" +
-          "<div style='font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); margin-top:2px; word-break:break-all;'>" + esc(o.url) + "</div>" +
-          "<div class='link-builder'>" +
-            "<input type='text' placeholder='Enter Sub ID / Name' id='name-" + o.id + "'>" +
-            "<button data-offer='" + o.id + "'>Generate Link</button>" +
-          "</div>" +
-          "<div class='result-box' id='result-" + o.id + "'></div>" +
-        "</div>"
-      );
-    }).join(""));
-
-  renderAnalyticsChart("userChart", profile.custom_visitors || 0, profile.custom_conversions || 0);
-  renderDeviceGeoCharts(profile.custom_visitors || 0, profile.custom_conversions || 0);
-
-  document.getElementById("withdrawBtn").onclick = function(){ openWithdrawModal(profile, availableBalance); };
-
-  if (isImpersonating){
-    document.getElementById("exitImpersonateBtn").onclick = function(){ impersonatedUserId = null; render(); };
-  } else {
-    ensureChatWidget(profile.is_admin ? "admin" : "user", profile.id, profile.username);
-  }
-
-  allowedOffers.forEach(function(o){
-    var btn = document.querySelector("[data-offer='" + o.id + "']");
-    if (!btn) return;
-    btn.onclick = function(){
-      var name = document.getElementById("name-" + o.id).value.trim();
-      var resultBox = document.getElementById("result-" + o.id);
-      if (!name){ alert("Please enter Sub ID first."); return; }
-      var sep = o.url.indexOf("?") === -1 ? "?" : "&";
-      var finalUrl = o.url + sep + "sub8=" + encodeURIComponent(name);
-      resultBox.className = "result-box show";
-      resultBox.textContent = finalUrl + " (Click to Copy)";
-      resultBox.onclick = function(){ navigator.clipboard.writeText(finalUrl); alert("Copied to clipboard!"); };
-    };
-  });
-}
-
-// ---------------- 1. WITHDRAW MODAL WITH MINIMUM LIMIT CHECK ----------------
-function openWithdrawModal(profile, currentAvailableBalance){
-  if (currentAvailableBalance < MINIMUM_WITHDRAWAL_LIMIT){
-    alert("Minimum withdrawal limit is ৳" + MINIMUM_WITHDRAWAL_LIMIT + ". Your current balance is ৳" + currentAvailableBalance);
-    return;
-  }
-
-  var modalSlot = document.getElementById("modalContainer");
-  modalSlot.innerHTML =
-    "<div class='modal-overlay'><div class='modal-card'>" +
-      "<h2 style='margin-top:0; color:#fff; font-size:16px;'>Request Payout (Available: ৳" + currentAvailableBalance + ")</h2>" +
-      "<label>Payment Method</label>" +
-      "<select id='wMethod'>" +
-        "<option value='Bkash'>Bkash</option>" +
-        "<option value='Nagad'>Nagad</option>" +
-        "<option value='Rocket'>Rocket</option>" +
-        "<option value='Bank'>Bank Transfer</option>" +
-      "</select>" +
-      "<label>Account Number</label><input id='wAccount' placeholder='017XXXXXXXX'>" +
-      "<label>Amount (৳ - Min " + MINIMUM_WITHDRAWAL_LIMIT + ")</label><input id='wAmount' type='number' value='" + currentAvailableBalance + "'>" +
-      "<div style='display:flex; gap:8px; margin-top:16px;'>" +
-        "<button class='btn-primary' id='wSubmitBtn' style='margin:0;'>Submit Request</button>" +
-        "<button class='btn-secondary' id='wCloseBtn'>Cancel</button>" +
-      "</div>" +
-    "</div></div>";
-
-  document.getElementById("wCloseBtn").onclick = function(){ modalSlot.innerHTML = ""; };
-  document.getElementById("wSubmitBtn").onclick = async function(){
-    var btn = this;
-    var method = document.getElementById("wMethod").value;
-    var acc = document.getElementById("wAccount").value.trim();
-    var amt = parseFloat(document.getElementById("wAmount").value) || 0;
-
-    if (!acc || amt < MINIMUM_WITHDRAWAL_LIMIT){ alert("Minimum withdrawal amount is ৳" + MINIMUM_WITHDRAWAL_LIMIT); return; }
-    if (amt > currentAvailableBalance){ alert("Insufficient available balance!"); return; }
-
-    btn.disabled = true; btn.textContent = "Sending…";
-    var res = await sb.from("payouts").insert({ user_id: profile.id, username: profile.username, method: method, account: acc, amount: amt, status: "pending" });
-    
-    btn.disabled = false; btn.textContent = "Submit Request";
-    if (res.error){
-      alert("Error: " + res.error.message);
-    } else {
-      alert("Payout request submitted successfully!");
-      modalSlot.innerHTML = "";
-      render();
-    }
-  };
-}
-
-// ---------------- ADMIN PANEL WITH LIVE PAYOUT ALERT SOUND ----------------
-async function renderAdmin(adminProfile){
-  var usersRes = await sb.from("profiles").select("*").order("created_at", { ascending: false });
-  var offersRes = await sb.from("offers").select("*");
-  var payoutsRes = await sb.from("payouts").select("*").order("created_at", { ascending: false });
-  
-  var users = (usersRes.data || []).filter(function(u){ return !u.is_admin; });
-  var offers = offersRes.data || [];
-  var payouts = payoutsRes.data || [];
-
-  var grandTotalLeads = 0;
-  var grandTotalPayout = 0;
-
-  users.forEach(function(u){
-    var lRate = u.per_lead_rate || 0;
-    var uPayout = u.custom_payout || ((u.custom_conversions || 0) * lRate);
-    grandTotalLeads += (u.custom_conversions || 0);
-    grandTotalPayout += uPayout;
-  });
-
-  app.innerHTML =
-    "<h1 class='page-title'>Admin Control Panel</h1>" +
-    "<p class='page-sub'>Overview & Full User Metrics Tracking</p>" +
-
-    "<div class='stat-rail'>" +
-      "<div class='stat'><div class='stat-name'>Total Users</div><div class='stat-value'>" + users.length + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Total Leads</div><div class='stat-value' style='color:var(--teal);'>" + grandTotalLeads + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Total Network Payout</div><div class='stat-value' style='color:var(--gold);'>৳" + grandTotalPayout + "</div></div>" +
-      "<div class='stat'><div class='stat-name'>Active Offers</div><div class='stat-value'>" + offers.length + "</div></div>" +
-    "</div>" +
-
-    "<div class='card' style='margin-bottom:16px;'><h3 style='margin:0 0 10px; font-size:14px; color:#fff;'>System Global Notice</h3>" +
-      "<div style='display:flex; gap:6px;'><input id='adminNoticeInput' placeholder='Set global notice text…' value='" + esc(adminProfile.notice_text || "") + "'><button class='btn-primary' id='saveNoticeBtn' style='margin:0; width:auto;'>Publish Notice</button></div>" +
-    "</div>" +
-
-    "<div class='card' style='margin-bottom:16px;'><h3 style='margin:0 0 10px; font-size:14px; color:#fff;'>Global Postback URL</h3>" +
-      "<div style='font-family:var(--font-mono); font-size:11.5px; color:var(--teal); background:var(--ink); padding:8px 10px; border-radius:6px; border:1px dashed var(--line); word-break:break-all;'>https://gemini-code-1790101773395.vercel.app/postback?sub8={sub8}</div>" +
-    "</div>" +
-
-    "<div style='display:grid; grid-template-columns:1fr; gap:16px;'>" +
-      "<div class='card'>" +
-        "<div class='section-title' style='margin-top:0;'>Pending Payout Requests (" + payouts.length + ")</div>" +
-        (payouts.length === 0 ? "<div style='color:var(--text-dim); font-size:12px;'>No payout requests.</div>" : payouts.map(function(p){
-          return (
-            "<div style='display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line-soft);'>" +
-              "<div><strong>" + esc(p.username) + "</strong> — ৳" + p.amount + "<br><small style='color:var(--text-dim);'>" + esc(p.method) + ": " + esc(p.account) + "</small></div>" +
-              "<div style='display:flex; gap:4px;'><span class='status-badge " + p.status + "'>" + p.status + "</span>" +
-              (p.status === "pending" ? "<button class='btn-secondary btn-ok' data-pay-id='" + p.id + "'>Mark Paid</button>" : "") + "</div>" +
-            "</div>"
-          );
-        }).join("")) +
-      "</div>" +
-
-      "<div class='card'>" +
-        "<div class='section-title' style='margin-top:0;'>Affiliates Overview & Approval (" + users.length + ")</div>" +
-        users.map(function(u){
-          var lRate = u.per_lead_rate || 0;
-          var uConvs = u.custom_conversions || 0;
-          var uPayout = u.custom_payout || (uConvs * lRate);
-
-          var actionButtons = "";
-          if (u.status === "pending"){
-            actionButtons =
-              "<button class='btn-secondary btn-ok' data-set-status='" + u.id + "' data-status='approved'>✓ Approve</button>" +
-              "<button class='btn-secondary btn-danger' data-set-status='" + u.id + "' data-status='rejected'>✕ Reject</button>";
-          } else if (u.status === "approved"){
-            actionButtons =
-              "<button class='btn-secondary btn-danger' data-set-status='" + u.id + "' data-status='suspended'>Suspend</button>";
-          } else {
-            actionButtons =
-              "<button class='btn-secondary btn-ok' data-set-status='" + u.id + "' data-status='approved'>Re-Approve</button>";
-          }
-
-          return (
-            "<div class='user-row'>" +
-              "<div class='user-info'>" +
-                "<div class='uname'>" + esc(u.username) + " <span class='status-badge " + u.status + "'>" + u.status + "</span></div>" +
-                "<div class='umeta'>" + esc(u.email) + " | Rate: ৳" + lRate + " | Leads: " + uConvs + " | Payout: ৳" + uPayout + "</div>" +
-              "</div>" +
-              "<div style='display:flex; gap:6px; flex-wrap:wrap; align-items:center;'>" +
-                actionButtons +
-                "<button class='btn-secondary' data-view-user='" + u.id + "'>👁️ View</button>" +
-                "<button class='btn-secondary' data-edit-user='" + u.id + "'>✏️ Edit</button>" +
-              "</div>" +
-            "</div>"
-          );
-        }).join("") +
-      "</div>" +
+    "<div class='card'>" +
+      "<h4 style='margin:0 0 12px; color:#fff;'>Affiliate Users Management</h4>" +
+      users.map(function(u){
+        return "<div style='display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);'>" +
+          "<div><strong>" + esc(u.username) + "</strong> (" + esc(u.email) + ")<br><small style='color:var(--text-secondary);'>Conversions: " + (u.custom_conversions||0) + "</small></div>" +
+          "<div><span class='badge badge-" + u.status + "'>" + u.status + "</span></div>" +
+        "</div>";
+      }).join("") +
     "</div>";
 
-  ensureChatWidget("admin", adminProfile.id, adminProfile.username);
-
-  // REALTIME PAYOUT ALERT LISTENER FOR ADMIN
-  sb.channel("admin-payout-alert").on("postgres_changes", { event: "INSERT", schema: "public", table: "payouts" }, function(){
-    playAlertSound();
-    alert("🔔 New Payout Request Received!");
-    renderAdmin(adminProfile);
-  }).subscribe();
-
-  document.getElementById("saveNoticeBtn").onclick = async function(){
-    var btn = this;
-    var txt = document.getElementById("adminNoticeInput").value.trim();
-    btn.disabled = true; btn.textContent = "Publishing…";
-    var res1 = await sb.from("profiles").update({ notice_text: txt }).neq("id", "00000000-0000-0000-0000-000000000000");
-    btn.disabled = false; btn.textContent = "Publish Notice";
-    if (!res1.error){ alert("Notice Published to All Users!"); renderAdmin(adminProfile); }
-  };
-
-  document.querySelectorAll("[data-pay-id]").forEach(function(btn){
+  document.querySelectorAll("[data-paid]").forEach(function(btn){
     btn.onclick = async function(){
-      var pid = btn.getAttribute("data-pay-id");
+      var pid = btn.getAttribute("data-paid");
       await sb.from("payouts").update({ status: "approved" }).eq("id", pid);
-      renderAdmin(adminProfile);
-    };
-  });
-
-  document.querySelectorAll("[data-set-status]").forEach(function(btn){
-    btn.onclick = async function(){
-      var uid = btn.getAttribute("data-set-status");
-      var st = btn.getAttribute("data-status");
-      await sb.from("profiles").update({ status: st }).eq("id", uid);
-      renderAdmin(adminProfile);
-    };
-  });
-
-  document.querySelectorAll("[data-view-user]").forEach(function(btn){
-    btn.onclick = function(){ impersonatedUserId = btn.getAttribute("data-view-user"); render(); };
-  });
-
-  document.querySelectorAll("[data-edit-user]").forEach(function(btn){
-    btn.onclick = function(){
-      var uid = btn.getAttribute("data-edit-user");
-      var u = users.find(function(x){ return x.id === uid; });
-      if (u) openEditUserModal(u, offers, adminProfile);
+      renderAdmin();
     };
   });
 }
 
-function renderAnalyticsChart(canvasId, clicks, leads){
-  var ctx = document.getElementById(canvasId);
+function renderChart(clicks, leads){
+  var ctx = document.getElementById("dashChart");
   if (!ctx) return;
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Clicks / Visitors', 'Leads / Conversions'],
-      datasets: [{
-        label: 'Metric',
-        data: [clicks, leads],
-        backgroundColor: ['rgba(245, 158, 11, 0.6)', 'rgba(16, 185, 129, 0.6)'],
-        borderColor: ['#f59e0b', '#10b981'],
-        borderWidth: 1
-      }]
+      labels: ['Clicks', 'Leads'],
+      datasets: [{ data: [clicks, leads], backgroundColor: ['#f59e0b', '#10b981'], borderRadius: 6 }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: { plugins: { legend: { display: false } } }
   });
 }
 
-// DEVICE & GEO DOUGHNUT CHARTS
-function renderDeviceGeoCharts(clicks, leads){
-  var devCtx = document.getElementById("deviceChart");
-  var geoCtx = document.getElementById("geoChart");
-  
-  if (devCtx){
-    new Chart(devCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Mobile', 'Desktop'],
-        datasets: [{ data: [Math.round(clicks * 0.85), Math.round(clicks * 0.15)], backgroundColor: ['#10b981', '#8b5cf6'] }]
-      },
-      options: { plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-
-  if (geoCtx){
-    new Chart(geoCtx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Bangladesh 🇧🇩', 'Others 🌐'],
-        datasets: [{ data: [Math.round(clicks * 0.90), Math.round(clicks * 0.10)], backgroundColor: ['#f59e0b', '#ef4444'] }]
-      },
-      options: { plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-}
-
-function openEditUserModal(user, offers, adminProfile){
-  var modalSlot = document.getElementById("modalContainer");
-  var userAllowed = user.allowed_offers || offers.map(function(o){ return o.id; });
-
-  var offerCks = offers.map(function(o){
-    var checked = userAllowed.includes(o.id) ? "checked" : "";
-    return "<label style='display:flex; gap:6px; font-size:12.5px; margin:4px 0;'><input type='checkbox' class='m-ck' value='" + o.id + "' " + checked + "> " + esc(o.name) + "</label>";
-  }).join("");
-
-  modalSlot.innerHTML =
-    "<div class='modal-overlay'><div class='modal-card'>" +
-      "<h2 style='margin-top:0; color:#fff; font-size:16px;'>Edit User (" + esc(user.username) + ")</h2>" +
-      "<label>Username</label><input id='mUname' value='" + esc(user.username) + "'>" +
-      "<label>Status</label>" +
-      "<select id='mStatus'>" +
-        "<option value='pending' " + (user.status==='pending'?'selected':'') + ">Pending</option>" +
-        "<option value='approved' " + (user.status==='approved'?'selected':'') + ">Approved</option>" +
-        "<option value='suspended' " + (user.status==='suspended'?'selected':'') + ">Suspended</option>" +
-        "<option value='rejected' " + (user.status==='rejected'?'selected':'') + ">Rejected</option>" +
-      "</select>" +
-      "<label style='margin-top:10px; color:var(--gold);'>Metrics & Rate Setup:</label>" +
-      "<div style='display:grid; grid-template-columns:1fr 1fr; gap:8px;'>" +
-        "<div style='grid-column:span 2;'><label>Per Lead Rate (৳)</label><input id='mPerLead' type='number' value='" + (user.per_lead_rate || 0) + "'></div>" +
-        "<div><label>Custom Payout (৳)</label><input id='mPayout' type='number' value='" + (user.custom_payout || 0) + "'></div>" +
-        "<div><label>Total Conversions</label><input id='mConv' type='number' value='" + (user.custom_conversions || 0) + "'></div>" +
-        "<div style='grid-column:span 2;'><label>Total Clicks</label><input id='mVis' type='number' value='" + (user.custom_visitors || 0) + "'></div>" +
-      "</div>" +
-      "<label style='margin-top:10px; color:var(--teal);'>Allowed Offers:</label>" +
-      "<div>" + offerCks + "</div>" +
-      "<div style='display:flex; gap:8px; margin-top:16px;'>" +
-        "<button class='btn-primary' id='mSaveBtn' style='margin:0;'>Save Changes</button>" +
-        "<button class='btn-secondary' id='mCloseBtn'>Cancel</button>" +
-      "</div>" +
-    "</div></div>";
-
-  document.getElementById("mCloseBtn").onclick = function(){ modalSlot.innerHTML = ""; };
-  document.getElementById("mSaveBtn").onclick = async function(){
-    var selected = Array.from(document.querySelectorAll(".m-ck:checked")).map(function(c){ return c.value; });
-    await sb.from("profiles").update({
-      username: document.getElementById("mUname").value.trim(),
-      status: document.getElementById("mStatus").value,
-      per_lead_rate: parseFloat(document.getElementById("mPerLead").value) || 0,
-      custom_payout: parseFloat(document.getElementById("mPayout").value) || 0,
-      custom_conversions: parseInt(document.getElementById("mConv").value) || 0,
-      custom_visitors: parseInt(document.getElementById("mVis").value) || 0,
-      allowed_offers: selected
-    }).eq("id", user.id);
-    modalSlot.innerHTML = "";
-    renderAdmin(adminProfile);
-  };
-}
-
-// ---------------- DUAL CHAT ENGINE ----------------
-var chatChannel = null;
-var chatState = { role: null, myId: null, username: null, mode: "private", threadUserId: null };
-
-function ensureChatWidget(role, myId, username){
-  chatState.role = role;
-  chatState.myId = myId;
-  chatState.username = username;
-
-  var widget = document.getElementById("chatWidget");
-  if (!widget){
-    widget = document.createElement("div");
-    widget.id = "chatWidget";
-    widget.innerHTML =
-      "<button class='chat-toggle-btn' id='chatToggleBtn'>💬<span class='chat-badge' id='chatBadge'>0</span></button>" +
-      "<div class='chat-panel' id='chatPanel'>" +
-        "<div class='chat-header'><span id='chatTitle'>Chat Center</span><button id='chatCloseBtn'>✕</button></div>" +
-        "<div class='chat-tabs'>" +
-          "<button class='chat-tab active' id='tabPrivateChat'>Admin Support</button>" +
-          "<button class='chat-tab' id='tabGlobalChat'>Global Chat 🌐</button>" +
-        "</div>" +
-        "<div id='chatBack' class='chat-back' style='display:none;'>← Back</div>" +
-        "<div id='chatAdminUserList' class='chat-user-list' style='display:none;'></div>" +
-        "<div id='chatMessages' class='chat-messages'></div>" +
-        "<div class='chat-input-row' id='chatInputRow'>" +
-          "<input id='chatInput' type='text' placeholder='Write message…'>" +
-          "<button id='chatSendBtn'>➤</button>" +
-        "</div>" +
-      "</div>";
-    document.body.appendChild(widget);
-
-    document.getElementById("chatToggleBtn").onclick = function(){
-      var panel = document.getElementById("chatPanel");
-      panel.classList.toggle("open");
-      if (panel.classList.contains("open")){
-        unreadCount = 0;
-        document.getElementById("chatBadge").classList.remove("show");
-        document.getElementById("chatBadge").textContent = "0";
-      }
-    };
-    document.getElementById("chatCloseBtn").onclick = function(){ document.getElementById("chatPanel").classList.remove("open"); };
-    document.getElementById("chatSendBtn").onclick = sendChatMessage;
-    document.getElementById("chatInput").onkeydown = function(e){ if (e.key === "Enter") sendChatMessage(); };
-
-    document.getElementById("tabPrivateChat").onclick = function(){
-      chatState.mode = "private";
-      document.getElementById("tabPrivateChat").classList.add("active");
-      document.getElementById("tabGlobalChat").classList.remove("active");
-      initChatView();
-    };
-
-    document.getElementById("tabGlobalChat").onclick = function(){
-      chatState.mode = "global";
-      document.getElementById("tabGlobalChat").classList.add("active");
-      document.getElementById("tabPrivateChat").classList.remove("active");
-      openGlobalChat();
-    };
-
-    document.getElementById("chatBack").onclick = function(){
-      closeChatChannel();
-      chatState.threadUserId = null;
-      document.getElementById("chatMessages").style.display = "none";
-      document.getElementById("chatInputRow").style.display = "none";
-      document.getElementById("chatBack").style.display = "none";
-      document.getElementById("chatAdminUserList").style.display = "block";
-      document.getElementById("chatTitle").textContent = "Users Chat";
-    };
-  }
-
-  initChatView();
-}
-
-function removeChatWidget(){
-  var widget = document.getElementById("chatWidget");
-  if (widget) widget.parentNode.removeChild(widget);
-  closeChatChannel();
-}
-
-function closeChatChannel(){
-  if (chatChannel){ sb.removeChannel(chatChannel); chatChannel = null; }
-}
-
-async function markMessagesAsSeen(targetUserId){
-  await sb.from("messages").update({ is_seen: true })
-    .eq("user_id", targetUserId)
-    .neq("sender_role", chatState.role)
-    .eq("is_seen", false);
-}
-
-function initChatView(){
-  closeChatChannel();
-  if (chatState.mode === "global"){ openGlobalChat(); return; }
-
-  if (chatState.role === "admin"){
-    document.getElementById("chatTitle").textContent = "Users Support";
-    document.getElementById("chatMessages").style.display = "none";
-    document.getElementById("chatInputRow").style.display = "none";
-    document.getElementById("chatBack").style.display = "none";
-    document.getElementById("chatAdminUserList").style.display = "block";
-    loadChatUserList();
-  } else {
-    document.getElementById("chatAdminUserList").style.display = "none";
-    document.getElementById("chatBack").style.display = "none";
-    document.getElementById("chatMessages").style.display = "flex";
-    document.getElementById("chatInputRow").style.display = "flex";
-    document.getElementById("chatTitle").textContent = "Admin Support";
-    openChatThread(chatState.myId);
-  }
-}
-
-async function loadChatUserList(){
-  var res = await sb.from("profiles").select("*").eq("is_admin", false);
-  var users = res.data || [];
-  var list = document.getElementById("chatAdminUserList");
-  if (users.length === 0){ list.innerHTML = "<div style='padding:16px; text-align:center; color:var(--text-dim);'>No users.</div>"; return; }
-
-  list.innerHTML = users.map(function(u){
-    return "<div class='chat-user-item' data-user='" + u.id + "'><span>" + esc(u.username) + "</span><span class='status-badge " + u.status + "'>" + u.status + "</span></div>";
-  }).join("");
-
-  users.forEach(function(u){
-    list.querySelector("[data-user='" + u.id + "']").onclick = function(){
-      document.getElementById("chatAdminUserList").style.display = "none";
-      document.getElementById("chatBack").style.display = "block";
-      document.getElementById("chatMessages").style.display = "flex";
-      document.getElementById("chatInputRow").style.display = "flex";
-      document.getElementById("chatTitle").textContent = u.username;
-      openChatThread(u.id);
-    };
-  });
-}
-
-async function openChatThread(userId){
-  closeChatChannel();
-  chatState.threadUserId = userId;
-
-  var box = document.getElementById("chatMessages");
-  box.innerHTML = "<div style='color:var(--text-dim); font-size:11px; text-align:center;'>Loading…</div>";
-
-  await markMessagesAsSeen(userId);
-
-  var res = await sb.from("messages").select("*").eq("user_id", userId).order("created_at", { ascending: true });
-  paintChatMessages(res.data || [], false);
-
-  chatChannel = sb.channel("room-messages-" + userId)
-    .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "user_id=eq." + userId }, function(payload){
-      if (payload.eventType === "INSERT"){
-        appendChatMessage(payload.new, false);
-        if (payload.new.sender_role !== chatState.role){
-          playPopSound();
-          if (document.getElementById("chatPanel").classList.contains("open")){
-            markMessagesAsSeen(userId);
-          } else {
-            unreadCount++;
-            var badge = document.getElementById("chatBadge");
-            badge.textContent = unreadCount;
-            badge.classList.add("show");
-          }
-        }
-      } else if (payload.eventType === "UPDATE"){
-        updateChatMessageUI(payload.new);
-      }
-    }).subscribe();
-}
-
-async function openGlobalChat(){
-  closeChatChannel();
-  document.getElementById("chatAdminUserList").style.display = "none";
-  document.getElementById("chatBack").style.display = "none";
-  document.getElementById("chatMessages").style.display = "flex";
-  document.getElementById("chatInputRow").style.display = "flex";
-  document.getElementById("chatTitle").textContent = "Global Public Room";
-
-  var box = document.getElementById("chatMessages");
-  box.innerHTML = "<div style='color:var(--text-dim); font-size:11px; text-align:center;'>Loading Global Chat…</div>";
-
-  var res = await sb.from("global_messages").select("*").order("created_at", { ascending: true }).limit(60);
-  paintChatMessages(res.data || [], true);
-
-  chatChannel = sb.channel("global-chat-public")
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "global_messages" }, function(payload){
-      appendChatMessage(payload.new, true);
-      if (payload.new.sender_id !== chatState.myId){
-        playPopSound();
-        if (!document.getElementById("chatPanel").classList.contains("open")){
-          unreadCount++;
-          var badge = document.getElementById("chatBadge");
-          badge.textContent = unreadCount;
-          badge.classList.add("show");
-        }
-      }
-    }).subscribe();
-}
-
-function paintChatMessages(msgs, isGlobal){
-  var box = document.getElementById("chatMessages");
-  box.innerHTML = msgs.length === 0 ? "<div style='color:var(--text-dim); font-size:11.5px; text-align:center; padding:16px;'>Start conversation...</div>" : "";
-  msgs.forEach(function(m){ appendChatMessage(m, isGlobal); });
-}
-
-function appendChatMessage(m, isGlobal){
-  var box = document.getElementById("chatMessages");
-  if (box.querySelector("div") && box.querySelector("div").textContent.includes("Start conversation")) box.innerHTML = "";
-
-  var isMine = isGlobal ? (m.sender_id === chatState.myId) : (m.sender_role === chatState.role);
-  var dt = new Date(m.created_at || Date.now());
-  var timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  var senderTag = (isGlobal && !isMine) ? "<div class='msg-sender-name'>" + esc(m.sender_name || "User") + "</div>" : "";
-  var seenStatusHtml = (!isGlobal && isMine) ?
-    (m.is_seen ? "<span class='msg-status seen' id='seen-" + m.id + "'>✓✓ Seen</span>" : "<span class='msg-status unseen' id='seen-" + m.id + "'>✓ Unseen</span>") : "";
-
-  var wrap = document.createElement("div");
-  wrap.className = "msg-wrapper " + (isMine ? "mine" : "theirs");
-  wrap.id = "msg-wrap-" + m.id;
-  wrap.innerHTML =
-    senderTag +
-    "<div class='msg'>" + esc(m.body) + "</div>" +
-    "<div class='msg-meta'><span>" + timeStr + "</span> " + seenStatusHtml + "</div>";
-
-  box.appendChild(wrap);
-  box.scrollTop = box.scrollHeight;
-}
-
-function updateChatMessageUI(m){
-  var seenEl = document.getElementById("seen-" + m.id);
-  if (seenEl){
-    if (m.is_seen){
-      seenEl.className = "msg-status seen";
-      seenEl.textContent = "✓✓ Seen";
-    }
-  }
-}
-
-async function sendChatMessage(){
-  var input = document.getElementById("chatInput");
-  var body = input.value.trim();
-  if (!body) return;
-  input.value = "";
-
-  if (chatState.mode === "global"){
-    await sb.from("global_messages").insert({ sender_id: chatState.myId, sender_name: chatState.username || "User", body: body });
-  } else if (chatState.threadUserId){
-    await sb.from("messages").insert({ user_id: chatState.threadUserId, sender_role: chatState.role, body: body, is_seen: false });
-  }
-}
-
-render();
+init();
 })();
 </script>
-
 </body>
 </html>
