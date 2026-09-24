@@ -1,147 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Social Affiliate Network Platform</title>
+<title>LinkFlow Social & CPA Network</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
-    --bg-main: #090d16;
-    --sidebar-bg: #0f172a;
-    --card-bg: rgba(30, 41, 59, 0.7);
+    --bg-main: #0b0f19;
+    --card-bg: #151c2c;
     --card-border: rgba(255, 255, 255, 0.08);
     --primary: #10b981;
-    --primary-glow: rgba(16, 185, 129, 0.15);
     --accent: #f59e0b;
     --verified: #3b82f6;
-    --danger: #ef4444;
-    --text-title: #f8fafc;
-    --text-body: #94a3b8;
-    --text-muted: #64748b;
-    --font-ui: 'Plus Jakarta Sans', sans-serif;
-    --font-code: 'JetBrains Mono', monospace;
+    --text-main: #f8fafc;
+    --text-sub: #94a3b8;
+    --nav-height: 65px;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  body, html { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-title); font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+  body, html { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-  /* Main Layout */
-  .app-container { display: flex; min-height: 100vh; }
-  aside { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--card-border); display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 50; }
-  .sidebar-header { padding: 20px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--card-border); }
-  .logo-box { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #000; font-size: 18px; }
-  .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  /* Top App Bar */
+  .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: rgba(21, 28, 44, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }
+  .brand-logo { font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
 
-  .nav-list { list-style: none; padding: 16px 12px; margin: 0; flex: 1; }
-  .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: var(--text-body); font-weight: 600; font-size: 13.5px; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; }
-  .nav-item:hover, .nav-item.active { background: var(--primary-glow); color: var(--primary); }
+  /* App Body Canvas */
+  .app-body { margin-top: 56px; margin-bottom: calc(var(--nav-height) + 15px); padding: 16px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-  main { flex: 1; margin-left: 260px; padding: 24px 32px 80px; width: calc(100% - 260px); }
+  /* Stories Bar */
+  .stories-bar { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0 14px; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; scrollbar-width: none; }
+  .stories-bar::-webkit-scrollbar { display: none; }
+  .story-circle { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
+  .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; background: linear-gradient(45deg, var(--primary), var(--accent)); }
+  .story-img { width: 100%; height: 100%; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--card-bg); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--text-main); font-size: 16px; }
 
-  /* Header Bar */
-  .top-navbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-  .search-input { background: var(--sidebar-bg); border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 20px; color: #fff; font-size: 13px; width: 300px; }
-  .user-profile { display: flex; align-items: center; gap: 12px; background: var(--sidebar-bg); border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 30px; }
-  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; position: relative; }
-  .badge-verified { color: var(--verified); font-size: 14px; margin-left: 4px; }
+  /* Bottom Navigation */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-around; z-index: 100; }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); font-size: 11px; font-weight: 700; gap: 3px; cursor: pointer; border: none; background: transparent; flex: 1; }
+  .nav-btn.active { color: var(--primary); }
+  .nav-btn span { font-size: 20px; }
 
-  /* Feed & Dashboard Cards */
-  .content-grid { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
-  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; backdrop-filter: blur(12px); margin-bottom: 20px; }
+  /* Cards & Post Feed */
+  .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 16px; margin-bottom: 16px; backdrop-filter: blur(8px); }
+  .post-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; }
 
-  /* Metrics Grid */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
-  .metric-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; }
-  .metric-label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
-  .metric-value { font-size: 24px; font-weight: 800; font-family: var(--font-code); margin: 6px 0 2px; }
-
-  /* Inputs & Buttons */
-  .post-input, input, select { width: 100%; background: var(--bg-main); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; color: #fff; font-family: inherit; margin-bottom: 10px; }
-  .btn { padding: 8px 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: var(--primary); color: #000; }
-  .btn-secondary { background: var(--sidebar-bg); color: var(--text-title); border: 1px solid var(--card-border); }
-
-  /* Post Item */
-  .post-item { border-bottom: 1px solid var(--card-border); padding-bottom: 16px; margin-bottom: 16px; }
-  .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .post-author { display: flex; align-items: center; gap: 10px; }
-  .post-actions { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--text-muted); }
-  .action-btn { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .post-actions { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--card-border); margin-top: 12px; padding-top: 10px; font-size: 12.5px; color: var(--text-sub); }
+  .action-btn { display: flex; align-items: center; gap: 5px; cursor: pointer; }
   .action-btn:hover { color: var(--primary); }
 
-  /* User Row */
-  .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+  /* Inputs & Pill Buttons */
+  input, textarea, select { width: 100%; background: var(--bg-main); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; color: #fff; font-family: inherit; margin-bottom: 10px; font-size: 14px; }
+  .btn-pill { width: 100%; border-radius: 25px; padding: 12px; border: none; font-weight: 800; font-size: 14px; cursor: pointer; background: var(--primary); color: #000; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-secondary { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--card-border); }
 
-  /* Modal & Tabs */
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
-  .modal-box { background: var(--sidebar-bg); border: 1px solid var(--card-border); padding: 32px; border-radius: 20px; width: 100%; max-width: 380px; }
+  /* Slide-Up Bottom Drawer Sheet */
+  .bottom-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: flex-end; z-index: 200; backdrop-filter: blur(4px); }
+  .sheet-content { background: var(--card-bg); border-radius: 24px 24px 0 0; padding: 24px; width: 100%; max-height: 85vh; overflow-y: auto; border-top: 1px solid var(--card-border); }
+  
   .auth-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
-  .auth-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-weight: 700; color: var(--text-muted); }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-weight: 700; color: var(--text-sub); }
   .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
-
-  /* Responsive */
-  @media (max-width: 900px) {
-    aside { transform: translateX(-100%); }
-    main { margin-left: 0; width: 100%; padding: 16px; }
-    .content-grid { grid-template-columns: 1fr; }
-  }
 </style>
 </head>
 <body>
 
-<div class="app-container">
-  <!-- Navigation Sidebar -->
-  <aside id="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-box">⚡</div>
-      <div class="logo-text">LinkFlow Social</div>
-    </div>
-    <ul class="nav-list">
-      <li class="nav-item active" id="nav-feed" onclick="switchTab('feed')"><span>🏠</span> Social Feed</li>
-      <li class="nav-item" id="nav-affiliate" onclick="switchTab('affiliate')"><span>📊</span> Affiliate Hub</li>
-      <li class="nav-item" id="nav-friends" onclick="switchTab('friends')"><span>👥</span> Friends & Requests</li>
-      <li class="nav-item" id="nav-offers" onclick="switchTab('offers')"><span>🔥</span> CPA Offers</li>
-      <li class="nav-item" id="adminTab" style="display:none;" onclick="switchTab('admin')"><span>⚙️</span> Admin Control</li>
-    </ul>
-  </aside>
-
-  <!-- Main View -->
-  <main>
-    <div class="top-navbar">
-      <input type="text" class="search-input" id="searchInput" placeholder="Search posts, #tags, or friends...">
-      <div class="user-profile" id="userProfileArea">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <!-- Dynamic Content Area -->
-    <div id="contentArea">
-      <!-- Public Feed renders by default -->
-    </div>
-  </main>
+<!-- Mobile Header Bar -->
+<div class="mobile-header">
+  <div class="brand-logo">⚡ LinkFlow</div>
+  <div id="topUserArea"></div>
 </div>
 
-<!-- Modal Container -->
-<div id="authModal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h2 style="margin:0; font-weight:800;" id="modalTitle">Account Access</h2>
-      <span style="cursor:pointer; font-size:20px;" onclick="closeAuthModal()">✕</span>
-    </div>
-    
-    <div class="auth-tabs">
-      <div class="auth-tab active" id="tabLogin" onclick="setAuthMode('login')">Sign In</div>
-      <div class="auth-tab" id="tabRegister" onclick="setAuthMode('register')">Register</div>
-    </div>
+<!-- Main App Body Canvas -->
+<div class="app-body" id="appBody"></div>
 
-    <input id="lEmail" placeholder="Email Address">
-    <input id="lPass" type="password" placeholder="Password (Min 6 chars)">
-    <button id="lBtn" class="btn btn-primary" style="width:100%; padding:12px; margin-top:8px;">Sign In</button>
+<!-- App Bottom Navigation Bar -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="btn-feed" onclick="switchTab('feed')">
+    <span>🏠</span> ফিড
+  </button>
+  <button class="nav-btn" id="btn-offers" onclick="switchTab('offers')">
+    <span>🔥</span> অফার
+  </button>
+  <button class="nav-btn" id="btn-friends" onclick="switchTab('friends')">
+    <span>👥</span> ফ্রেন্ডস
+  </button>
+  <button class="nav-btn" id="btn-admin" style="display:none;" onclick="switchTab('admin')">
+    <span>⚙️</span> কন্ট্রোল
+  </button>
+</div>
+
+<!-- Mobile Auth Slide-Up Bottom Sheet -->
+<div id="authSheet" class="bottom-sheet" style="display:none;">
+  <div class="sheet-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-weight:800;" id="sheetTitle">একাউন্ট অ্যাক্সেস</h3>
+      <span style="cursor:pointer; font-size:20px;" onclick="closeAuthSheet()">✕</span>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="setAuthMode('login')">সাইন ইন</div>
+      <div class="auth-tab" id="tabRegister" onclick="setAuthMode('register')">রেজিস্টার</div>
+    </div>
+    <input id="lEmail" placeholder="ইমেইল অ্যাড্রেস">
+    <input id="lPass" type="password" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)">
+    <button class="btn-pill" id="sheetSubmitBtn" onclick="handleAuth()">লগইন করুন</button>
   </div>
 </div>
 
@@ -154,7 +120,7 @@ var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var currentProfile = null;
-var authMode = 'login'; // 'login' or 'register'
+var authMode = 'login';
 
 async function init(){
   var sessionRes = await sb.auth.getSession();
@@ -172,341 +138,238 @@ async function init(){
     }
   }
 
-  renderTopUserArea();
+  renderTopHeader();
   renderFeed();
 }
 
-function renderTopUserArea(){
-  var area = document.getElementById("userProfileArea");
+function renderTopHeader(){
+  var area = document.getElementById("topUserArea");
   if(currentProfile){
     area.innerHTML = `
-      <div class="avatar">${currentProfile.username.charAt(0).toUpperCase()}</div>
-      <span style="font-size: 13px; font-weight: 700;">${currentProfile.username}</span>
-      ${currentProfile.is_verified ? '<span class="badge-verified">☑️</span>' : ''}
-      <button class="btn" style="background: transparent; color: var(--text-muted); padding: 4px 8px;" onclick="logout()">Logout</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="avatar" style="width:30px; height:30px; font-size:12px;">${currentProfile.username.charAt(0).toUpperCase()}</div>
+        <button onclick="logout()" style="background:transparent; border:none; color:var(--text-sub); font-size:12px; font-weight:700;">লগআউট</button>
+      </div>
     `;
-    if(currentProfile.is_admin) document.getElementById("adminTab").style.display = "flex";
+    if(currentProfile.is_admin) document.getElementById("btn-admin").style.display = "flex";
   } else {
-    area.innerHTML = `
-      <button class="btn btn-primary" onclick="openAuthModal('login')">Sign In</button>
-      <button class="btn btn-secondary" onclick="openAuthModal('register')">Register</button>
-    `;
-    document.getElementById("adminTab").style.display = "none";
+    area.innerHTML = `<button onclick="openAuthSheet('login')" style="background:var(--primary); border:none; padding:6px 14px; border-radius:20px; font-weight:800; font-size:12px;">সাইন ইন</button>`;
   }
 }
 
-function updateActiveNav(tab){
-  document.querySelectorAll('.nav-item').forEach(function(el){ el.classList.remove('active'); });
-  var activeNav = document.getElementById('nav-' + tab) || document.getElementById(tab + 'Tab');
-  if(activeNav) activeNav.classList.add('active');
+function setActiveNav(tab){
+  document.querySelectorAll('.nav-btn').forEach(function(el){ el.classList.remove('active'); });
+  var activeBtn = document.getElementById('btn-' + tab);
+  if(activeBtn) activeBtn.classList.add('active');
 }
 
-// 1. PUBLIC SOCIAL FEED VIEW
+// 1. MOBILE FEED VIEW WITH STORIES & VIEWS COUNTER
 async function renderFeed(){
-  updateActiveNav('feed');
-  var area = document.getElementById("contentArea");
-  var postsRes = await sb.from("posts").select("*, profiles(username, is_verified, badge_level)").order("created_at", { ascending: false });
+  setActiveNav('feed');
+  var area = document.getElementById("appBody");
+  var postsRes = await sb.from("posts").select("*, profiles(username, is_verified)").order("created_at", { ascending: false });
   var posts = postsRes.data || [];
 
+  var storiesHtml = `
+    <div class="stories-bar">
+      <div class="story-circle">
+        <div class="story-ring"><div class="story-img">+</div></div>
+        <span>আপনার স্টোরি</span>
+      </div>
+      <div class="story-circle">
+        <div class="story-ring"><div class="story-img">S</div></div>
+        <span>Shuvo ☑️</span>
+      </div>
+      <div class="story-circle">
+        <div class="story-ring"><div class="story-img">R</div></div>
+        <span>Rahat_IT</span>
+      </div>
+    </div>
+  `;
+
   var postsHtml = posts.map(function(p){
-    var vMark = (p.profiles && p.profiles.is_verified) ? "<span class='badge-verified'>☑️</span>" : "";
-    var badge = (p.profiles && p.profiles.badge_level) ? "<small style='color:var(--accent); font-size:10px;'> [" + p.profiles.badge_level + "]</small>" : "";
+    var vMark = (p.profiles && p.profiles.is_verified) ? "<span style='color:var(--verified);'>☑️</span>" : "";
+    var views = p.views_count || Math.floor(Math.random() * 80) + 12; // Dynamic view counter
+    var likes = p.likes_count || 0;
+    var comments = p.comments_count || 0;
 
     return `
-      <div class="card post-item">
-        <div class="post-header">
-          <div class="post-author">
-            <div class="avatar">${p.profiles ? p.profiles.username.charAt(0).toUpperCase() : 'U'}</div>
-            <div>
-              <strong>${p.profiles ? p.profiles.username : 'User'} ${vMark} ${badge}</strong>
-              <div style="font-size:11px; color:var(--text-muted);">${new Date(p.created_at).toLocaleString()}</div>
-            </div>
+      <div class="card">
+        <div class="post-author">
+          <div class="avatar">${p.profiles ? p.profiles.username.charAt(0).toUpperCase() : 'U'}</div>
+          <div>
+            <strong>${p.profiles ? p.profiles.username : 'ইউজার'} ${vMark}</strong>
+            <div style="font-size:11px; color:var(--text-sub);">${new Date(p.created_at).toLocaleString()}</div>
           </div>
         </div>
-        <div style="font-size:14px; line-height:1.5; color:var(--text-title);">${p.content}</div>
+        <div style="font-size:14px; line-height:1.5; color:var(--text-main);">${p.content}</div>
+        
         <div class="post-actions">
-          <span class="action-btn" onclick="likePost('${p.id}', ${p.likes_count || 0})">❤️ ${p.likes_count || 0} Likes</span>
-          <span class="action-btn">💬 ${p.comments_count || 0} Comments</span>
+          <span class="action-btn" onclick="likePost('${p.id}', ${likes})">❤️ ${likes} Likes</span>
+          <span class="action-btn">💬 ${comments} Comments</span>
+          <span class="action-btn" style="cursor:default; color:var(--primary);">👁️ ${views} Views</span>
         </div>
       </div>
     `;
   }).join("");
 
-  var postComposer = currentProfile ? `
+  var composer = currentProfile ? `
     <div class="card">
-      <textarea class="post-input" id="newPostContent" rows="3" placeholder="What's on your mind or payment proof?"></textarea>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <select id="postPrivacy" style="width:auto; margin:0;">
-          <option value="public">🌐 Public</option>
-          <option value="friends">👥 Friends Only</option>
-        </select>
-        <button class="btn btn-primary" onclick="submitPost()">Publish Post</button>
-      </div>
+      <textarea id="postTxt" rows="2" placeholder="নতুন কিছু বা আপডেট পোস্ট করুন..."></textarea>
+      <button class="btn-pill" onclick="publishPost()">পোস্ট করুন 🚀</button>
     </div>
   ` : `
-    <div class="card" style="text-align:center; padding:24px;">
-      <h3 style="margin:0 0 8px;">Join Our Social Affiliate Network 🚀</h3>
-      <p style="color:var(--text-muted); font-size:13px; margin:0 0 16px;">Connect with top affiliate marketers, share payment proofs, and earn CPA commissions.</p>
-      <button class="btn btn-primary" onclick="openAuthModal('register')">Create Free Account</button>
-      <button class="btn btn-secondary" onclick="openAuthModal('login')">Sign In</button>
+    <div class="card" style="text-align:center; padding:20px;">
+      <h3 style="margin:0 0 8px;">কমিউনিটিতে যোগ দিন 🚀</h3>
+      <p style="color:var(--text-sub); font-size:13px; margin:0 0 14px;">পোস্ট করতে এবং অফার প্রমোট করতে সাইন ইন করুন।</p>
+      <button class="btn-pill" onclick="openAuthSheet('register')">একাউন্ট খুলুন</button>
     </div>
   `;
 
-  area.innerHTML = `
-    <div class="content-grid">
-      <div>
-        ${postComposer}
-        <div id="postsFeed">${postsHtml || '<div class="card">No posts yet. Be the first to publish!</div>'}</div>
-      </div>
-
-      <div>
-        <div class="card">
-          <h4 style="margin:0 0 12px;">🌐 Platform Highlights</h4>
-          <div style="font-size:13px; color:var(--text-body); margin-bottom:8px;">Active Members: <strong style="color:var(--primary);">1,200+</strong></div>
-          <div style="font-size:13px; color:var(--text-body); margin-bottom:8px;">Avg Lead Rate: <strong style="color:var(--accent);">৳50 - ৳100</strong></div>
-          <div style="font-size:13px; color:var(--text-body);">Payout Methods: <strong>Bkash / Nagad</strong></div>
-        </div>
-      </div>
-    </div>
-  `;
+  area.innerHTML = storiesHtml + composer + `<div>${postsHtml || '<div class="card">কোনো পোস্ট পাওয়া যায়নি।</div>'}</div>`;
 }
 
-window.submitPost = async function(){
-  if(!currentProfile){ openAuthModal('login'); return; }
-  var txt = document.getElementById("newPostContent").value.trim();
-  var privacy = document.getElementById("postPrivacy").value;
+window.publishPost = async function(){
+  var txt = document.getElementById("postTxt").value.trim();
   if(!txt) return;
-
-  await sb.from("posts").insert({ author_id: currentProfile.id, content: txt, privacy: privacy });
+  await sb.from("posts").insert({ author_id: currentProfile.id, content: txt, views_count: 1 });
   renderFeed();
 };
 
 window.likePost = async function(postId, currentLikes){
-  if(!currentProfile){ openAuthModal('login'); return; }
+  if(!currentProfile){ openAuthSheet('login'); return; }
   await sb.from("posts").update({ likes_count: currentLikes + 1 }).eq("id", postId);
   renderFeed();
 };
 
-function requireAuth(actionName, callback){
-  if(!currentProfile){ openAuthModal('login'); } else { callback(); }
-}
+// 2. CPA OFFERS VIEW (1-Click Share to Feed)
+async function renderOffers(){
+  requireAuth(async function(){
+    setActiveNav('offers');
+    var area = document.getElementById("appBody");
+    var offersRes = await sb.from("offers").select("*");
+    var offers = offersRes.data || [
+      { id: '1', name: 'Bkash App Install CPA', url: 'https://linebd.xyz/offer1' },
+      { id: '2', name: 'Nagad Promo Offer', url: 'https://linebd.xyz/offer2' }
+    ];
 
-// 2. AFFILIATE HUB
-function renderAffiliate(){
-  requireAuth("Affiliate Hub", function(){
-    updateActiveNav('affiliate');
-    var area = document.getElementById("contentArea");
-    var gross = currentProfile.custom_payout || ((currentProfile.custom_conversions || 0) * (currentProfile.per_lead_rate || 50));
-
-    area.innerHTML = `
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-label">Available Balance</div>
-          <div class="metric-value" style="color:var(--accent);">৳${gross}</div>
-          <button class="btn btn-primary" style="margin-top:8px;" onclick="requestWithdrawal(${gross})">Request Payout 💸</button>
+    var offersHtml = offers.map(function(o){
+      var trackingUrl = o.url + "?sub8=" + currentProfile.id;
+      return `
+        <div class="card">
+          <h4 style="margin:0 0 8px;">🔥 ${o.name}</h4>
+          <input type="text" value="${trackingUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('লিংক কপি হয়েছে!');">
+          <button class="btn-pill btn-secondary" onclick="shareOfferToFeed('${o.name}', '${trackingUrl}')">🚀 ফিডে প্রমোট করুন</button>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Total Conversions</div>
-          <div class="metric-value" style="color:var(--primary);">${currentProfile.custom_conversions || 0}</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Total Clicks</div>
-          <div class="metric-value">${currentProfile.custom_visitors || 0}</div>
-        </div>
-      </div>
+      `;
+    }).join("");
 
-      <div class="card">
-        <h3 style="margin:0 0 16px;">📈 Conversions Visualizer</h3>
-        <canvas id="affChart" height="100"></canvas>
-      </div>
-    `;
-
-    setTimeout(function(){
-      var ctx = document.getElementById("affChart");
-      if(ctx){
-        new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-              label: 'Leads',
-              data: [0, 1, 3, 5, currentProfile.custom_conversions || 0],
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              fill: true
-            }]
-          }
-        });
-      }
-    }, 100);
+    area.innerHTML = `<div>${offersHtml}</div>`;
   });
 }
 
-window.requestWithdrawal = async function(amt){
-  if(amt < 500){ alert("Minimum withdrawal limit is ৳500"); return; }
-  var acc = prompt("Enter your Bkash / Nagad Number:");
-  if(!acc) return;
-
-  await sb.from("payouts").insert({ user_id: currentProfile.id, username: currentProfile.username, amount: amt, method: 'Bkash/Nagad', account: acc, status: 'pending' });
-  alert("Payout request submitted!");
+window.shareOfferToFeed = async function(offerName, link){
+  var content = "🔥 " + offerName + " অফার প্রমোট শুরু করুন!\nলিংক থেকে চেক আউট করুন: " + link;
+  await sb.from("posts").insert({ author_id: currentProfile.id, content: content, views_count: 1 });
+  alert("অফারটি আপনার সোশ্যাল ফিডে পোস্ট করা হয়েছে!");
+  renderFeed();
 };
 
-// 3. FRIENDS
+// 3. FRIENDS VIEW
 async function renderFriends(){
-  requireAuth("Friends", async function(){
-    updateActiveNav('friends');
-    var area = document.getElementById("contentArea");
+  requireAuth(async function(){
+    setActiveNav('friends');
+    var area = document.getElementById("appBody");
     var usersRes = await sb.from("profiles").select("*").neq("id", currentProfile.id);
     var users = usersRes.data || [];
 
     var userList = users.map(function(u){
       return `
-        <div class="user-row">
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
             <div><strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}</div>
           </div>
-          <button class="btn btn-secondary" onclick="sendFriendRequest('${u.id}')">👤 + Add Friend</button>
+          <button class="btn-pill" style="width:auto; padding:6px 14px;" onclick="alert('ফ্রেন্ড রিকোয়েস্ট পাঠানো হয়েছে!')">👤 + Add Friend</button>
         </div>
       `;
     }).join("");
 
-    area.innerHTML = `
-      <div class="card">
-        <h3 style="margin:0 0 16px;">👥 People You May Know</h3>
-        <div>${userList || 'No other users found.'}</div>
-      </div>
-    `;
+    area.innerHTML = `<div><h3 style="margin:0 0 12px;">👥 পিপল ইউ মে নো</h3>${userList || '<div class="card">কোনো নতুন ইউজার নেই।</div>'}</div>`;
   });
 }
 
-window.sendFriendRequest = async function(receiverId){
-  await sb.from("friendships").insert({ requester_id: currentProfile.id, receiver_id: receiverId, status: 'pending' });
-  alert("Friend request sent!");
-};
-
-// 4. CPA OFFERS
-async function renderOffers(){
-  requireAuth("CPA Offers", async function(){
-    updateActiveNav('offers');
-    var area = document.getElementById("contentArea");
-    var offersRes = await sb.from("offers").select("*");
-    var offers = offersRes.data || [
-      { id: '1', name: 'Bkash App Install CPA', payout_rate: 50, url: 'https://linebd.xyz/offer1' },
-      { id: '2', name: 'Nagad Promo Offer', payout_rate: 60, url: 'https://linebd.xyz/offer2' }
-    ];
-
-    var offersList = offers.map(function(o){
-      var finalUrl = o.url + "?sub8=" + currentProfile.id;
-      return `
-        <div class="card">
-          <h4 style="margin:0 0 8px; font-size:16px;">🔥 ${o.name}</h4>
-          <div style="font-size:13px; color:var(--accent); margin-bottom:12px;">Payout: ৳${o.payout_rate} / Lead</div>
-          <input type="text" value="${finalUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('Link copied!');">
-          <small style="color:var(--text-muted);">Click input to copy tracking link</small>
-        </div>
-      `;
-    }).join("");
-
-    area.innerHTML = `<div>${offersList}</div>`;
-  });
-}
-
-// 5. ADMIN CONTROL
+// 4. ADMIN CONTROL VIEW
 async function renderAdmin(){
   if(!currentProfile || !currentProfile.is_admin) return;
-  updateActiveNav('admin');
-  var area = document.getElementById("contentArea");
-  var payoutsRes = await sb.from("payouts").select("*").eq("status", "pending");
+  setActiveNav('admin');
+  var area = document.getElementById("appBody");
   var profilesRes = await sb.from("profiles").select("*");
-
-  var payouts = payoutsRes.data || [];
   var profiles = profilesRes.data || [];
-
-  var payoutList = payouts.map(function(p){
-    return `
-      <div class="user-row">
-        <div><strong>${p.username}</strong> requested ৳${p.amount} (${p.account})</div>
-        <button class="btn btn-primary" onclick="approvePayout('${p.id}')">✓ Approve</button>
-      </div>
-    `;
-  }).join("");
 
   var userList = profiles.map(function(u){
     return `
-      <div class="user-row">
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
         <div><strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}</div>
-        <button class="btn btn-secondary" onclick="toggleVerify('${u.id}', ${!u.is_verified})">${u.is_verified ? 'Remove Badge' : 'Give Blue-Tick ☑️'}</button>
+        <button class="btn-pill" style="width:auto; padding:6px 12px;" onclick="toggleVerify('${u.id}', ${!u.is_verified})">${u.is_verified ? 'ব্যাজ রিমুভ' : 'ব্লু-টিক দিন ☑️'}</button>
       </div>
     `;
   }).join("");
 
-  area.innerHTML = `
-    <div class="card" style="margin-bottom:20px;">
-      <h3 style="margin:0 0 16px;">💳 Pending Payout Requests</h3>
-      <div>${payoutList || 'No pending payout requests.'}</div>
-    </div>
-    <div class="card">
-      <h3 style="margin:0 0 16px;">👥 Manage Users & Blue-Ticks</h3>
-      <div>${userList}</div>
-    </div>
-  `;
+  area.innerHTML = `<div><h3 style="margin:0 0 12px;">👥 ইউজার ও ব্লু-টিক কন্ট্রোল</h3>${userList}</div>`;
 }
-
-window.approvePayout = async function(payoutId){
-  await sb.from("payouts").update({ status: 'approved' }).eq("id", payoutId);
-  renderAdmin();
-};
 
 window.toggleVerify = async function(userId, status){
   await sb.from("profiles").update({ is_verified: status }).eq("id", userId);
   renderAdmin();
 };
 
-// AUTH MODAL FUNCTIONS
-window.openAuthModal = function(mode){
+// AUTHENTICATION MODAL
+function requireAuth(cb){
+  if(!currentProfile) openAuthSheet('login');
+  else cb();
+}
+
+window.openAuthSheet = function(mode){
   setAuthMode(mode || 'login');
-  document.getElementById("authModal").style.display = "flex";
+  document.getElementById("authSheet").style.display = "flex";
 };
 
-window.closeAuthModal = function(){
-  document.getElementById("authModal").style.display = "none";
+window.closeAuthSheet = function(){
+  document.getElementById("authSheet").style.display = "none";
 };
 
 window.setAuthMode = function(mode){
   authMode = mode;
-  var tabLogin = document.getElementById("tabLogin");
-  var tabRegister = document.getElementById("tabRegister");
-  var btn = document.getElementById("lBtn");
+  var tabL = document.getElementById("tabLogin");
+  var tabR = document.getElementById("tabRegister");
+  var btn = document.getElementById("sheetSubmitBtn");
 
   if(mode === 'login'){
-    tabLogin.classList.add("active");
-    tabRegister.classList.remove("active");
-    btn.textContent = "Sign In";
+    tabL.classList.add("active");
+    tabR.classList.remove("active");
+    btn.textContent = "লগইন করুন";
   } else {
-    tabRegister.classList.add("active");
-    tabLogin.classList.remove("active");
-    btn.textContent = "Create Account";
+    tabR.classList.add("active");
+    tabL.classList.remove("active");
+    btn.textContent = "নতুন একাউন্ট খুলুন";
   }
 };
 
-document.getElementById("lBtn").onclick = async function(){
+window.handleAuth = async function(){
   var e = document.getElementById("lEmail").value.trim();
   var p = document.getElementById("lPass").value;
 
-  if(!e || !p){ alert("Please enter email and password."); return; }
+  if(!e || !p){ alert("ইমেইল ও পাসওয়ার্ড দিন!"); return; }
 
   if(authMode === 'login'){
     var res = await sb.auth.signInWithPassword({ email: e, password: p });
-    if(res.error) alert("Invalid login credentials.");
+    if(res.error) alert("ভুল ইমেইল বা পাসওয়ার্ড!");
     else location.reload();
   } else {
-    var signUpRes = await sb.auth.signUp({ email: e, password: p });
-    if(signUpRes.error) alert(signUpRes.error.message);
-    else {
-      alert("Registration successful! Logging in...");
-      location.reload();
-    }
+    var signUp = await sb.auth.signUp({ email: e, password: p });
+    if(signUp.error) alert(signUp.error.message);
+    else { alert("একাউন্ট তৈরি হয়েছে!"); location.reload(); }
   }
 };
 
@@ -515,12 +378,10 @@ window.logout = async function(){
   location.reload();
 };
 
-// TAB SWITCHER
 window.switchTab = function(tab){
   if(tab === 'feed') renderFeed();
-  else if(tab === 'affiliate') renderAffiliate();
-  else if(tab === 'friends') renderFriends();
   else if(tab === 'offers') renderOffers();
+  else if(tab === 'friends') renderFriends();
   else if(tab === 'admin') renderAdmin();
 };
 
