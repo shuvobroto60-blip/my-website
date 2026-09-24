@@ -6,52 +6,78 @@
 <title>LinkFlow Social & CPA Network</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
     --bg-main: #0b0f19;
     --card-bg: #151c2c;
     --card-border: rgba(255, 255, 255, 0.08);
     --primary: #10b981;
+    --primary-glow: rgba(16, 185, 129, 0.15);
     --accent: #f59e0b;
     --verified: #3b82f6;
+    --danger: #ef4444;
     --text-main: #f8fafc;
     --text-sub: #94a3b8;
     --nav-height: 65px;
+    --font-mono: 'JetBrains Mono', monospace;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
   body, html { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-  /* Top App Bar */
+  /* Header */
   .mobile-header { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: rgba(21, 28, 44, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }
-  .brand-logo { font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .brand-logo { font-weight: 800; font-size: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .icon-btn { position: relative; background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text-main); font-size: 16px; cursor: pointer; }
+  .badge-count { position: absolute; top: -2px; right: -2px; background: var(--danger); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 10px; }
 
   /* App Body Canvas */
   .app-body { margin-top: 56px; margin-bottom: calc(var(--nav-height) + 15px); padding: 16px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
-  /* Stories Bar */
-  .stories-bar { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0 14px; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; scrollbar-width: none; }
-  .stories-bar::-webkit-scrollbar { display: none; }
-  .story-circle { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--text-sub); cursor: pointer; flex-shrink: 0; }
-  .story-ring { width: 52px; height: 52px; border-radius: 50%; padding: 2px; background: linear-gradient(45deg, var(--primary), var(--accent)); }
-  .story-img { width: 100%; height: 100%; border-radius: 50%; background: var(--bg-main); border: 2px solid var(--card-bg); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--text-main); font-size: 16px; }
+  /* Search & Hashtags */
+  .search-box { display: flex; gap: 8px; margin-bottom: 12px; }
+  .hashtag-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+  .hashtag-chips::-webkit-scrollbar { display: none; }
+  .chip { background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text-sub); white-space: nowrap; cursor: pointer; }
+  .chip.active { background: var(--primary-glow); color: var(--primary); border-color: var(--primary); }
+
+  /* Pinned Notice */
+  .pinned-notice { background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15)); border: 1px solid var(--primary); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; }
 
   /* Bottom Navigation */
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); border-top: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-around; z-index: 100; }
-  .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); font-size: 11px; font-weight: 700; gap: 3px; cursor: pointer; border: none; background: transparent; flex: 1; }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); font-size: 10.5px; font-weight: 700; gap: 3px; cursor: pointer; border: none; background: transparent; flex: 1; position: relative; }
   .nav-btn.active { color: var(--primary); }
-  .nav-btn span { font-size: 20px; }
+  .nav-btn span { font-size: 19px; }
 
   /* Cards & Post Feed */
   .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; padding: 16px; margin-bottom: 16px; backdrop-filter: blur(8px); }
-  .post-author { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .post-author { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .author-info { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #000; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+
+  .badge-tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: var(--accent); border: 1px solid rgba(245, 158, 11, 0.3); margin-left: 4px; }
+
+  .post-media { width: 100%; border-radius: 12px; margin-top: 10px; max-height: 350px; object-fit: cover; border: 1px solid var(--card-border); }
 
   .post-actions { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--card-border); margin-top: 12px; padding-top: 10px; font-size: 12.5px; color: var(--text-sub); }
   .action-btn { display: flex; align-items: center; gap: 5px; cursor: pointer; }
   .action-btn:hover { color: var(--primary); }
+
+  /* Comment Section */
+  .comments-box { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--card-border); }
+  .comment-item { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 13px; }
+
+  /* Metrics Grid */
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .metric-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px; }
+  .metric-label { font-size: 11px; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
+  .metric-val { font-size: 20px; font-weight: 800; font-family: var(--font-mono); margin-top: 4px; }
 
   /* Inputs & Pill Buttons */
   input, textarea, select { width: 100%; background: var(--bg-main); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; color: #fff; font-family: inherit; margin-bottom: 10px; font-size: 14px; }
@@ -65,18 +91,57 @@
   .auth-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
   .auth-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-weight: 700; color: var(--text-sub); }
   .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+  /* Profile Cover Drawer */
+  .profile-header-card { position: relative; border-radius: 18px; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); margin-bottom: 16px; }
+  .cover-photo { width: 100%; height: 110px; background: linear-gradient(135deg, #059669, #3b82f6); object-fit: cover; }
+  .profile-details { padding: 0 16px 16px; margin-top: -30px; }
 </style>
 </head>
 <body>
 
 <!-- Mobile Header Bar -->
 <div class="mobile-header">
-  <div class="brand-logo">⚡ LinkFlow</div>
-  <div id="topUserArea"></div>
+  <div class="brand-logo" onclick="switchTab('feed')">⚡ LinkFlow</div>
+  <div class="header-actions">
+    <div class="icon-btn" onclick="toggleNotifications()">
+      🔔 <span class="badge-count" id="notifBadge">2</span>
+    </div>
+    <div id="topUserArea"></div>
+  </div>
+</div>
+
+<!-- Notifications Drawer Modal -->
+<div id="notifDrawer" class="bottom-sheet" style="display:none;">
+  <div class="sheet-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-weight:800;">🔔 ইন-অ্যাপ নোটিফিকেশন</h3>
+      <span style="cursor:pointer; font-size:20px;" onclick="toggleNotifications()">✕</span>
+    </div>
+    <div id="notifList">
+      <div class="card" style="margin-bottom:8px;"><strong>Shuvo_CPA</strong> আপনার পোস্টে লাইক দিয়েছেন। <small style="color:var(--text-sub); display:block;">২ মিনিট আগে</small></div>
+      <div class="card" style="margin-bottom:8px;"><strong>Rahat_IT</strong> আপনার ফ্রেন্ড রিকোয়েস্ট একসেপ্ট করেছেন। <small style="color:var(--text-sub); display:block;">১০ মিনিট আগে</small></div>
+    </div>
+  </div>
 </div>
 
 <!-- Main App Body Canvas -->
 <div class="app-body" id="appBody"></div>
+
+<!-- Floating Messenger Chat -->
+<div id="messengerModal" class="bottom-sheet" style="display:none;">
+  <div class="sheet-content" style="height:70vh;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--card-border); padding-bottom:8px;">
+      <h4 style="margin:0; font-weight:800;" id="chatTitle">💬 ডাইরেক্ট চ্যাট</h4>
+      <span style="cursor:pointer; font-size:20px;" onclick="closeMessenger()">✕</span>
+    </div>
+    <div id="chatHistory" style="height:calc(100% - 110px); overflow-y:auto; margin-bottom:12px;"></div>
+    <div style="display:flex; gap:8px;">
+      <input id="chatInput" placeholder="মেসেজ লিখুন..." style="margin-bottom:0;">
+      <button class="btn-pill" style="width:auto; padding:0 20px;" onclick="sendChatMessage()">পাঠান</button>
+    </div>
+  </div>
+</div>
 
 <!-- App Bottom Navigation Bar -->
 <div class="bottom-nav">
@@ -86,8 +151,14 @@
   <button class="nav-btn" id="btn-offers" onclick="switchTab('offers')">
     <span>🔥</span> অফার
   </button>
+  <button class="nav-btn" id="btn-affiliate" onclick="switchTab('affiliate')">
+    <span>📊</span> এনালিটিক্স
+  </button>
   <button class="nav-btn" id="btn-friends" onclick="switchTab('friends')">
     <span>👥</span> ফ্রেন্ডস
+  </button>
+  <button class="nav-btn" id="btn-profile" onclick="switchTab('profile')">
+    <span>👤</span> প্রোফাইল
   </button>
   <button class="nav-btn" id="btn-admin" style="display:none;" onclick="switchTab('admin')">
     <span>⚙️</span> কন্ট্রোল
@@ -121,6 +192,7 @@ var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var currentProfile = null;
 var authMode = 'login';
+var activeHashtag = '';
 
 async function init(){
   var sessionRes = await sb.auth.getSession();
@@ -132,7 +204,7 @@ async function init(){
 
     if(!currentProfile){
       var uname = session.user.email.split("@")[0];
-      var newP = { id: session.user.id, username: uname, email: session.user.email, status: 'approved' };
+      var newP = { id: session.user.id, username: uname, email: session.user.email, status: 'approved', badge_level: 'Bronze' };
       await sb.from("profiles").upsert(newP);
       currentProfile = newP;
     }
@@ -147,8 +219,7 @@ function renderTopHeader(){
   if(currentProfile){
     area.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
-        <div class="avatar" style="width:30px; height:30px; font-size:12px;">${currentProfile.username.charAt(0).toUpperCase()}</div>
-        <button onclick="logout()" style="background:transparent; border:none; color:var(--text-sub); font-size:12px; font-weight:700;">লগআউট</button>
+        <div class="avatar" style="width:32px; height:32px; font-size:12px;">${currentProfile.username.charAt(0).toUpperCase()}</div>
       </div>
     `;
     if(currentProfile.is_admin) document.getElementById("btn-admin").style.display = "flex";
@@ -163,51 +234,78 @@ function setActiveNav(tab){
   if(activeBtn) activeBtn.classList.add('active');
 }
 
-// 1. MOBILE FEED VIEW WITH STORIES & VIEWS COUNTER
+// 1. MOBILE FEED VIEW WITH HASHTAGS & MEDIA
 async function renderFeed(){
   setActiveNav('feed');
   var area = document.getElementById("appBody");
-  var postsRes = await sb.from("posts").select("*, profiles(username, is_verified)").order("created_at", { ascending: false });
+  var query = sb.from("posts").select("*, profiles(username, is_verified, badge_level)").order("created_at", { ascending: false });
+  
+  var postsRes = await query;
   var posts = postsRes.data || [];
 
-  var storiesHtml = `
-    <div class="stories-bar">
-      <div class="story-circle">
-        <div class="story-ring"><div class="story-img">+</div></div>
-        <span>আপনার স্টোরি</span>
+  if(activeHashtag){
+    posts = posts.filter(p => p.content.includes(activeHashtag));
+  }
+
+  var pinnedNotice = `
+    <div class="pinned-notice">
+      <div style="font-size:20px;">📌</div>
+      <div style="flex:1;">
+        <strong style="color:var(--primary); font-size:13px;">অফিশিয়াল পিন্ড নোটিশ</strong>
+        <p style="margin:4px 0 0; font-size:12px; color:var(--text-main); line-height:1.4;">সকল নতুন প্রমোটারদের জন্য Meta Ads এবং Facebook CPA ট্রাফিক টিপস গাইড আনলক করা হয়েছে!</p>
       </div>
-      <div class="story-circle">
-        <div class="story-ring"><div class="story-img">S</div></div>
-        <span>Shuvo ☑️</span>
-      </div>
-      <div class="story-circle">
-        <div class="story-ring"><div class="story-img">R</div></div>
-        <span>Rahat_IT</span>
-      </div>
+    </div>
+  `;
+
+  var hashtagsHtml = `
+    <div class="hashtag-chips">
+      <div class="chip ${activeHashtag===''?'active':''}" onclick="filterHashtag('')">🔥 All Posts</div>
+      <div class="chip ${activeHashtag==='#MetaAds'?'active':''}" onclick="filterHashtag('#MetaAds')">#MetaAds</div>
+      <div class="chip ${activeHashtag==='#CPAMarketing'?'active':''}" onclick="filterHashtag('#CPAMarketing')">#CPAMarketing</div>
+      <div class="chip ${activeHashtag==='#Smartlink'?'active':''}" onclick="filterHashtag('#Smartlink')">#Smartlink</div>
+      <div class="chip ${activeHashtag==='#Tips'?'active':''}" onclick="filterHashtag('#Tips')">#Tips</div>
     </div>
   `;
 
   var postsHtml = posts.map(function(p){
     var vMark = (p.profiles && p.profiles.is_verified) ? "<span style='color:var(--verified);'>☑️</span>" : "";
-    var views = p.views_count || Math.floor(Math.random() * 80) + 12; // Dynamic view counter
+    var badge = (p.profiles && p.profiles.badge_level) ? `<span class="badge-tag">${p.profiles.badge_level}</span>` : "";
+    var views = p.views_count || Math.floor(Math.random() * 80) + 14;
     var likes = p.likes_count || 0;
-    var comments = p.comments_count || 0;
+    var isOwner = currentProfile && currentProfile.id === p.author_id;
+
+    var mediaHtml = p.image_url ? `<img src="${p.image_url}" class="post-media" alt="post attachment">` : '';
 
     return `
-      <div class="card">
+      <div class="card" id="post-${p.id}">
         <div class="post-author">
-          <div class="avatar">${p.profiles ? p.profiles.username.charAt(0).toUpperCase() : 'U'}</div>
-          <div>
-            <strong>${p.profiles ? p.profiles.username : 'ইউজার'} ${vMark}</strong>
-            <div style="font-size:11px; color:var(--text-sub);">${new Date(p.created_at).toLocaleString()}</div>
+          <div class="author-info">
+            <div class="avatar">${p.profiles ? p.profiles.username.charAt(0).toUpperCase() : 'U'}</div>
+            <div>
+              <strong>${p.profiles ? p.profiles.username : 'ইউজার'} ${vMark} ${badge}</strong>
+              <div style="font-size:11px; color:var(--text-sub);">${new Date(p.created_at).toLocaleString()}</div>
+            </div>
           </div>
+          ${isOwner ? `<button onclick="editPost('${p.id}', '${escape(p.content)}')" style="background:transparent; border:none; color:var(--text-sub); font-size:12px; cursor:pointer;">✏️ Edit</button>` : ''}
         </div>
-        <div style="font-size:14px; line-height:1.5; color:var(--text-main);">${p.content}</div>
-        
+
+        <div style="font-size:14px; line-height:1.5; color:var(--text-main);" id="post-text-${p.id}">${p.content}</div>
+        ${mediaHtml}
+
         <div class="post-actions">
           <span class="action-btn" onclick="likePost('${p.id}', ${likes})">❤️ ${likes} Likes</span>
-          <span class="action-btn">💬 ${comments} Comments</span>
+          <span class="action-btn" onclick="toggleComments('${p.id}')">💬 Comments</span>
           <span class="action-btn" style="cursor:default; color:var(--primary);">👁️ ${views} Views</span>
+        </div>
+
+        <div id="comments-${p.id}" class="comments-box" style="display:none;">
+          <div id="comment-list-${p.id}">
+            <div class="comment-item"><strong>Tanvir:</strong> গ্রেট টিপস ভাই! 🚀</div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            <input id="comment-input-${p.id}" placeholder="কমেন্ট লিখুন..." style="margin-bottom:0; font-size:12px; padding:8px 12px;">
+            <button class="btn-pill" style="width:auto; padding:0 14px; font-size:12px;" onclick="addComment('${p.id}')">পাঠান</button>
+          </div>
         </div>
       </div>
     `;
@@ -215,7 +313,8 @@ async function renderFeed(){
 
   var composer = currentProfile ? `
     <div class="card">
-      <textarea id="postTxt" rows="2" placeholder="নতুন কিছু বা আপডেট পোস্ট করুন..."></textarea>
+      <textarea id="postTxt" rows="2" placeholder="নতুন কিছু, ছবি লিংক বা হ্যাশট্যাগ (#MetaAds) পোস্ট করুন..."></textarea>
+      <input id="postImgUrl" placeholder="ছবি URL (অপশনাল, e.g. https://...)" style="font-size:12px;">
       <button class="btn-pill" onclick="publishPost()">পোস্ট করুন 🚀</button>
     </div>
   ` : `
@@ -226,20 +325,53 @@ async function renderFeed(){
     </div>
   `;
 
-  area.innerHTML = storiesHtml + composer + `<div>${postsHtml || '<div class="card">কোনো পোস্ট পাওয়া যায়নি।</div>'}</div>`;
+  area.innerHTML = pinnedNotice + hashtagsHtml + composer + `<div>${postsHtml || '<div class="card">কোনো পোস্ট পাওয়া যায়নি।</div>'}</div>`;
 }
+
+window.filterHashtag = function(tag){
+  activeHashtag = tag;
+  renderFeed();
+};
 
 window.publishPost = async function(){
   var txt = document.getElementById("postTxt").value.trim();
+  var img = document.getElementById("postImgUrl").value.trim();
   if(!txt) return;
-  await sb.from("posts").insert({ author_id: currentProfile.id, content: txt, views_count: 1 });
+  await sb.from("posts").insert({ author_id: currentProfile.id, content: txt, image_url: img, views_count: 1 });
   renderFeed();
+};
+
+window.editPost = async function(postId, rawTxt){
+  var oldTxt = unescape(rawTxt);
+  var newTxt = prompt("পোস্ট এডিট করুন:", oldTxt);
+  if(newTxt && newTxt !== oldTxt){
+    await sb.from("posts").update({ content: newTxt }).eq("id", postId);
+    renderFeed();
+  }
 };
 
 window.likePost = async function(postId, currentLikes){
   if(!currentProfile){ openAuthSheet('login'); return; }
   await sb.from("posts").update({ likes_count: currentLikes + 1 }).eq("id", postId);
   renderFeed();
+};
+
+window.toggleComments = function(postId){
+  var el = document.getElementById("comments-" + postId);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+};
+
+window.addComment = function(postId){
+  var inp = document.getElementById("comment-input-" + postId);
+  var txt = inp.value.trim();
+  if(!txt) return;
+
+  var list = document.getElementById("comment-list-" + postId);
+  var newC = document.createElement("div");
+  newC.className = "comment-item";
+  newC.innerHTML = `<strong>${currentProfile ? currentProfile.username : 'You'}:</strong> ${txt}`;
+  list.appendChild(newC);
+  inp.value = "";
 };
 
 // 2. CPA OFFERS VIEW (1-Click Share to Feed)
@@ -249,16 +381,19 @@ async function renderOffers(){
     var area = document.getElementById("appBody");
     var offersRes = await sb.from("offers").select("*");
     var offers = offersRes.data || [
-      { id: '1', name: 'Bkash App Install CPA', url: 'https://linebd.xyz/offer1' },
-      { id: '2', name: 'Nagad Promo Offer', url: 'https://linebd.xyz/offer2' }
+      { id: '1', name: 'Bkash App Install CPA', category: 'App Install', url: 'https://linebd.xyz/offer1' },
+      { id: '2', name: 'Nagad Promo Offer', category: 'Smartlink', url: 'https://linebd.xyz/offer2' }
     ];
 
     var offersHtml = offers.map(function(o){
       var trackingUrl = o.url + "?sub8=" + currentProfile.id;
       return `
         <div class="card">
-          <h4 style="margin:0 0 8px;">🔥 ${o.name}</h4>
-          <input type="text" value="${trackingUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('লিংক কপি হয়েছে!');">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <h4 style="margin:0;">🔥 ${o.name}</h4>
+            <span class="badge-tag">${o.category || 'CPA'}</span>
+          </div>
+          <input type="text" value="${trackingUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('ট্র্যাকিং লিংক কপি হয়েছে!');">
           <button class="btn-pill btn-secondary" onclick="shareOfferToFeed('${o.name}', '${trackingUrl}')">🚀 ফিডে প্রমোট করুন</button>
         </div>
       `;
@@ -269,13 +404,67 @@ async function renderOffers(){
 }
 
 window.shareOfferToFeed = async function(offerName, link){
-  var content = "🔥 " + offerName + " অফার প্রমোট শুরু করুন!\nলিংক থেকে চেক আউট করুন: " + link;
+  var content = "🔥 " + offerName + " প্রমোট শুরু করুন!\n#CPAMarketing লিংক: " + link;
   await sb.from("posts").insert({ author_id: currentProfile.id, content: content, views_count: 1 });
   alert("অফারটি আপনার সোশ্যাল ফিডে পোস্ট করা হয়েছে!");
   renderFeed();
 };
 
-// 3. FRIENDS VIEW
+// 3. AFFILIATE DASHBOARD & SMART SHORTENER
+function renderAffiliate(){
+  requireAuth(function(){
+    setActiveNav('affiliate');
+    var area = document.getElementById("appBody");
+    var gross = currentProfile.custom_payout || ((currentProfile.custom_conversions || 0) * (currentProfile.per_lead_rate || 50));
+
+    area.innerHTML = `
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">মোট কনভার্সন</div>
+          <div class="metric-val" style="color:var(--primary);">${currentProfile.custom_conversions || 0}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ট্রাফিক ক্লিকস</div>
+          <div class="metric-val" style="color:var(--accent);">${currentProfile.custom_visitors || 124}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin:0 0 10px;">🔗 স্মার্ট ইউআরএল শর্টনার</h4>
+        <input id="longUrl" placeholder="দীর্ঘ CPA লিংক এখানে পেস্ট করুন...">
+        <button class="btn-pill" onclick="shortenUrl()">কাস্টম লিংক তৈরি করুন</button>
+        <div id="shortResult" style="margin-top:10px; font-weight:700; color:var(--primary);"></div>
+      </div>
+
+      <div class="card">
+        <h4 style="margin:0 0 12px;">📈 জিও ও ডিভাইস ট্র্যাকার</h4>
+        <canvas id="affChart" height="120"></canvas>
+      </div>
+    `;
+
+    setTimeout(function(){
+      var ctx = document.getElementById("affChart");
+      if(ctx){
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['Bangladesh', 'USA', 'UK', 'India', 'Others'],
+            datasets: [{ label: 'Traffic Clicks', data: [85, 20, 10, 5, 4], borderColor: '#10b981', fill: false }]
+          }
+        });
+      }
+    }, 100);
+  });
+}
+
+window.shortenUrl = function(){
+  var url = document.getElementById("longUrl").value.trim();
+  if(!url) return;
+  var short = "https://linebd.xyz/s/" + Math.random().toString(36).substring(7);
+  document.getElementById("shortResult").innerHTML = `শর্ট লিংক: <input value="${short}" readonly onclick="this.select();">`;
+};
+
+// 4. FRIENDS & MESSENGER
 async function renderFriends(){
   requireAuth(async function(){
     setActiveNav('friends');
@@ -288,18 +477,44 @@ async function renderFriends(){
         <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
-            <div><strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}</div>
+            <div>
+              <strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}
+              <div style="font-size:11px; color:var(--accent);">${u.badge_level || 'Bronze Member'}</div>
+            </div>
           </div>
-          <button class="btn-pill" style="width:auto; padding:6px 14px;" onclick="alert('ফ্রেন্ড রিকোয়েস্ট পাঠানো হয়েছে!')">👤 + Add Friend</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn-pill" style="width:auto; padding:6px 12px; font-size:12px;" onclick="openMessenger('${u.username}')">💬 ইনবক্স</button>
+          </div>
         </div>
       `;
     }).join("");
 
-    area.innerHTML = `<div><h3 style="margin:0 0 12px;">👥 পিপল ইউ মে নো</h3>${userList || '<div class="card">কোনো নতুন ইউজার নেই।</div>'}</div>`;
+    area.innerHTML = `<div><h3 style="margin:0 0 12px;">👥 নেটওয়ার্ক মেম্বার্স</h3>${userList || '<div class="card">কোনো ইউজার নেই।</div>'}</div>`;
   });
 }
 
-// 4. ADMIN CONTROL VIEW
+// 5. USER PROFILE DRAWER
+function renderProfile(){
+  requireAuth(function(){
+    setActiveNav('profile');
+    var area = document.getElementById("appBody");
+
+    area.innerHTML = `
+      <div class="profile-header-card">
+        <div class="cover-photo"></div>
+        <div class="profile-details">
+          <div class="avatar" style="width:60px; height:60px; font-size:24px; border:3px solid var(--card-bg);">${currentProfile.username.charAt(0).toUpperCase()}</div>
+          <h3 style="margin:8px 0 2px;">${currentProfile.username} ${currentProfile.is_verified ? '☑️' : ''}</h3>
+          <span class="badge-tag">${currentProfile.badge_level || 'Bronze Marketer'}</span>
+          <p style="font-size:13px; color:var(--text-sub); margin:8px 0;">${currentProfile.bio || 'CPA Marketing Enthusiast & Traffic Specialist'}</p>
+          <button class="btn-pill btn-secondary" onclick="logout()">লগআউট করুন 🚪</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// 6. ADMIN CONTROL VIEW
 async function renderAdmin(){
   if(!currentProfile || !currentProfile.is_admin) return;
   setActiveNav('admin');
@@ -322,6 +537,37 @@ async function renderAdmin(){
 window.toggleVerify = async function(userId, status){
   await sb.from("profiles").update({ is_verified: status }).eq("id", userId);
   renderAdmin();
+};
+
+// MESSENGER LOGIC
+window.openMessenger = function(username){
+  document.getElementById("chatTitle").textContent = "💬 Chat with " + username;
+  document.getElementById("chatHistory").innerHTML = `
+    <div style="background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px; margin-bottom:8px; font-size:13px;"><strong>${username}:</strong> হ্যালো! নতুন কোনো CPA ট্রিকস আছে?</div>
+  `;
+  document.getElementById("messengerModal").style.display = "flex";
+};
+
+window.closeMessenger = function(){
+  document.getElementById("messengerModal").style.display = "none";
+};
+
+window.sendChatMessage = function(){
+  var txt = document.getElementById("chatInput").value.trim();
+  if(!txt) return;
+  var hist = document.getElementById("chatHistory");
+  var msg = document.createElement("div");
+  msg.style.cssText = "background:var(--primary-glow); color:var(--primary); padding:8px 12px; border-radius:10px; margin-bottom:8px; font-size:13px; text-align:right;";
+  msg.innerHTML = `<strong>You:</strong> ${txt}`;
+  hist.appendChild(msg);
+  document.getElementById("chatInput").value = "";
+};
+
+// NOTIFICATIONS LOGIC
+window.toggleNotifications = function(){
+  var drawer = document.getElementById("notifDrawer");
+  drawer.style.display = drawer.style.display === "none" ? "flex" : "none";
+  document.getElementById("notifBadge").style.display = "none";
 };
 
 // AUTHENTICATION MODAL
@@ -381,7 +627,9 @@ window.logout = async function(){
 window.switchTab = function(tab){
   if(tab === 'feed') renderFeed();
   else if(tab === 'offers') renderOffers();
+  else if(tab === 'affiliate') renderAffiliate();
   else if(tab === 'friends') renderFriends();
+  else if(tab === 'profile') renderProfile();
   else if(tab === 'admin') renderAdmin();
 };
 
