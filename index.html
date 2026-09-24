@@ -60,7 +60,7 @@
   .metric-label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
   .metric-value { font-size: 24px; font-weight: 800; font-family: var(--font-code); margin: 6px 0 2px; }
 
-  /* Tables & Inputs */
+  /* Inputs & Buttons */
   .post-input, input, select { width: 100%; background: var(--bg-main); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; color: #fff; font-family: inherit; margin-bottom: 10px; }
   .btn { padding: 8px 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: all 0.2s; }
   .btn-primary { background: var(--primary); color: #000; }
@@ -76,6 +76,13 @@
 
   /* User Row */
   .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--card-border); }
+
+  /* Modal & Tabs */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal-box { background: var(--sidebar-bg); border: 1px solid var(--card-border); padding: 32px; border-radius: 20px; width: 100%; max-width: 380px; }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--card-border); margin-bottom: 16px; }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; font-weight: 700; color: var(--text-muted); }
+  .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 
   /* Responsive */
   @media (max-width: 900px) {
@@ -107,19 +114,35 @@
   <main>
     <div class="top-navbar">
       <input type="text" class="search-input" id="searchInput" placeholder="Search posts, #tags, or friends...">
-      <div class="user-profile">
-        <div class="avatar" id="userAvatar">U</div>
-        <span style="font-size: 13px; font-weight: 700;" id="usernameDisplay">User</span>
-        <span id="verifiedBadge" class="badge-verified" style="display:none;">☑️</span>
-        <button class="btn" style="background: transparent; color: var(--text-muted); padding: 4px 8px;" id="logoutBtn">Logout</button>
+      <div class="user-profile" id="userProfileArea">
+        <!-- Rendered dynamically -->
       </div>
     </div>
 
     <!-- Dynamic Content Area -->
     <div id="contentArea">
-      <!-- Loaded dynamically via JS -->
+      <!-- Public Feed renders by default -->
     </div>
   </main>
+</div>
+
+<!-- Modal Container -->
+<div id="authModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="margin:0; font-weight:800;" id="modalTitle">Account Access</h2>
+      <span style="cursor:pointer; font-size:20px;" onclick="closeAuthModal()">✕</span>
+    </div>
+    
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="setAuthMode('login')">Sign In</div>
+      <div class="auth-tab" id="tabRegister" onclick="setAuthMode('register')">Register</div>
+    </div>
+
+    <input id="lEmail" placeholder="Email Address">
+    <input id="lPass" type="password" placeholder="Password (Min 6 chars)">
+    <button id="lBtn" class="btn btn-primary" style="width:100%; padding:12px; margin-top:8px;">Sign In</button>
+  </div>
 </div>
 
 <script>
@@ -131,33 +154,45 @@ var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var currentProfile = null;
+var authMode = 'login'; // 'login' or 'register'
 
 async function init(){
   var sessionRes = await sb.auth.getSession();
   var session = sessionRes.data ? sessionRes.data.session : null;
 
-  if(!session){
-    renderAuth();
-    return;
+  if(session){
+    var profRes = await sb.from("profiles").select("*").eq("id", session.user.id).single();
+    currentProfile = profRes.data;
+
+    if(!currentProfile){
+      var uname = session.user.email.split("@")[0];
+      var newP = { id: session.user.id, username: uname, email: session.user.email, status: 'approved' };
+      await sb.from("profiles").upsert(newP);
+      currentProfile = newP;
+    }
   }
 
-  var profRes = await sb.from("profiles").select("*").eq("id", session.user.id).single();
-  currentProfile = profRes.data;
-
-  if(!currentProfile){
-    var uname = session.user.email.split("@")[0];
-    var newP = { id: session.user.id, username: uname, email: session.user.email, status: 'approved' };
-    await sb.from("profiles").upsert(newP);
-    currentProfile = newP;
-  }
-
-  document.getElementById("usernameDisplay").textContent = currentProfile.username;
-  document.getElementById("userAvatar").textContent = currentProfile.username.charAt(0).toUpperCase();
-  
-  if(currentProfile.is_verified) document.getElementById("verifiedBadge").style.display = "inline";
-  if(currentProfile.is_admin) document.getElementById("adminTab").style.display = "flex";
-
+  renderTopUserArea();
   renderFeed();
+}
+
+function renderTopUserArea(){
+  var area = document.getElementById("userProfileArea");
+  if(currentProfile){
+    area.innerHTML = `
+      <div class="avatar">${currentProfile.username.charAt(0).toUpperCase()}</div>
+      <span style="font-size: 13px; font-weight: 700;">${currentProfile.username}</span>
+      ${currentProfile.is_verified ? '<span class="badge-verified">☑️</span>' : ''}
+      <button class="btn" style="background: transparent; color: var(--text-muted); padding: 4px 8px;" onclick="logout()">Logout</button>
+    `;
+    if(currentProfile.is_admin) document.getElementById("adminTab").style.display = "flex";
+  } else {
+    area.innerHTML = `
+      <button class="btn btn-primary" onclick="openAuthModal('login')">Sign In</button>
+      <button class="btn btn-secondary" onclick="openAuthModal('register')">Register</button>
+    `;
+    document.getElementById("adminTab").style.display = "none";
+  }
 }
 
 function updateActiveNav(tab){
@@ -166,7 +201,7 @@ function updateActiveNav(tab){
   if(activeNav) activeNav.classList.add('active');
 }
 
-// 1. SOCIAL FEED VIEW
+// 1. PUBLIC SOCIAL FEED VIEW
 async function renderFeed(){
   updateActiveNav('feed');
   var area = document.getElementById("contentArea");
@@ -197,27 +232,39 @@ async function renderFeed(){
     `;
   }).join("");
 
+  var postComposer = currentProfile ? `
+    <div class="card">
+      <textarea class="post-input" id="newPostContent" rows="3" placeholder="What's on your mind or payment proof?"></textarea>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <select id="postPrivacy" style="width:auto; margin:0;">
+          <option value="public">🌐 Public</option>
+          <option value="friends">👥 Friends Only</option>
+        </select>
+        <button class="btn btn-primary" onclick="submitPost()">Publish Post</button>
+      </div>
+    </div>
+  ` : `
+    <div class="card" style="text-align:center; padding:24px;">
+      <h3 style="margin:0 0 8px;">Join Our Social Affiliate Network 🚀</h3>
+      <p style="color:var(--text-muted); font-size:13px; margin:0 0 16px;">Connect with top affiliate marketers, share payment proofs, and earn CPA commissions.</p>
+      <button class="btn btn-primary" onclick="openAuthModal('register')">Create Free Account</button>
+      <button class="btn btn-secondary" onclick="openAuthModal('login')">Sign In</button>
+    </div>
+  `;
+
   area.innerHTML = `
     <div class="content-grid">
       <div>
-        <div class="card">
-          <textarea class="post-input" id="newPostContent" rows="3" placeholder="What's on your mind or payment proof?"></textarea>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <select id="postPrivacy" style="width:auto; margin:0;">
-              <option value="public">🌐 Public</option>
-              <option value="friends">👥 Friends Only</option>
-            </select>
-            <button class="btn btn-primary" onclick="submitPost()">Publish Post</button>
-          </div>
-        </div>
+        ${postComposer}
         <div id="postsFeed">${postsHtml || '<div class="card">No posts yet. Be the first to publish!</div>'}</div>
       </div>
 
       <div>
         <div class="card">
-          <h4 style="margin:0 0 12px;">📊 Quick Stats</h4>
-          <div style="font-size:13px; color:var(--text-body); margin-bottom:8px;">Balance: <strong style="color:var(--accent);">৳${currentProfile.custom_payout || 0}</strong></div>
-          <div style="font-size:13px; color:var(--text-body);">Conversions: <strong style="color:var(--primary);">${currentProfile.custom_conversions || 0}</strong></div>
+          <h4 style="margin:0 0 12px;">🌐 Platform Highlights</h4>
+          <div style="font-size:13px; color:var(--text-body); margin-bottom:8px;">Active Members: <strong style="color:var(--primary);">1,200+</strong></div>
+          <div style="font-size:13px; color:var(--text-body); margin-bottom:8px;">Avg Lead Rate: <strong style="color:var(--accent);">৳50 - ৳100</strong></div>
+          <div style="font-size:13px; color:var(--text-body);">Payout Methods: <strong>Bkash / Nagad</strong></div>
         </div>
       </div>
     </div>
@@ -225,6 +272,7 @@ async function renderFeed(){
 }
 
 window.submitPost = async function(){
+  if(!currentProfile){ openAuthModal('login'); return; }
   var txt = document.getElementById("newPostContent").value.trim();
   var privacy = document.getElementById("postPrivacy").value;
   if(!txt) return;
@@ -234,57 +282,64 @@ window.submitPost = async function(){
 };
 
 window.likePost = async function(postId, currentLikes){
+  if(!currentProfile){ openAuthModal('login'); return; }
   await sb.from("posts").update({ likes_count: currentLikes + 1 }).eq("id", postId);
   renderFeed();
 };
 
-// 2. AFFILIATE HUB VIEW
+function requireAuth(actionName, callback){
+  if(!currentProfile){ openAuthModal('login'); } else { callback(); }
+}
+
+// 2. AFFILIATE HUB
 function renderAffiliate(){
-  updateActiveNav('affiliate');
-  var area = document.getElementById("contentArea");
-  var gross = currentProfile.custom_payout || ((currentProfile.custom_conversions || 0) * (currentProfile.per_lead_rate || 50));
+  requireAuth("Affiliate Hub", function(){
+    updateActiveNav('affiliate');
+    var area = document.getElementById("contentArea");
+    var gross = currentProfile.custom_payout || ((currentProfile.custom_conversions || 0) * (currentProfile.per_lead_rate || 50));
 
-  area.innerHTML = `
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-label">Available Balance</div>
-        <div class="metric-value" style="color:var(--accent);">৳${gross}</div>
-        <button class="btn btn-primary" style="margin-top:8px;" onclick="requestWithdrawal(${gross})">Request Payout 💸</button>
+    area.innerHTML = `
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Available Balance</div>
+          <div class="metric-value" style="color:var(--accent);">৳${gross}</div>
+          <button class="btn btn-primary" style="margin-top:8px;" onclick="requestWithdrawal(${gross})">Request Payout 💸</button>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Conversions</div>
+          <div class="metric-value" style="color:var(--primary);">${currentProfile.custom_conversions || 0}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Clicks</div>
+          <div class="metric-value">${currentProfile.custom_visitors || 0}</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Conversions</div>
-        <div class="metric-value" style="color:var(--primary);">${currentProfile.custom_conversions || 0}</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Clicks</div>
-        <div class="metric-value">${currentProfile.custom_visitors || 0}</div>
-      </div>
-    </div>
 
-    <div class="card">
-      <h3 style="margin:0 0 16px;">📈 Conversions Visualizer</h3>
-      <canvas id="affChart" height="100"></canvas>
-    </div>
-  `;
+      <div class="card">
+        <h3 style="margin:0 0 16px;">📈 Conversions Visualizer</h3>
+        <canvas id="affChart" height="100"></canvas>
+      </div>
+    `;
 
-  setTimeout(function(){
-    var ctx = document.getElementById("affChart");
-    if(ctx){
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{
-            label: 'Leads',
-            data: [0, 1, 3, 5, currentProfile.custom_conversions || 0],
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            fill: true
-          }]
-        }
-      });
-    }
-  }, 100);
+    setTimeout(function(){
+      var ctx = document.getElementById("affChart");
+      if(ctx){
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+              label: 'Leads',
+              data: [0, 1, 3, 5, currentProfile.custom_conversions || 0],
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true
+            }]
+          }
+        });
+      }
+    }, 100);
+  });
 }
 
 window.requestWithdrawal = async function(amt){
@@ -296,31 +351,33 @@ window.requestWithdrawal = async function(amt){
   alert("Payout request submitted!");
 };
 
-// 3. FRIENDS & REQUESTS VIEW
+// 3. FRIENDS
 async function renderFriends(){
-  updateActiveNav('friends');
-  var area = document.getElementById("contentArea");
-  var usersRes = await sb.from("profiles").select("*").neq("id", currentProfile.id);
-  var users = usersRes.data || [];
+  requireAuth("Friends", async function(){
+    updateActiveNav('friends');
+    var area = document.getElementById("contentArea");
+    var usersRes = await sb.from("profiles").select("*").neq("id", currentProfile.id);
+    var users = usersRes.data || [];
 
-  var userList = users.map(function(u){
-    return `
-      <div class="user-row">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
-          <div><strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}</div>
+    var userList = users.map(function(u){
+      return `
+        <div class="user-row">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="avatar">${u.username.charAt(0).toUpperCase()}</div>
+            <div><strong>${u.username}</strong> ${u.is_verified ? '☑️' : ''}</div>
+          </div>
+          <button class="btn btn-secondary" onclick="sendFriendRequest('${u.id}')">👤 + Add Friend</button>
         </div>
-        <button class="btn btn-secondary" onclick="sendFriendRequest('${u.id}')">👤 + Add Friend</button>
+      `;
+    }).join("");
+
+    area.innerHTML = `
+      <div class="card">
+        <h3 style="margin:0 0 16px;">👥 People You May Know</h3>
+        <div>${userList || 'No other users found.'}</div>
       </div>
     `;
-  }).join("");
-
-  area.innerHTML = `
-    <div class="card">
-      <h3 style="margin:0 0 16px;">👥 People You May Know</h3>
-      <div>${userList || 'No other users found.'}</div>
-    </div>
-  `;
+  });
 }
 
 window.sendFriendRequest = async function(receiverId){
@@ -328,33 +385,36 @@ window.sendFriendRequest = async function(receiverId){
   alert("Friend request sent!");
 };
 
-// 4. CPA OFFERS VIEW
+// 4. CPA OFFERS
 async function renderOffers(){
-  updateActiveNav('offers');
-  var area = document.getElementById("contentArea");
-  var offersRes = await sb.from("offers").select("*");
-  var offers = offersRes.data || [
-    { id: '1', name: 'Bkash App Install CPA', payout_rate: 50, url: 'https://linebd.xyz/offer1' },
-    { id: '2', name: 'Nagad Promo Offer', payout_rate: 60, url: 'https://linebd.xyz/offer2' }
-  ];
+  requireAuth("CPA Offers", async function(){
+    updateActiveNav('offers');
+    var area = document.getElementById("contentArea");
+    var offersRes = await sb.from("offers").select("*");
+    var offers = offersRes.data || [
+      { id: '1', name: 'Bkash App Install CPA', payout_rate: 50, url: 'https://linebd.xyz/offer1' },
+      { id: '2', name: 'Nagad Promo Offer', payout_rate: 60, url: 'https://linebd.xyz/offer2' }
+    ];
 
-  var offersList = offers.map(function(o){
-    var finalUrl = o.url + "?sub8=" + currentProfile.id;
-    return `
-      <div class="card">
-        <h4 style="margin:0 0 8px; font-size:16px;">🔥 ${o.name}</h4>
-        <div style="font-size:13px; color:var(--accent); margin-bottom:12px;">Payout: ৳${o.payout_rate} / Lead</div>
-        <input type="text" value="${finalUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('Link copied!');">
-        <small style="color:var(--text-muted);">Click input to copy tracking link</small>
-      </div>
-    `;
-  }).join("");
+    var offersList = offers.map(function(o){
+      var finalUrl = o.url + "?sub8=" + currentProfile.id;
+      return `
+        <div class="card">
+          <h4 style="margin:0 0 8px; font-size:16px;">🔥 ${o.name}</h4>
+          <div style="font-size:13px; color:var(--accent); margin-bottom:12px;">Payout: ৳${o.payout_rate} / Lead</div>
+          <input type="text" value="${finalUrl}" readonly onclick="this.select(); document.execCommand('copy'); alert('Link copied!');">
+          <small style="color:var(--text-muted);">Click input to copy tracking link</small>
+        </div>
+      `;
+    }).join("");
 
-  area.innerHTML = `<div>${offersList}</div>`;
+    area.innerHTML = `<div>${offersList}</div>`;
+  });
 }
 
-// 5. ADMIN CONTROL VIEW
+// 5. ADMIN CONTROL
 async function renderAdmin(){
+  if(!currentProfile || !currentProfile.is_admin) return;
   updateActiveNav('admin');
   var area = document.getElementById("contentArea");
   var payoutsRes = await sb.from("payouts").select("*").eq("status", "pending");
@@ -403,36 +463,54 @@ window.toggleVerify = async function(userId, status){
   renderAdmin();
 };
 
-// AUTHENTICATION
-function renderAuth(){
-  document.body.innerHTML = `
-    <div style="display:flex; height:100vh; align-items:center; justify-content:center; background:var(--bg-main);">
-      <div style="background:var(--sidebar-bg); border:1px solid var(--card-border); padding:32px; border-radius:20px; width:100%; max-width:380px;">
-        <h2 style="margin:0 0 8px; font-weight:800;">Social Affiliate Portal</h2>
-        <p style="margin:0 0 20px; color:var(--text-muted); font-size:13px;">Login or create account to access network</p>
-        <input id="lEmail" placeholder="Email">
-        <input id="lPass" type="password" placeholder="Password">
-        <button id="lBtn" class="btn btn-primary" style="width:100%; padding:12px;">Sign In / Register</button>
-      </div>
-    </div>
-  `;
+// AUTH MODAL FUNCTIONS
+window.openAuthModal = function(mode){
+  setAuthMode(mode || 'login');
+  document.getElementById("authModal").style.display = "flex";
+};
 
-  document.getElementById("lBtn").onclick = async function(){
-    var e = document.getElementById("lEmail").value.trim();
-    var p = document.getElementById("lPass").value;
+window.closeAuthModal = function(){
+  document.getElementById("authModal").style.display = "none";
+};
+
+window.setAuthMode = function(mode){
+  authMode = mode;
+  var tabLogin = document.getElementById("tabLogin");
+  var tabRegister = document.getElementById("tabRegister");
+  var btn = document.getElementById("lBtn");
+
+  if(mode === 'login'){
+    tabLogin.classList.add("active");
+    tabRegister.classList.remove("active");
+    btn.textContent = "Sign In";
+  } else {
+    tabRegister.classList.add("active");
+    tabLogin.classList.remove("active");
+    btn.textContent = "Create Account";
+  }
+};
+
+document.getElementById("lBtn").onclick = async function(){
+  var e = document.getElementById("lEmail").value.trim();
+  var p = document.getElementById("lPass").value;
+
+  if(!e || !p){ alert("Please enter email and password."); return; }
+
+  if(authMode === 'login'){
     var res = await sb.auth.signInWithPassword({ email: e, password: p });
-    
-    if(res.error){
-      var signUpRes = await sb.auth.signUp({ email: e, password: p });
-      if(signUpRes.error) alert(signUpRes.error.message);
-      else location.reload();
-    } else {
+    if(res.error) alert("Invalid login credentials.");
+    else location.reload();
+  } else {
+    var signUpRes = await sb.auth.signUp({ email: e, password: p });
+    if(signUpRes.error) alert(signUpRes.error.message);
+    else {
+      alert("Registration successful! Logging in...");
       location.reload();
     }
-  };
-}
+  }
+};
 
-document.getElementById("logoutBtn").onclick = async function(){
+window.logout = async function(){
   await sb.auth.signOut();
   location.reload();
 };
