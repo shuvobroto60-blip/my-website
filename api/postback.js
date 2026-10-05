@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {db} from './_db.js';
 function json(res,status,body){res.status(status).json(body);}
 function safeEqual(a,b){const x=Buffer.from(String(a||''));const y=Buffer.from(String(b||''));return x.length===y.length&&crypto.timingSafeEqual(x,y);}
 async function supabaseInsert(row){
