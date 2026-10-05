@@ -1277,6 +1277,8 @@ function editMsg(key,msgId){
   m.text=t.trim(); m.edited=true; save(); render();
 }
 
+async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
+
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
 const apiToken=()=>localStorage.getItem(API_TOKEN_KEY)||'';
@@ -1287,7 +1289,7 @@ async function apiCall(path,body,method='POST'){
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,online:false,role:u.role,status:u.status,publicId:u.public_id,device:'Server account'}));}catch(e){}}
 async function restoreServerSession(){
  const t=apiToken(); if(!t)return;
- try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();state.nav='dashboard';render();}}
+ try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();state.nav='dashboard';render();loadServerWallet();}}
  catch(e){localStorage.removeItem(API_TOKEN_KEY);state.session=null;}
 }
 const legacyDoLogin=doLogin;
@@ -1311,6 +1313,13 @@ sendDM=async function(){const inp=document.getElementById('dmInput'),text=inp.va
 async function refreshGlobalChat(){try{const d=await apiCall('/api/chat?kind=global',null,'GET');state.chatGlobal=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,name:(m.users&&m.users.name)||userName(m.sender_id),text:m.body,time:m.created_at,name:(m.users&&m.users.name)||userName(m.sender_id)}));render();}catch(e){}}
 async function refreshDMChat(){try{const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(state.chatContact),null,'GET');const k=threadKey(currentUserId(),state.chatContact);state.dms[k]=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));render();}catch(e){}}
 setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();}},5000);
+const legacyRequestWd=requestWd;
+requestWd=async function(){
+ const amt=Number(document.getElementById('wdAmt').value||0),account=document.getElementById('wdNumber').value.trim(),method=document.getElementById('wdMethod').value;
+ if(amt<=0||!account)return alert('Enter a valid amount and account number');
+ try{await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:account});showToast('Withdrawal request submitted');await loadServerWallet();}catch(e){showToast(e.message);}
+};
+
 restoreServerSession();
 
 render();
