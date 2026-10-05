@@ -1,0 +1,11 @@
+{
+  "name": "tracknest",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
