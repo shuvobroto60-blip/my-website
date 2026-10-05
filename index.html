@@ -214,7 +214,7 @@ function doLogin(){
   const pw=document.getElementById('authLoginPw').value;
   const acc=state.accounts.find(a=>a.username.toLowerCase()===idf || a.email.toLowerCase()===idf);
   if(!acc || acc.password!==pw){ state.authError='Invalid username/email or password.'; save(); render(); return; }
-  state.session={userId:acc.id}; state.role=acc.role; state.impersonating=null; state.nav='dashboard'; state.authError='';
+  state.session={userId:acc.id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
   save(); render(); checkAndShowNotice();
 }
 function doSignup(){
@@ -231,7 +231,7 @@ function doSignup(){
   state.accounts.push({id,username,email,phone,password:pw,role:'user'});
   state.users.push({id,name:username,online:true,role:'user',publicId:generatePublicUserId()});
   state.userWallets[id]={main:0,withdrawal:0,pending:0};
-  state.session={userId:id}; state.role='user'; state.impersonating=null; state.nav='dashboard'; state.authError='';
+  state.session={userId:id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
   save(); render(); checkAndShowNotice();
 }
 function logout(){ state.session=null; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
@@ -320,8 +320,10 @@ function sendNotice(){
   render();
 }
 
-function effRole(){ return state.impersonating ? 'user' : state.role; }
-function currentUserId(){ if(state.role==='admin') return state.impersonating || 'admin'; return (state.session && state.session.userId) || 'you'; }
+function sessionAccount(){ return state.session ? state.accounts.find(a=>a.id===state.session.userId) : null; }
+function sessionRole(){ const a=sessionAccount(); return a ? a.role : null; }
+function effRole(){ return state.impersonating ? 'user' : (sessionRole() || 'user'); }
+function currentUserId(){ const a=sessionAccount(); if(!a) return null; return a.role==='admin' ? (state.impersonating || a.id) : a.id; }
 function userName(id){ const u=state.users.find(u=>u.id===id); return u?u.name:id; }
 function userEmail(id){ const acc=state.accounts.find(a=>a.id===id); return acc ? acc.email : (id+'@tracknest.app'); }
 function userOnline(id){ const u=state.users.find(u=>u.id===id); return u?u.online:false; }
@@ -367,7 +369,6 @@ function showToast(text){
 }
 
 function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); }
-function setRole(r){ if(r!=='admin' && r!=='user') return; if(!state.session) return; const acc=state.accounts.find(a=>a.id===state.session.userId); if(!acc) return; state.role=acc.role; state.impersonating=null; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function startImpersonate(){ const v=document.getElementById('impersonateSelect').value; state.impersonating=v; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function startImpersonateByPublicId(){ const el=document.getElementById('impersonatePublicId'); const pid=(el?el.value:'').trim(); const u=state.users.find(x=>x.role==='user' && String(x.publicId)===pid); if(!/^\d{5}$/.test(pid) || !u){ state.authError='User ID not found.'; save(); render(); return; } state.authError=''; state.impersonating=u.id; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function exitImpersonate(){ state.impersonating=null; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
@@ -404,7 +405,7 @@ function sidebar(){
       </div>${subsHtml}</div>`;
   }).join('');
   const nonAdminUsers = state.users.filter(u=>u.role==='user');
-  const impersonateBlock = state.role==='admin' ? (
+  const impersonateBlock = sessionRole()==='admin' ? (
     state.impersonating
     ? `<div class="mb-3 p-2 rounded-lg text-xs" style="background:rgba(94,234,212,.12);border:1px solid var(--accent)">
          Viewing as <b>${userName(state.impersonating)}</b><br>
@@ -544,7 +545,7 @@ function referralCard(){
   return `<div class="card p-3 sm:p-4">
     <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
       <div class="font-semibold text-sm">🔗 Referral Program <span style="color:var(--muted);font-weight:400">— earn ${fmt(REF_BONUS)}/signup</span></div>
-      <span class="btn2" style="font-size:11px;padding:4px 8px" onclick="simulateReferral()">+ Simulate Signup</span>
+      <span class="btn2" style="font-size:11px;padding:4px 8px" onclick="simulateReferral()">Real signups only</span>
     </div>
     <div class="flex items-center gap-2 mb-2">
       <input readonly value="${link}" onclick="this.select()" style="font-size:12px;padding:5px 8px">
@@ -553,14 +554,6 @@ function referralCard(){
     </div>
     ${rows ? `<div class="overflow-x-auto"><table style="font-size:12px"><tbody>${rows}</tbody></table></div>` : ''}
   </div>`;
-}
-function simulateReferral(){
-  const me=currentUserId();
-  if(me==='admin') return;
-  const n = state.referrals.filter(r=>r.referrerId===me).length+1;
-  state.referrals.push({referrerId:me,name:'Guest User '+n,date:now(),bonus:REF_BONUS});
-  walletOf(me).main += REF_BONUS;
-  save(); render();
 }
 
 function statCard(label,val,color){
@@ -715,7 +708,7 @@ function offerCard(o,mine){
       <div class="text-sm" style="color:var(--muted)">Payout: <span style="color:var(--accent)" class="font-semibold">${fmt(o.payout)}</span> / conversion</div>
       ${capHtml}
       ${mine
-        ? `<div class="flex gap-2 mt-2"><span class="btn flex-1 text-center" onclick="getLink('${o.id}')">Get Link</span><span class="btn2" onclick="simulateConversion('${o.id}')">Simulate Conversion</span></div>`
+        ? `<div class="flex gap-2 mt-2"><span class="btn flex-1 text-center" onclick="getLink('${o.id}')">Get Link</span><span class="btn2" onclick="simulateConversion('${o.id}')">Test conversion via advertiser S2S</span></div>`
         : `<span class="btn mt-2 text-center" onclick="joinOffer('${o.id}')">Join Offer</span>`}
     </div>`;
 }
@@ -893,7 +886,7 @@ function securityS2SView(){
     <td>${new Date(l.time).toLocaleString()}</td><td>${l.offer}</td>
     <td style="color:var(--muted)" class="max-w-[220px] truncate">${l.url}</td>
     <td><span class="pill" style="background:rgba(74,222,128,.15);color:var(--ok)">${l.status}</span></td>
-  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No postback hits yet. Use "Simulate Conversion" on an active offer.</td></tr>`;
+  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No real postback hits received yet. Conversions appear here when an advertiser sends S2S data.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Raw S2S Postback Log</div>
     <div class="overflow-x-auto"><table><thead><tr><th>Time</th><th>Offer</th><th>Postback URL</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1190,22 +1183,6 @@ function getLink(id){
   document.getElementById('linkBox').innerHTML=`<div class="card p-4"><div class="text-sm mb-2" style="color:var(--muted)">Your tracking link (${o.name}):</div><input readonly value="${link}" onclick="this.select()"></div>`;
 }
 
-function simulateConversion(offerId){
-  const o=state.offers.find(x=>x.id===offerId); if(!o)return;
-  const me=currentUserId();
-  if(o.dailyCap && offerUsageToday(me,offerId)>=o.dailyCap){ showToast('Daily cap reached for this offer'); return; }
-  incOfferUsage(me,offerId);
-  state.conversions.push({id:uid(),offerId:o.id,offerName:o.name,userId:me,amount:o.payout,date:now(),read:false});
-  walletOf(me).pending += o.payout;
-  const cid=uid();
-  const pbUrl=(o.s2s||'https://tracknest.dev/pb?click_id={click_id}&payout={payout}&status={status}')
-    .replace('{click_id}',cid).replace('{payout}',o.payout).replace('{status}','approved');
-  state.s2sLogs.push({id:uid(),offer:o.name,url:pbUrl,status:'200 OK',time:now()});
-  const day=now().slice(0,10);
-  if(!state.clicksByDay[day]) state.clicksByDay[day]={clicks:0,conv:0};
-  state.clicksByDay[day].conv++;
-  save(); showToast(`Conversion recorded: ${fmt(o.payout)} from ${o.name}`); render();
-}
 
 // payments
 function requestWd(){
