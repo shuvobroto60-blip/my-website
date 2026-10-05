@@ -1149,12 +1149,16 @@ function addOffer(){
   logAudit(`Added offer "${name}"`);
   save(); render();
 }
-function testPostback(){
-  const url=document.getElementById('ofS2S').value.trim();
-  const box=document.getElementById('pbTestResult');
-  if(!url){ box.innerHTML=`<div class="text-xs mt-2" style="color:var(--danger)">Enter a postback URL first.</div>`; return; }
-  const resolved=url.replace('{click_id}','TEST123').replace('{payout}','10.00').replace('{status}','approved');
-  box.innerHTML=`<div class="text-xs mt-2" style="color:var(--ok)">✓ Resolved: <span style="color:var(--muted)">${resolved}</span><br>Local validation only — no external request was sent</div>`;
+async function testPostback(){
+ const box=document.getElementById('pbTestResult');
+ box.innerHTML=`<div class="text-xs mt-2" style="color:var(--muted)">Testing TrackNest receiver…</div>`;
+ try{
+  const r=await fetch('/api/postback-test',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});
+  const data=await r.json();
+  box.innerHTML=`<div class="text-xs mt-2" style="color:${data.ok?'var(--ok)':'var(--danger)'}">${data.ok?'✓':'✕'} ${escapeHtml(data.message||'Receiver test completed')} ${data.status?`<br>HTTP ${data.status}`:''}</div>`;
+ }catch(e){
+  box.innerHTML=`<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable. Configure Vercel environment variables first.</div>`;
+ }
 }
 function delOffer(id){ const o=state.offers.find(x=>x.id===id); state.offers=state.offers.filter(o=>o.id!==id); logAudit(`Deleted offer "${o?o.name:id}"`); save(); render(); }
 function toggleOffer(id){ const o=state.offers.find(o=>o.id===id); o.status=o.status==='active'?'paused':'active'; save(); render(); }
