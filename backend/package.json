@@ -1,0 +1,1 @@
+{"name":"tracknest-backend","private":true,"type":"module","scripts":{"dev":"node server.js","start":"node server.js"},"dependencies":{"@supabase/supabase-js":"latest","cors":"latest","dotenv":"latest","express":"latest","helmet":"latest","jsonwebtoken":"latest","bcryptjs":"latest"}}
