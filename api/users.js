@@ -1,0 +1,2 @@
+import {db,auth,json} from './_db.js';
+export default async function handler(req,res){try{const me=await auth(req);if(!me||me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});const rows=await db('users?select=id,public_id,username,email,name,phone,role,status,created_at&order=created_at.desc&limit=1000');return json(res,200,{ok:true,users:rows});}catch(e){return json(res,500,{ok:false,message:e.message});}}
