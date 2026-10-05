@@ -1,29 +1,12 @@
 create extension if not exists pgcrypto;
-
-create table if not exists public.users (
- id uuid primary key default gen_random_uuid(),
- public_id char(5) unique not null check (public_id ~ '^[0-9]{5}$'),
- username text unique not null,
- email text unique not null,
- name text not null default '',
- password_hash text not null,
- role text not null default 'user' check (role in ('user','admin')),
- status text not null default 'active' check (status in ('active','suspended')),
- created_at timestamptz not null default now()
-);
-
-create table if not exists public.postbacks (
- id uuid primary key default gen_random_uuid(),
- token text not null default '',
- click_id text not null,
- payout numeric(12,2) not null default 0,
- status text not null default 'approved',
- query jsonb not null default '{}'::jsonb,
- body jsonb not null default '{}'::jsonb,
- received_at timestamptz not null default now()
-);
-create index if not exists users_public_id_idx on public.users(public_id);
-create index if not exists postbacks_click_id_idx on public.postbacks(click_id);
-create index if not exists postbacks_received_at_idx on public.postbacks(received_at desc);
-alter table public.users enable row level security;
-alter table public.postbacks enable row level security;
+create table if not exists public.users (id uuid primary key default gen_random_uuid(),public_id char(5) unique not null check(public_id ~ '^[0-9]{5}$'),username text unique not null,email text unique not null,name text not null default '',phone text not null default '',password_hash text not null,role text not null default 'user' check(role in ('user','admin')),status text not null default 'active',created_at timestamptz not null default now());
+create table if not exists public.sessions (token_hash text primary key,user_id uuid not null references public.users(id) on delete cascade,expires_at timestamptz not null,created_at timestamptz not null default now());
+create table if not exists public.conversations (id uuid primary key default gen_random_uuid(),user_a uuid not null references public.users(id) on delete cascade,user_b uuid references public.users(id) on delete cascade,kind text not null default 'dm',created_at timestamptz not null default now());
+create table if not exists public.messages (id uuid primary key default gen_random_uuid(),conversation_id uuid not null references public.conversations(id) on delete cascade,sender_id uuid not null references public.users(id) on delete cascade,body text not null,created_at timestamptz not null default now(),edited_at timestamptz);
+create table if not exists public.wallets (user_id uuid primary key references public.users(id) on delete cascade,balance numeric(14,2) not null default 0,pending numeric(14,2) not null default 0,paid numeric(14,2) not null default 0,updated_at timestamptz not null default now());
+create table if not exists public.conversions (id uuid primary key default gen_random_uuid(),user_id uuid references public.users(id) on delete set null,click_id text not null,offer_id text,payout numeric(14,2) not null default 0,status text not null default 'approved',sub1 text,sub2 text,sub3 text,sub4 text,sub5 text,sub6 text,sub7 text,sub8 text,raw jsonb not null default '{}'::jsonb,created_at timestamptz not null default now());
+create table if not exists public.withdrawals (id uuid primary key default gen_random_uuid(),user_id uuid not null references public.users(id) on delete cascade,amount numeric(14,2) not null,method text not null,account_number text not null,status text not null default 'pending',provider_ref text,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists public.postbacks (id uuid primary key default gen_random_uuid(),token text not null default '',click_id text not null,payout numeric(12,2) not null default 0,status text not null default 'approved',query jsonb not null default '{}'::jsonb,body jsonb not null default '{}'::jsonb,received_at timestamptz not null default now());
+create table if not exists public.notifications (id uuid primary key default gen_random_uuid(),user_id uuid references public.users(id) on delete cascade,channel text not null,recipient text not null,subject text,body text not null,status text not null default 'queued',provider_ref text,created_at timestamptz not null default now());
+create index if not exists users_public_id_idx on public.users(public_id); create index if not exists sessions_user_idx on public.sessions(user_id); create index if not exists messages_conversation_idx on public.messages(conversation_id,created_at); create index if not exists conversions_click_idx on public.conversions(click_id); create index if not exists withdrawals_user_idx on public.withdrawals(user_id,created_at desc); create index if not exists postbacks_click_id_idx on public.postbacks(click_id);
+alter table public.users enable row level security; alter table public.sessions enable row level security; alter table public.conversations enable row level security; alter table public.messages enable row level security; alter table public.wallets enable row level security; alter table public.conversions enable row level security; alter table public.withdrawals enable row level security; alter table public.postbacks enable row level security; alter table public.notifications enable row level security;
