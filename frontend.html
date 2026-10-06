@@ -1162,7 +1162,7 @@ function requestWd(){
 }
 async function cancelWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'cancelled'});await loadServerWallet();showToast('Withdrawal cancelled');render();}catch(e){showToast(e.message);}}
 async function approveWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'approved'});await syncServerWithdrawals();showToast('Withdrawal approved');render();}catch(e){showToast(e.message);}}
-async function rejectWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();showToast('Withdrawal rejected');render();}}
+async function rejectWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();showToast('Withdrawal rejected');render();}catch(e){showToast(e.message);}}
 
 function showInvoice(id){
   const w=state.withdrawals.find(x=>x.id===id); if(!w)return;
