@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import {db,auth,json} from './_db.js';
+import {db,auth,json} from '../backend/_db.js';
 const seed=[
  {name:'ShopNix Fashion App Install',url:'https://track.example.com/shopnix?click_id={click_id}',payout:4.5,category:'App Install',country:'Bangladesh',device:'Android',daily_cap:10,s2s:'',status:'active'},
  {name:'EzyLoan — Loan Signup',url:'https://track.example.com/ezyloan?click_id={click_id}',payout:12,category:'CPL',country:'Bangladesh',device:'Any',daily_cap:5,s2s:'',status:'active'},
