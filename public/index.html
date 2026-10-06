@@ -1409,10 +1409,7 @@ requestWd=async function(){
 };
 
 window.addEventListener('error',e=>{
-  const box=document.getElementById('app');
-  if(box && !box.innerHTML.trim()){
-    box.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0E1120;color:#E7E9F5;font-family:system-ui"><div style="max-width:560px;background:#161A2E;border:1px solid #2A2F4A;border-radius:16px;padding:24px"><h2 style="margin:0 0 10px">TrackNest loading error</h2><p style="color:#8A8FB3;margin:0 0 14px">Please refresh the page. If the problem continues, clear this site data and reopen TrackNest.</p><button onclick="localStorage.removeItem(LS_KEY);location.reload()" style="background:#5EEAD4;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer">Reset local app data</button></div></div>';
-  }
+  if(window.__tracknestBootFallback) window.__tracknestBootFallback();
 });
 window.addEventListener('unhandledrejection',()=>{});
 restoreServerSession();
