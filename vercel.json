@@ -1,4 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://backend-riponkaku50-8247.vercel.app/api/:path*" }
+  ]
 }
