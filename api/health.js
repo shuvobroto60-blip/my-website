@@ -1,4 +1,4 @@
-import {db} from './_db.js';
+import {db} from '../backend/_db.js';
 export default async function handler(req,res){
  const configured=Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY);
  let schemaReady=false,error=null;
