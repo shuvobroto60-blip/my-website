@@ -1427,6 +1427,25 @@ function editMsg(key,msgId){
 
 async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
+/* TrackNest production interaction helpers */
+function setActionBusy(el,busy,label){
+  if(!el)return;
+  if(busy){
+    if(!el.dataset.originalLabel) el.dataset.originalLabel=el.textContent;
+    el.dataset.busy='1';
+    el.style.pointerEvents='none';
+    el.style.opacity='.72';
+    el.textContent=label||'Please wait…';
+    el.setAttribute('aria-busy','true');
+  }else{
+    el.dataset.busy='0';
+    el.style.pointerEvents='';
+    el.style.opacity='';
+    el.textContent=el.dataset.originalLabel||el.textContent;
+    el.removeAttribute('aria-busy');
+  }
+}
+
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
 const apiToken=()=>localStorage.getItem(API_TOKEN_KEY)||'';
@@ -1448,15 +1467,26 @@ async function syncServerWithdrawals(){
 }
 const legacyDoLogin=doLogin;
 doLogin=async function(){
- const identifier=document.getElementById('authLoginId').value.trim(),password=document.getElementById('authLoginPw').value;
+ const identifier=document.getElementById('authLoginId')?.value.trim()||'',password=document.getElementById('authLoginPw')?.value||'';
+ const btn=document.querySelector('.auth-card .auth-submit');
+ if(btn?.dataset.busy==='1')return;
+ if(!identifier||!password){state.authError='Username/email and password are required.';render();return;}
+ setActionBusy(btn,true,'Signing in…');
  try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
  catch(e){state.authError=e.message;render();}
+ finally{setActionBusy(btn,false,'Sign in');}
 };
 const legacyDoSignup=doSignup;
 doSignup=async function(){
- const username=document.getElementById('authSuUser').value.trim(),email=document.getElementById('authSuEmail').value.trim(),phone=document.getElementById('authSuPhone').value.trim(),password=document.getElementById('authSuPw').value;
+ const username=document.getElementById('authSuUser')?.value.trim()||'',email=document.getElementById('authSuEmail')?.value.trim()||'',phone=document.getElementById('authSuPhone')?.value.trim()||'',password=document.getElementById('authSuPw')?.value||'';
+ const btn=document.querySelector('.auth-card .auth-submit');
+ if(btn?.dataset.busy==='1')return;
+ if(!username||!email||!phone||!password){state.authError='All fields are required.';render();return;}
+ if(password.length<6){state.authError='Password must be at least 6 characters.';render();return;}
+ setActionBusy(btn,true,'Creating account…');
  try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();}
  catch(e){state.authError=e.message;render();}
+ finally{setActionBusy(btn,false,'Create account');}
 };
 const legacyLogout=logout;
 logout=async function(){try{await apiCall('/api/auth',{action:'logout'});}catch(e){}localStorage.removeItem(API_TOKEN_KEY);state.session=null;state.impersonating=null;render();};
