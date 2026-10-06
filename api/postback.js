@@ -1,8 +1,7 @@
-import crypto from 'node:crypto';
 import {db} from '../backend/_db.js';
 
 function json(res,status,body){res.status(status).json(body);}
-function safeEqual(a,b){const x=Buffer.from(String(a||''));const y=Buffer.from(String(b||''));return x.length===y.length&&crypto.timingSafeEqual(x,y);}
+function safeEqual(a,b){const x=String(a||''),y=String(b||'');if(x.length!==y.length)return false;let diff=0;for(let i=0;i<x.length;i++)diff|=x.charCodeAt(i)^y.charCodeAt(i);return diff===0;}
 function normalizeStatus(v){const s=String(v||'approved').toLowerCase();if(['approved','pending','rejected','cancelled'].includes(s))return s;return null;}
 
 async function supabaseInsert(row){
