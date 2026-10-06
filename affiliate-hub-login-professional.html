@@ -320,22 +320,7 @@ function sendNotice(){
   render();
 }
 
-function sessionAccount(){ return state.session ? state.accounts.find(a=>a.id===state.session.userId) : null; }
-function sessionRole(){ const a=sessionAccount(); return a ? a.role : null; }
-function effRole(){ return state.impersonating ? 'user' : (sessionRole() || 'user'); }
-function currentUserId(){ const a=sessionAccount(); if(!a) return null; return a.role==='admin' ? (state.impersonating || a.id) : a.id; }
-function userName(id){ const u=state.users.find(u=>u.id===id); return u?u.name:id; }
-function userEmail(id){ const acc=state.accounts.find(a=>a.id===id); return acc ? acc.email : (id+'@tracknest.app'); }
-function userOnline(id){ const u=state.users.find(u=>u.id===id); return u?u.online:false; }
-function walletOf(id){ if(!state.userWallets[id]) state.userWallets[id]={main:0,withdrawal:0,pending:0}; return state.userWallets[id]; }
-function offerUsageToday(userId,offerId){ return state.offerUsage[`${userId}_${offerId}_${now().slice(0,10)}`]||0; }
-function incOfferUsage(userId,offerId){ const k=`${userId}_${offerId}_${now().slice(0,10)}`; state.offerUsage[k]=(state.offerUsage[k]||0)+1; }
-function logAudit(action){ state.auditLog.push({id:uid(),actor:userName(currentUserId()),action,time:now()}); }
-function threadKey(a,b){ return [a,b].sort().join('|'); }
-function unreadCountFor(me,other){
-  const arr=state.dms[threadKey(me,other)]||[];
-  return arr.filter(m=>m.from===other && !m.seen).length;
-}
+function sessionAccount(){const a=state.accounts.find(x=>x.id===state.session?.userId);if(a)return a;const u=state.users.find(x=>x.id===state.session?.userId);return u?{id:u.id,role:u.role,username:u.username,email:u.email,name:u.name,phone:u.phone}:null;}
 function totalUnread(){
   const me=currentUserId();
   return state.users.filter(u=>u.id!==me).reduce((a,u)=>a+unreadCountFor(me,u.id),0);
@@ -1258,19 +1243,19 @@ async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,
 async function syncServerWithdrawals(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/wallet',{action:'list'});if(d.withdrawals)state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at}));save();}catch(e){}}async function refreshServerSecurity(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/security?kind=s2s',null,'GET');if(d.logs)state.s2sLogs=d.logs;save();if(state.nav==='security'&&state.sub==='s2s')render();}catch(e){}}
 async function restoreServerSession(){
  const t=apiToken(); if(!t)return;
- try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await refreshServerStats();state.nav='dashboard';render();loadServerWallet();}}
+ try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.serverUser=d.user;state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await refreshServerStats();state.nav='dashboard';render();loadServerWallet();}}
  catch(e){localStorage.removeItem(API_TOKEN_KEY);state.session=null;}
 }
 const legacyDoLogin=doLogin;
 doLogin=async function(){
  const identifier=document.getElementById('authLoginId').value.trim(),password=document.getElementById('authLoginPw').value;
- try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.nav='dashboard';state.authError='';render();checkAndShowNotice();}
+ try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();checkAndShowNotice();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyDoSignup=doSignup;
 doSignup=async function(){
  const username=document.getElementById('authSuUser').value.trim(),email=document.getElementById('authSuEmail').value.trim(),phone=document.getElementById('authSuPhone').value.trim(),password=document.getElementById('authSuPw').value;
- try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.nav='dashboard';state.authError='';render();}
+ try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyLogout=logout;
