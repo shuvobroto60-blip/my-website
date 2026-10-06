@@ -53,8 +53,9 @@ export default async function handler(req,res){
 
   if(b.action==='update'){
    if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
-   const id=String(b.id||''),next=String(b.status||'');
+   const id=String(b.id||''),next=String(b.status||''),paymentRef=String(b.payment_ref||'').trim().slice(0,120);
    if(!['approved','rejected','cancelled'].includes(next))return json(res,400,{ok:false,message:'Invalid status'});
+   if(next==='approved'&&!paymentRef)return json(res,400,{ok:false,message:'Payment reference is required when marking a manual payment as paid'});
 
    const wd=(await db('withdrawals?id=eq.'+encodeURIComponent(id)+'&select=*'))[0];
    if(!wd)return json(res,404,{ok:false,message:'Withdrawal not found'});
@@ -80,10 +81,27 @@ export default async function handler(req,res){
    try{
     const updated=(await db('withdrawals?id=eq.'+encodeURIComponent(id)+'&status=eq.pending',{
      method:'PATCH',headers:{Prefer:'return=representation'},
-     body:JSON.stringify({status:next,updated_at:new Date().toISOString()})
+     body:JSON.stringify({status:next,provider_ref:paymentRef||null,updated_at:new Date().toISOString()})
     }))[0];
     if(!updated)throw new Error('Withdrawal was changed by another request');
-    if(next==='approved')await notifyUser(wd.user_id,'Withdrawal approved','Your TrackNest withdrawal of $'+Number(wd.amount).toFixed(2)+' has been approved.');
+    if(next==='approved')await notifyUser(wd.user_id,'Withdrawal paid','Your TrackNest withdrawal of 
+    if(next==='rejected')await notifyUser(wd.user_id,'Withdrawal rejected','Your TrackNest withdrawal of $'+Number(wd.amount).toFixed(2)+' was rejected and returned to your balance.');
+    if(next==='cancelled')await notifyUser(wd.user_id,'Withdrawal cancelled','Your TrackNest withdrawal of $'+Number(wd.amount).toFixed(2)+' was cancelled.');
+    return json(res,200,{ok:true,withdrawal:updated});
+   }catch(e){
+    if(next==='approved'){
+     await patchWallet(wd.user_id,[['pending',Math.max(0,Number(w.pending||0)-Number(wd.amount))],['paid',Number(w.paid||0)+Number(wd.amount)]],{pending:Number(w.pending||0),paid:Number(w.paid||0)}).catch(()=>{});
+    }else{
+     await patchWallet(wd.user_id,[['balance',Number(w.balance||0)+Number(wd.amount)],['pending',Math.max(0,Number(w.pending||0)-Number(wd.amount))]],{balance:Number(w.balance||0),pending:Number(w.pending||0)}).catch(()=>{});
+    }
+    throw e;
+   }
+  }
+
+  return json(res,400,{ok:false,message:'Unknown action'});
+ }catch(e){return json(res,500,{ok:false,message:e.message||'Server error'});}
+}
++Number(wd.amount).toFixed(2)+' has been paid manually. Reference: '+paymentRef);
     if(next==='rejected')await notifyUser(wd.user_id,'Withdrawal rejected','Your TrackNest withdrawal of $'+Number(wd.amount).toFixed(2)+' was rejected and returned to your balance.');
     if(next==='cancelled')await notifyUser(wd.user_id,'Withdrawal cancelled','Your TrackNest withdrawal of $'+Number(wd.amount).toFixed(2)+' was cancelled.');
     return json(res,200,{ok:true,withdrawal:updated});
