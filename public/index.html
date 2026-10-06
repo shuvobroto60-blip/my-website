@@ -685,6 +685,19 @@ function offerFilterBar(){
     <select onchange="updateOfferFilter('device',this.value)"><option value="">All Devices</option>${opt(devices,f.device)}</select>
   </div>`;
 }
+async function runAdminTestConversion(){
+ const box=document.getElementById('qaTestResult');
+ if(!box)return;
+ box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Running QA click → conversion → wallet test…</div>';
+ try{
+  const d=await apiCall('/api/test-conversion',{payout:1});
+  await syncServerOffers(); await loadServerWallet(); await refreshServerStats();
+  box.innerHTML='<div class="text-xs mt-2" style="color:var(--ok)">✓ Test conversion completed: +$'+Number(d.payout).toFixed(2)+' credited.<br>Click ID: '+escapeHtml(d.click_id)+'</div>';
+  showToast('QA conversion completed'); render();
+ }catch(e){
+  box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">✕ QA test failed: '+escapeHtml(e.message)+'</div>';
+ }
+}
 function offersAllView(){
   const list=filteredOffers(state.offers);
   const rows=list.map(o=>`<tr>
@@ -698,6 +711,12 @@ function offersAllView(){
     <td class="whitespace-nowrap"><span class="btn2" onclick="toggleOffer('${o.id}')">${o.status==='active'?'Pause':'Activate'}</span> <span class="btn2" style="color:var(--danger)" onclick="delOffer('${o.id}')">Delete</span></td>
   </tr>`).join('');
   return `<div class="p-4 sm:p-8">
+    <div class="card p-4 sm:p-5 mb-5" style="border-color:var(--accent)">
+      <div class="font-semibold mb-1">Admin QA — Test Conversion</div>
+      <div class="text-xs" style="color:var(--muted)">Server test: click → approved conversion → wallet credit. Fixed QA payout: $1.00.</div>
+      <div class="mt-3"><span class="btn" onclick="runAdminTestConversion()">Run Test Conversion</span></div>
+      <div id="qaTestResult"></div>
+    </div>
     <div class="card p-4 sm:p-5 mb-5 flex items-center justify-between flex-wrap gap-3">
       <div>
         <div class="font-semibold">Anti-Fraud Protection</div>
