@@ -1125,8 +1125,19 @@ async function addOffer(){
  try{await apiCall('/api/offers',payload);await syncServerOffers();showToast('Offer added');render();}catch(e){showToast(e.message);}
 }
 async function testPostback(){
- const box=document.getElementById('pbTestResult');box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Testing TrackNest receiver…</div>';
- try{const r=await fetch('/api/postback-test',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});const data=await r.json();box.innerHTML='<div class="text-xs mt-2" style="color:'+(data.ok?'var(--ok)':'var(--danger)')+'">'+(data.ok?'✓':'✕')+' '+escapeHtml(data.message||'Receiver test completed')+(data.status?'<br>HTTP '+data.status:'')+'</div>';}catch(e){box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';}
+ const box=document.getElementById('pbTestResult');
+ box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
+ try{
+   const r=await fetch('/api/health',{cache:'no-store'});
+   const data=await r.json().catch(()=>({}));
+   const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
+   box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
+     (ok?'✓ Postback receiver is online and database is ready.':'✕ Postback receiver check failed.')+
+     '<br>HTTP '+r.status+(data.error?'<br>'+escapeHtml(data.error):'')+
+     '</div>';
+ }catch(e){
+   box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';
+ }
 }
 async function delOffer(id){try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}catch(e){showToast(e.message);}}
 async function toggleOffer(id){try{const o=state.offers.find(x=>x.id===id);if(!o)return;await apiCall('/api/offers',{action:'status',id,status:o.status==='active'?'paused':'active'});await syncServerOffers();render();}catch(e){showToast(e.message);}}
