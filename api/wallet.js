@@ -1,5 +1,5 @@
-import {db,auth,json} from './_db.js';
-import {notifyUser} from './_notify.js';
+import {db,auth,json} from '../backend/_db.js';
+import {notifyUser} from '../backend/_notify.js';
 export default async function handler(req,res){
  try{
   const me=await auth(req);
