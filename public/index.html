@@ -1201,16 +1201,20 @@ function buildTrackLink(id){
 }
 
 // payments
-function requestWd(){
+async function requestWd(){
   const amt=Number(document.getElementById('wdAmt').value||0);
   const number=document.getElementById('wdNumber').value.trim();
   const method=document.getElementById('wdMethod').value;
-  const me=currentUserId(); const w=walletOf(me);
+  const w=walletOf(currentUserId());
   if(amt<=0||amt>w.withdrawal){alert('Enter a valid amount');return;}
   if(!number){alert('Please add your bKash/Nagad/Rocket number');return;}
-  w.withdrawal-=amt; w.pending+=amt;
-  state.withdrawals.push({id:uid(),user:me,amount:amt,method,number,status:'pending',date:now()});
-  save(); render();
+  try{
+    await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:number});
+    await loadServerWallet();
+    await syncServerWithdrawals();
+    showToast('Withdrawal request submitted');
+    render();
+  }catch(e){showToast(e.message||'Withdrawal failed');}
 }
 async function cancelWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'cancelled'});await loadServerWallet();showToast('Withdrawal cancelled');render();}catch(e){showToast(e.message);}}
 async function approveWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'approved'});await syncServerWithdrawals();showToast('Withdrawal approved');render();}catch(e){showToast(e.message);}}
@@ -1292,7 +1296,7 @@ async function apiCall(path,body,method='POST'){
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
-async function syncServerWithdrawals(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/wallet',{action:'list'});if(d.withdrawals)state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at}));save();}catch(e){}}async function refreshServerSecurity(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/security?kind=s2s',null,'GET');if(d.logs)state.s2sLogs=d.logs;save();if(state.nav==='security'&&state.sub==='s2s')render();}catch(e){}}
+async function syncServerWithdrawals(){try{const d=await apiCall('/api/wallet',{action:'list'});if(d.withdrawals)state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at}));save();}catch(e){}}async function refreshServerSecurity(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/security?kind=s2s',null,'GET');if(d.logs)state.s2sLogs=d.logs;save();if(state.nav==='security'&&state.sub==='s2s')render();}catch(e){}}
 async function restoreServerSession(){
  const t=apiToken(); if(!t)return;
  try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.serverUser=d.user;state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await refreshServerStats();state.nav='dashboard';render();loadServerWallet();}}
@@ -1301,13 +1305,13 @@ async function restoreServerSession(){
 const legacyDoLogin=doLogin;
 doLogin=async function(){
  const identifier=document.getElementById('authLoginId').value.trim(),password=document.getElementById('authLoginPw').value;
- try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();checkAndShowNotice();}
+ try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyDoSignup=doSignup;
 doSignup=async function(){
  const username=document.getElementById('authSuUser').value.trim(),email=document.getElementById('authSuEmail').value.trim(),phone=document.getElementById('authSuPhone').value.trim(),password=document.getElementById('authSuPw').value;
- try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();}
+ try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyLogout=logout;
