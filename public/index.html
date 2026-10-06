@@ -250,6 +250,13 @@ const T={
 };
 function t(k){ return (T[state.lang]&&T[state.lang][k]) || T.en[k] || k; }
 function toggleLang(){ state.lang = state.lang==='en'?'bn':'en'; save(); render(); }
+function walletOf(id){
+  const w=(state.userWallets&&state.userWallets[id])||{};
+  const main=Number(w.main??w.balance??0);
+  const withdrawal=Number(w.withdrawal??w.balance??main);
+  const pending=Number(w.pending??0);
+  return {main,withdrawal,pending};
+}
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
 function showAuthTab(t){ state.authTab=t; state.authError=''; save(); render(); }
