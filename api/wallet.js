@@ -1,4 +1,5 @@
 import {db,auth,json} from './_db.js';
+import {notifyUser} from './_notify.js';
 export default async function handler(req,res){
  try{
   const me=await auth(req); if(!me)return json(res,401,{ok:false,message:'Unauthorized'});
@@ -33,6 +34,21 @@ export default async function handler(req,res){
     await db('wallets?user_id=eq.'+encodeURIComponent(wd.user_id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({balance:Number(w.balance)+Number(wd.amount),pending:Math.max(0,Number(w.pending)-Number(wd.amount)),updated_at:new Date().toISOString()})});
    }
    const updated=(await db('withdrawals?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:next,updated_at:new Date().toISOString()})}))[0];
+   if(next==='approved')await notifyUser(wd.user_id,'Withdrawal approved','Your TrackNest withdrawal of 
+  }
+  return json(res,403,{ok:false,message:'Forbidden'});
+ }catch(e){return json(res,500,{ok:false,message:e.message});}
+}+Number(wd.amount).toFixed(2)+' has been approved.');
+   if(next==='rejected')await notifyUser(wd.user_id,'Withdrawal rejected','Your TrackNest withdrawal of 
+  }
+  return json(res,403,{ok:false,message:'Forbidden'});
+ }catch(e){return json(res,500,{ok:false,message:e.message});}
+}+Number(wd.amount).toFixed(2)+' was rejected and returned to your balance.');
+   if(next==='cancelled')await notifyUser(wd.user_id,'Withdrawal cancelled','Your TrackNest withdrawal of 
+  }
+  return json(res,403,{ok:false,message:'Forbidden'});
+ }catch(e){return json(res,500,{ok:false,message:e.message});}
+}+Number(wd.amount).toFixed(2)+' was cancelled.');
    return json(res,200,{ok:true,withdrawal:updated});
   }
   return json(res,403,{ok:false,message:'Forbidden'});
