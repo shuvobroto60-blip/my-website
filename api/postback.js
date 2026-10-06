@@ -22,7 +22,9 @@ export default async function handler(req,res){
  try{
   const input=req.method==='GET'?req.query:(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
   const expected=process.env.POSTBACK_TOKEN;
-  if(expected&&!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
+  const testExpected=process.env.POSTBACK_TEST_TOKEN;
+  const testAuthorized=Boolean(testExpected&&safeEqual(input.test_token,testExpected));
+  if(expected&&!safeEqual(input.token,expected)&&!testAuthorized)return json(res,401,{ok:false,message:'Invalid postback token'});
 
   const clickId=String(input.click_id||input.clickid||input.subid||'').trim();
   const payout=Number(input.payout||0);
