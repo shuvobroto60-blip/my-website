@@ -222,6 +222,9 @@ if(!state.statsRange) state.statsRange={from:'',to:''};
 if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
 if(state.userSearch===undefined) state.userSearch='';
 if(state.legalOpen===undefined) state.legalOpen='';
+// Production authentication is server-side; never persist plaintext demo credentials in the browser.
+state.accounts=[];
+try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
 state.users.forEach(u=>{ if(!u.status) u.status='active'; if(!u.subRole) u.subRole='none'; if(!u.device) u.device='Unknown device'; });
 function generatePublicUserId(){
   const used=new Set(state.users.map(u=>String(u.publicId||'')).filter(x=>/^\d{5}$/.test(x)));
