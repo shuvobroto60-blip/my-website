@@ -51,22 +51,55 @@ export default async function handler(req,res){
   }))[0];
 
   if(click.user_id&&status==='approved'&&payout>0){
-   let credited=false;
-   let lastBalance=0;
-   for(let attempt=0;attempt<3&&!credited;attempt++){
-    const w=(await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&select=*'))[0];
-    if(!w)break;
-    const current=Number(w.balance||0);
-    lastBalance=current;
-    const next=current+payout;
-    const updated=await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&balance=eq.'+encodeURIComponent(current),{
-     method:'PATCH',headers:{Prefer:'return=representation'},
-     body:JSON.stringify({balance:next,updated_at:new Date().toISOString()})
+   const supabaseUrl=process.env.SUPABASE_URL;
+   const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
+   if(!supabaseUrl||!serviceKey)return json(res,500,{ok:false,message:'Wallet credit service is not configured',click_id:clickId});
+
+   const creditResponse=await fetch(supabaseUrl.replace(/\\/$/,'')+'/rest/v1/rpc/process_wallet_credit',{
+    method:'POST',
+    headers:{
+     apikey:serviceKey,
+     Authorization:'Bearer '+serviceKey,
+     'Content-Type':'application/json'
+    },
+    body:JSON.stringify({
+     p_click_id:clickId,
+     p_user_id:click.user_id,
+     p_amount:payout,
+     p_conversion_id:conversion?.id||null
+    })
+   });
+
+   const creditText=await creditResponse.text();
+   let creditResult=null;
+   try{creditResult=creditText?JSON.parse(creditText):null;}catch{}
+
+   if(!creditResponse.ok){
+    return json(res,409,{
+     ok:false,
+     message:'Wallet credit could not be completed; safely retry the same postback',
+     click_id:clickId,
+     error:creditResult?.message||creditResult?.hint||creditText||'Wallet credit failed'
     });
-    if(updated.length){credited=true;break;}
-    if(attempt<2)await new Promise(resolve=>setTimeout(resolve,50*(attempt+1)));
    }
-   if(!credited)return json(res,409,{ok:false,message:'Wallet credit could not be completed; safely retry the same postback',click_id:clickId,balance:lastBalance});
+
+   if(!creditResult?.ok){
+    return json(res,409,{ok:false,message:'Wallet credit was not confirmed; safely retry the same postback',click_id:clickId});
+   }
+
+   return json(res,200,{
+    ok:true,
+    message:creditResult.duplicate?'Postback already credited':'Postback received and wallet credited',
+    click_id:clickId,
+    status,
+    payout,
+    attributed:true,
+    duplicate:Boolean(creditResult.duplicate),
+    credited:Boolean(creditResult.credited),
+    conversion_id:conversion?.id||null,
+    ledger_id:creditResult.ledger_id||null,
+    balance_after:creditResult.balance_after
+   });
   }
 
   return json(res,200,{ok:true,message:'Postback received',click_id:clickId,status,payout,attributed:true,conversion_id:conversion?.id||null});
