@@ -8,6 +8,7 @@ export default async function handler(req,res){
   const input=req.method==='GET'?(req.query||{}):(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
   const expected=process.env.POSTBACK_TOKEN;
   if(expected&&!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
-  return json(res,200,{ok:true,message:'Postback auth layer OK'});
+  const click=(await db('clicks?click_id=eq.PBTEST20261007A&select=*'))[0];
+  return json(res,200,{ok:true,message:'DB lookup OK',found:Boolean(click)});
  }catch(e){return json(res,500,{ok:false,message:e.message||'Server error'});}
 }
