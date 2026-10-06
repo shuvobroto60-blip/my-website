@@ -1397,6 +1397,43 @@ window.addEventListener('error',e=>{
   }
 });
 window.addEventListener('unhandledrejection',()=>{});
+async function restoreServerSession(){
+  const token=apiToken();
+  if(!token){ state.session=null; return; }
+  try{
+    const d=await apiCall('/api/auth',{action:'me'});
+    if(!d.user){
+      localStorage.removeItem(API_TOKEN_KEY);
+      state.session=null;
+      state.serverUser=null;
+      render();
+      return;
+    }
+    state.session={userId:d.user.id};
+    state.serverUser=d.user;
+    state.impersonating=null;
+    await syncServerUsers();
+    await syncServerOffers();
+    await syncServerWithdrawals();
+    await loadServerWallet();
+    render();
+    checkAndShowNotice();
+  }catch(e){
+    localStorage.removeItem(API_TOKEN_KEY);
+    state.session=null;
+    state.serverUser=null;
+    state.impersonating=null;
+    render();
+  }
+}
+async function refreshServerSecurity(){
+  try{
+    const d=await apiCall('/api/security?kind=s2s',null,'GET');
+    if(d.ok) state.serverSecurity=d.logs||[];
+    if(state.nav==='security' && state.sub==='s2s') render();
+  }catch(e){}
+}
+
 restoreServerSession();
 
 render();
