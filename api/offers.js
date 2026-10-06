@@ -16,8 +16,9 @@ export default async function handler(req,res){
     for(const s of seed){await db('offers',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:crypto.randomUUID(),...s})});}
     rows=await db('offers?select=*&order=created_at.asc&limit=1000');
    }
-   return json(res,200,{ok:true,offers:rows});
+   const memberships=await db('offer_memberships?user_id=eq.'+encodeURIComponent(me.id)+'&select=offer_id'); const joined=new Set(memberships.map(x=>String(x.offer_id))); return json(res,200,{ok:true,offers:rows.map(o=>({...o,joined:joined.has(String(o.id))}))});
   }
+  if(b.action==='join'){const offerId=String(b.id||'');if(!offerId)return json(res,400,{ok:false,message:'Offer id required'});await db('offer_memberships',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:me.id,offer_id:offerId})});return json(res,200,{ok:true});}
   if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
   if(b.action==='create'){
    if(!b.name||!b.url)return json(res,400,{ok:false,message:'Offer name and URL are required'});
