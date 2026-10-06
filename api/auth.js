@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import {db,hashPassword,verifyPassword,token,tokenHash,publicId,json} from '../backend/_db.js';
 
 const clean=(v,max=160)=>String(v??'').trim().slice(0,max);
@@ -23,7 +24,7 @@ export default async function handler(req,res){
    if(!/^[A-Za-z0-9_.-]{3,40}$/.test(username)||!/^\S+@\S+\.\S+$/.test(email)||!/^[0-9+ -]{8,25}$/.test(phone)||password.length<6||password.length>200)return json(res,400,{ok:false,message:'Invalid signup details'});
    const e=await db('users?or=(username.eq.'+encodeURIComponent(username)+',email.eq.'+encodeURIComponent(email)+')&select=id');
    if(e.length)return json(res,409,{ok:false,message:'Username or email already exists'});
-   const u=(await db('users',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({public_id:await publicId(),username,email,phone,name:username,password_hash:hashPassword(password),role:'user',status:'active',sub_role:'none'})}))[0];
+   const u=(await db('users',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),public_id:await publicId(),username,email,phone,name:username,password_hash:hashPassword(password),role:'user',status:'active',sub_role:'none'})}))[0];
    await db('wallets',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:u.id,balance:0,pending:0,paid:0})});
    const t=token();
    await db('sessions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({token_hash:tokenHash(t),user_id:u.id,expires_at:new Date(Date.now()+2592000000).toISOString()})});
@@ -39,7 +40,7 @@ export default async function handler(req,res){
    if(adminMatch){
     u=(await db('users?username=eq.'+encodeURIComponent(id)+'&select=*'))[0];
     if(!u){
-     u=(await db('users',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({public_id:await publicId(),username:id,email:process.env.ADMIN_EMAIL||'admin@tracknest.com',name:'Administrator',password_hash:hashPassword(pw),role:'admin',status:'active',sub_role:'none'})}))[0];
+     u=(await db('users',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),public_id:await publicId(),username:id,email:process.env.ADMIN_EMAIL||'admin@tracknest.com',name:'Administrator',password_hash:hashPassword(pw),role:'admin',status:'active',sub_role:'none'})}))[0];
     }else if(u.role!=='admin'||u.status!=='active'||!verifyPassword(pw,u.password_hash)){
      u=(await db('users?id=eq.'+encodeURIComponent(u.id),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({password_hash:hashPassword(pw),role:'admin',status:'active',sub_role:'none'})}))[0];
     }
