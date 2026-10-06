@@ -1262,7 +1262,8 @@ async function buildTrackLink(id){
     const link=location.origin+d.url;
     state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
     const safe=link.replace(/'/g,"\\'");
-    if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Your secure tracking URL</div><input readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(\\''+safe+'\\');showToast(\\'Link copied\\')">Copy</span><span class="btn2" onclick="window.open(\\''+safe+'\\',\\'_blank\\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are cryptographically signed and passed through to click/conversion attribution.</div>';
+    const jsLink=JSON.stringify(link);
+    if(box)box.innerHTML=`<div class="text-xs mb-1" style="color:var(--muted)">Your secure tracking URL</div><input readonly value="${escapeHtml(link)}" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(${jsLink});showToast('Link copied')">Copy</span><span class="btn2" onclick="window.open(${jsLink},'_blank')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are cryptographically signed and passed through to click/conversion attribution.</div>`;
   }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">Could not sign link: '+escapeHtml(e.message)+'</div>';showToast(e.message);}
 }
 
