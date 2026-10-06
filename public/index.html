@@ -149,6 +149,39 @@ if(!state || !Array.isArray(state.users) || !Array.isArray(state.offers) || !Arr
   state=seed();
   try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
 }
+// Recover older/incomplete local state objects before the first render.
+if(!Array.isArray(state.users)) state.users=[];
+if(!Array.isArray(state.offers)) state.offers=[];
+if(!Array.isArray(state.accounts)) state.accounts=[];
+if(!state.userWallets || typeof state.userWallets!=='object') state.userWallets={};
+if(!state.clicksByDay || typeof state.clicksByDay!=='object') state.clicksByDay=seed().clicksByDay;
+if(!Array.isArray(state.withdrawals)) state.withdrawals=[];
+if(!Array.isArray(state.chatGlobal)) state.chatGlobal=[];
+if(!state.dms || typeof state.dms!=='object') state.dms={};
+if(!Array.isArray(state.notices)) state.notices=[];
+if(!Array.isArray(state.referrals)) state.referrals=[];
+if(!Array.isArray(state.conversions)) state.conversions=[];
+if(!Array.isArray(state.s2sLogs)) state.s2sLogs=[];
+if(!Array.isArray(state.fraudLogs)) state.fraudLogs=[];
+if(!Array.isArray(state.auditLog)) state.auditLog=[];
+if(!Array.isArray(state.faqs)) state.faqs=[];
+if(!Array.isArray(state.tickets)) state.tickets=[];
+if(!state.offerFilter || typeof state.offerFilter!=='object') state.offerFilter={q:'',category:'',country:'',device:''};
+if(!state.statsRange || typeof state.statsRange!=='object') state.statsRange={from:'',to:''};
+if(!state.theme) state.theme='dark';
+if(!state.nav) state.nav='dashboard';
+if(state.sub===undefined) state.sub='';
+if(state.authTab===undefined) state.authTab='login';
+if(state.authError===undefined) state.authError='';
+if(state.antiFraud===undefined) state.antiFraud=true;
+if(!state.lastClick || typeof state.lastClick!=='object') state.lastClick={};
+if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+if(!state.lang) state.lang='en';
+if(state.bellOpen===undefined) state.bellOpen=false;
+if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
+if(state.userSearch===undefined) state.userSearch='';
+if(state.legalOpen===undefined) state.legalOpen='';
+try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
 if(state.sidebarOpen===undefined) state.sidebarOpen=!isMobile();
 if(!state.theme) state.theme='dark';
 if(state.antiFraud===undefined) state.antiFraud=true;
