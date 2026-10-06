@@ -690,7 +690,7 @@ async function runAdminTestConversion(){
  if(!box)return;
  box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Running QA click → conversion → wallet test…</div>';
  try{
-  const d=await apiCall('/api/test-conversion',{payout:1});
+  const d=await apiCall('/api/payments',{action:'test_conversion',payout:1});
   await syncServerOffers(); await loadServerWallet(); await refreshServerStats();
   box.innerHTML='<div class="text-xs mt-2" style="color:var(--ok)">✓ Test conversion completed: +$'+Number(d.payout).toFixed(2)+' credited.<br>Click ID: '+escapeHtml(d.click_id)+'</div>';
   showToast('QA conversion completed'); render();
