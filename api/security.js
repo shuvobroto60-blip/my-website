@@ -1,4 +1,4 @@
-import {db,auth,json} from './_db.js';
+import {db,auth,json} from '../backend/_db.js';
 export default async function handler(req,res){
  try{const me=await auth(req);if(!me||me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
  const kind=String(req.query.kind||'s2s');
