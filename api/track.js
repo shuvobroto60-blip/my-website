@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import {db,json} from './_db.js';
+import {db,json} from '../backend/_db.js';
 export default async function handler(req,res){
  try{
   const q=req.query||{},userId=String(q.user_id||''),offerId=String(q.offer_id||'');
