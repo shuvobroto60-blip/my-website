@@ -83,6 +83,15 @@
 <div id="legalHost"></div>
 
 <script>
+window.addEventListener('error',function(e){
+  var m='TrackNest JS error: '+(e.message||'Unknown error')+' @ line '+(e.lineno||'?')+', col '+(e.colno||'?');
+  var d=document.createElement('div'); d.id='bootError'; d.style='position:fixed;inset:16px;z-index:99999;background:#24121a;color:#fff;border:1px solid #fb7185;border-radius:14px;padding:18px;font:14px system-ui;white-space:pre-wrap;overflow:auto'; d.textContent=m+(e.error&&e.error.stack?'\n\n'+e.error.stack:''); document.body.appendChild(d);
+});
+window.addEventListener('unhandledrejection',function(e){
+  var d=document.createElement('div'); d.style='position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;background:#24121a;color:#fff;border:1px solid #fb7185;border-radius:14px;padding:14px;font:14px system-ui'; d.textContent='TrackNest promise error: '+(e.reason&&e.reason.message||e.reason||'Unknown'); document.body.appendChild(d);
+});
+</script>
+<script>
 const LS_KEY='tracknest_state_v3';
 const uid=()=>Math.random().toString(36).slice(2,9);
 const now=()=>new Date().toISOString();
