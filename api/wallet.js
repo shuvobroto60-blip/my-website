@@ -20,8 +20,8 @@ export default async function handler(req,res){
    return json(res,201,{ok:true,withdrawal:wd});
   }
   if(b.action==='list'){
-   if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
-   return json(res,200,{ok:true,withdrawals:await db('withdrawals?select=*&order=created_at.desc&limit=200')});
+   const q=me.role==='admin'?'withdrawals?select=*&order=created_at.desc&limit=200':'withdrawals?user_id=eq.'+encodeURIComponent(me.id)+'&select=*&order=created_at.desc&limit=200';
+   return json(res,200,{ok:true,withdrawals:await db(q)});
   }
   if(b.action==='update'){
    if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
