@@ -18,7 +18,9 @@ export default async function handler(req,res){
   const clickId=String(input.click_id||input.clickid||input.subid||'').trim(), payout=Number(input.payout||0), status=String(input.status||input.conv_status||'approved');
   if(!clickId)return json(res,400,{ok:false,message:'click_id is required'});
   const click=(await db('clicks?click_id=eq.'+encodeURIComponent(clickId)+'&select=*'))[0];
-  const row={token:String(input.token||''),click_id:clickId,payout:Number.isFinite(payout)?payout:0,status,query:req.method==='GET'?input:{},body:req.method==='POST'?input:{},received_at:new Date().toISOString()};
+  const existing=(await db('conversions?click_id=eq.'+encodeURIComponent(clickId)+'&select=id,status,payout&limit=1'))[0];
+  if(existing)return json(res,200,{ok:true,message:'Postback already processed',click_id:clickId,status:existing.status,payout:Number(existing.payout||0),duplicate:true});
+  const row={token:'',click_id:clickId,payout:Number.isFinite(payout)?payout:0,status,query:req.method==='GET'?input:{},body:req.method==='POST'?input:{},received_at:new Date().toISOString()};
   if(!await supabaseInsert(row))return json(res,503,{ok:false,message:'Postback receiver is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel.'});
   if(click){await db('conversions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({user_id:click.user_id,click_id:clickId,offer_id:click.offer_id,payout:row.payout,status,sub1:click.sub1,sub2:click.sub2,sub3:click.sub3,sub4:click.sub4,sub5:click.sub5,sub6:click.sub6,sub7:click.sub7,sub8:click.sub8,raw:input})});if(click.user_id&&status==='approved'&&row.payout>0){const w=(await db('wallets?user_id=eq.'+click.user_id+'&select=*'))[0];if(w)await db('wallets?user_id=eq.'+click.user_id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({balance:Number(w.balance)+row.payout,updated_at:new Date().toISOString()})});}return json(res,200,{ok:true,message:'Postback received',click_id:clickId,status,payout:row.payout,attributed:Boolean(click)});
  }catch(e){return json(res,500,{ok:false,message:e.message||'Server error'});}
