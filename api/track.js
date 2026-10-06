@@ -20,8 +20,11 @@ export default async function handler(req,res){
    if(!offer)return json(res,404,{ok:false,message:'Offer not found or inactive'});
    if(!offer.url||!/^https?:\\/\\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
    const subs=Array.from({length:8},(_,i)=>clean(q['sub'+(i+1)],500));
-   const sig=hmac(canonical(me.id,offerId,subs));
+   const clickId=clean(q.click_id||q.clickid||'',120);
+   if(clickId&&!/^[A-Za-z0-9._:-]{6,120}$/.test(clickId))return json(res,400,{ok:false,message:'Invalid click_id'});
+   const sig=hmac(canonical(me.id,offerId,subs,clickId));
    const params=new URLSearchParams({user_id:me.id,offer_id:offerId,sig});
+   if(clickId)params.set('click_id',clickId);
    subs.forEach((v,i)=>{if(v)params.set('sub'+(i+1),v);});
    return json(res,200,{ok:true,url:'/api/track?'+params.toString(),click_url:params.toString()});
   }
@@ -33,9 +36,11 @@ export default async function handler(req,res){
   if(!offer.url||!/^https?:\\/\\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
 
   const subs=Array.from({length:8},(_,i)=>clean(q['sub'+(i+1)],500));
-  const expectedSig=hmac(canonical(userId,offerId,subs)); const validSig=Buffer.byteLength(sig)===Buffer.byteLength(expectedSig)&&crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expectedSig)); if(!userId || !sig || !process.env.TRACKING_SIGNING_SECRET || !validSig)return json(res,403,{ok:false,message:'Invalid or unsigned tracking link'});
+  const requestedClickId=clean(q.click_id||q.clickid||'',120);
+  if(requestedClickId&&!/^[A-Za-z0-9._:-]{6,120}$/.test(requestedClickId))return json(res,400,{ok:false,message:'Invalid click_id'});
+  const expectedSig=hmac(canonical(userId,offerId,subs,requestedClickId)); const validSig=Buffer.byteLength(sig)===Buffer.byteLength(expectedSig)&&crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expectedSig)); if(!userId || !sig || !process.env.TRACKING_SIGNING_SECRET || !validSig)return json(res,403,{ok:false,message:'Invalid or unsigned tracking link'});
 
-  let clickId=clean(q.click_id||q.clickid||'',120);
+  let clickId=requestedClickId;
   if(!clickId)clickId=crypto.randomBytes(12).toString('hex');
   if(!/^[A-Za-z0-9._:-]{6,120}$/.test(clickId))return json(res,400,{ok:false,message:'Invalid click_id'});
   const exists=(await db('clicks?click_id=eq.'+encodeURIComponent(clickId)+'&select=id'))[0];
