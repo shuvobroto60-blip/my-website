@@ -250,6 +250,30 @@ const T={
 };
 function t(k){ return (T[state.lang]&&T[state.lang][k]) || T.en[k] || k; }
 function toggleLang(){ state.lang = state.lang==='en'?'bn':'en'; save(); render(); }
+function currentUserId(){ return state.impersonating || state.session?.userId || ''; }
+function sessionRole(){
+  const id=state.session?.userId;
+  const u=state.users.find(x=>x.id===id);
+  return u?.role || state.serverUser?.role || state.role || 'user';
+}
+function effRole(){ return state.impersonating ? 'user' : sessionRole(); }
+function userName(id){
+  const u=state.users.find(x=>x.id===id);
+  return u?.name || u?.username || (id==='admin'?'Admin':'User');
+}
+function userPublicId(id){
+  const u=state.users.find(x=>x.id===id);
+  return String(u?.publicId || '');
+}
+function threadKey(a,b){ return [String(a||''),String(b||'')].sort().join(':'); }
+function unreadCountFor(me,other){
+  const arr=state.dms?.[threadKey(me,other)] || [];
+  return arr.filter(m=>m.from!==me && !m.seen).length;
+}
+function notifUnreadCount(){
+  const me=currentUserId();
+  return Array.isArray(state.notices) ? state.notices.filter(n=>!(n.dismissedBy||[]).includes(me)).length : 0;
+}
 function walletOf(id){
   const w=(state.userWallets&&state.userWallets[id])||{};
   const main=Number(w.main??w.balance??0);
