@@ -1145,7 +1145,7 @@ async function testPostback(){
 }
 async function delOffer(id){try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}catch(e){showToast(e.message);}}
 async function toggleOffer(id){try{const o=state.offers.find(x=>x.id===id);if(!o)return;await apiCall('/api/offers',{action:'status',id,status:o.status==='active'?'paused':'active'});await syncServerOffers();render();}catch(e){showToast(e.message);}}
-function joinOffer(id){const o=state.offers.find(x=>x.id===id);if(!o)return;o.joined=true;save();render();setNav('offers','active');}
+async function joinOffer(id){try{await apiCall('/api/offers',{action:'join',id});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}catch(e){showToast(e.message);}}
 async function getLink(id){
  const o=state.offers.find(x=>x.id===id);if(!o)return;const me=currentUserId(),key=me+'_'+id,last=state.lastClick[key]||0;
  if(state.antiFraud&&Date.now()-last<15000){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Please wait a few seconds before generating another link for this offer.</div></div>';return;}
@@ -1246,7 +1246,7 @@ async function apiCall(path,body,method='POST'){
  const d=await r.json().catch(()=>({ok:false,message:'Invalid server response'})); if(!r.ok) throw new Error(d.message||'Request failed'); return d;
 }
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
-async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(state.offers.find(x=>String(x.id)===String(o.id)&&x.joined))}));save();}catch(e){}}
+async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
 async function syncServerWithdrawals(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/wallet',{action:'list'});if(d.withdrawals)state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at}));save();}catch(e){}}
 async function restoreServerSession(){
