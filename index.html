@@ -86,6 +86,31 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
 @media(max-width:850px){.auth-shell{display:block;padding:12px;min-height:100dvh;background:linear-gradient(145deg,#07111f,#0f2430)}.auth-left{display:none!important}.auth-right{display:flex;align-items:flex-start;justify-content:center;width:100%;min-height:calc(100dvh - 24px);padding:8px 0 24px}.auth-card{width:100%;max-width:520px;padding:22px 18px;border-radius:18px;margin:0 auto;box-shadow:0 18px 45px rgba(0,0,0,.28)}.auth-card h2{font-size:24px;line-height:1.2}.auth-card .auth-sub{margin-bottom:18px;line-height:1.45}.auth-tabs{margin-bottom:18px}.auth-tab{min-height:44px;display:flex;align-items:center;justify-content:center}.auth-card input{margin-bottom:11px!important;font-size:16px!important;padding:13px 14px!important}.auth-submit{font-size:16px}.auth-links{flex-wrap:wrap;gap:8px}}
 @media(max-width:380px){.auth-shell{padding:8px}.auth-right{min-height:calc(100dvh - 16px);padding-top:4px}.auth-card{width:100%;padding:18px 14px;border-radius:16px}.auth-card h2{font-size:22px}}
 @media(pointer:coarse){.auth-card input,.auth-submit,.auth-tab{min-height:48px}}
+
+/* Mobile dashboard interaction layer */
+@media(max-width:767px){
+  html,body{height:100%;overflow:hidden}
+  #app{height:100%;overflow:hidden}
+  .main{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:82px!important;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
+  .sidebar{z-index:200!important;width:min(86vw,320px)!important;max-width:320px!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .sidebar.open{transform:translateX(0)!important}
+  .sidebar .navitem,.sidebar .subitem,.sidebar .btn2,.sidebar .switch,.sidebar [onclick],.topbar [onclick]{touch-action:manipulation!important;cursor:pointer!important;-webkit-tap-highlight-color:transparent}
+  .navitem{min-height:48px!important;padding:12px 14px!important;font-size:15px!important}
+  .subitem{min-height:44px!important;padding:11px 14px 11px 42px!important;font-size:14px!important}
+  .backdrop{z-index:190!important;touch-action:none}
+  .bottomnav{z-index:180!important;min-height:64px!important;padding-bottom:env(safe-area-inset-bottom,0px)!important;box-shadow:0 -5px 18px rgba(0,0,0,.12)}
+  .bottomnav-item{min-height:64px!important;padding:8px 2px 7px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important;font-size:10px!important}
+  .bottomnav-item div:first-child{font-size:20px!important;line-height:1.1}
+  .topbar,.main [onclick],.main button,.main .btn,.main .btn2,.main input,.main select,.main textarea{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .main .btn,.main .btn2,button{min-height:42px}
+  .card{max-width:100%;overflow-x:auto}
+  table{min-width:620px}
+}
+@media(max-width:420px){
+  .topbar{padding-left:10px!important;padding-right:10px!important}
+  .topbar .text-right{display:none!important}
+  .main{padding-bottom:78px!important}
+}
 </style>
 </head>
 <body>
