@@ -1,9 +1,0 @@
-import crypto from 'node:crypto';
-export function cfg(){const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error('Supabase environment variables are missing');return{url:url.replace(/\/$/,''),key};}
-export async function db(path,opt={}){const c=cfg();const r=await fetch(c.url+'/rest/v1/'+path,{...opt,headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',...(opt.headers||{})}});const t=await r.text();let b={};try{b=t?JSON.parse(t):{}}catch{b={}}if(!r.ok)throw new Error(b.message||('Supabase '+r.status));return b;}
-export function hashPassword(p){const salt=crypto.randomBytes(16).toString('hex');return salt+':'+crypto.scryptSync(p,salt,64).toString('hex');}
-export function verifyPassword(p,s){const [salt,h]=String(s||'').split(':');if(!salt||!h)return false;const a=crypto.scryptSync(p,salt,64),b=Buffer.from(h,'hex');return a.length===b.length&&crypto.timingSafeEqual(a,b);}
-export function token(){return crypto.randomBytes(32).toString('hex');} export function tokenHash(t){return crypto.createHash('sha256').update(t).digest('hex');}
-export async function auth(req){const h=String(req.headers.authorization||'');if(!h.startsWith('Bearer '))return null;const q=await db('sessions?token_hash=eq.'+encodeURIComponent(tokenHash(h.slice(7)))+'&select=user_id,expires_at');const s=q[0];if(!s||new Date(s.expires_at)<new Date())return null;const u=(await db('users?id=eq.'+s.user_id+'&select=id,public_id,username,email,name,phone,role,status'))[0];return u&&u.status==='active'?u:null;}
-export async function publicId(){for(let i=0;i<50;i++){const n=String(10000+crypto.randomInt(90000));if(!(await db('users?public_id=eq.'+n+'&select=id')).length)return n;}throw new Error('User ID allocation failed');}
-export function json(res,status,data){res.status(status).json(data);}
