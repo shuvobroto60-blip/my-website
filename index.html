@@ -1499,9 +1499,24 @@ async function refreshDMChat(){try{const d=await apiCall('/api/chat?kind=dm&user
 setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
 const legacyRequestWd=requestWd;
 requestWd=async function(){
- const amt=Number(document.getElementById('wdAmt').value||0),account=document.getElementById('wdNumber').value.trim(),method=document.getElementById('wdMethod').value;
- if(amt<=0||!account)return alert('Enter a valid amount and account number');
- try{await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:account});showToast('Withdrawal request submitted');await loadServerWallet();}catch(e){showToast(e.message);}
+ const amt=Number(document.getElementById('wdAmt')?.value||0);
+ const account=(document.getElementById('wdNumber')?.value||'').trim();
+ const method=document.getElementById('wdMethod')?.value||'bKash';
+ const w=walletOf(currentUserId());
+ if(!Number.isFinite(amt)||amt<=0)return showToast('Enter a valid withdrawal amount');
+ if(amt>Number(w.withdrawal||0))return showToast('Withdrawal amount exceeds your available balance');
+ if(!account)return showToast('Please enter your bKash/Nagad/Rocket number');
+ const btn=document.querySelector('[onclick="requestWd()"]');
+ if(btn?.dataset.busy==='1')return;
+ setActionBusy(btn,true,'Submitting…');
+ try{
+   await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:account});
+   await loadServerWallet();
+   await syncServerWithdrawals();
+   showToast('Withdrawal request submitted');
+   render();
+ }catch(e){showToast(e.message||'Withdrawal failed');}
+ finally{setActionBusy(btn,false,'Request Payment');}
 };
 
 window.addEventListener('error',e=>{
