@@ -51,15 +51,22 @@ export default async function handler(req,res){
   }))[0];
 
   if(click.user_id&&status==='approved'&&payout>0){
-   const w=(await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&select=*'))[0];
-   if(w){
-    const next=Number(w.balance||0)+payout;
-    const updated=await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&balance=eq.'+encodeURIComponent(Number(w.balance||0)),{
+   let credited=false;
+   let lastBalance=0;
+   for(let attempt=0;attempt<3&&!credited;attempt++){
+    const w=(await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&select=*'))[0];
+    if(!w)break;
+    const current=Number(w.balance||0);
+    lastBalance=current;
+    const next=current+payout;
+    const updated=await db('wallets?user_id=eq.'+encodeURIComponent(click.user_id)+'&balance=eq.'+encodeURIComponent(current),{
      method:'PATCH',headers:{Prefer:'return=representation'},
      body:JSON.stringify({balance:next,updated_at:new Date().toISOString()})
     });
-    if(!updated.length)return json(res,409,{ok:false,message:'Wallet changed during conversion; retry postback',click_id:clickId});
+    if(updated.length){credited=true;break;}
+    if(attempt<2)await new Promise(resolve=>setTimeout(resolve,50*(attempt+1)));
    }
+   if(!credited)return json(res,409,{ok:false,message:'Wallet credit could not be completed; safely retry the same postback',click_id:clickId,balance:lastBalance});
   }
 
   return json(res,200,{ok:true,message:'Postback received',click_id:clickId,status,payout,attributed:true,conversion_id:conversion?.id||null});
