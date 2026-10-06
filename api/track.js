@@ -33,7 +33,7 @@ export default async function handler(req,res){
   if(!offer.url||!/^https?:\\/\\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
 
   const subs=Array.from({length:8},(_,i)=>clean(q['sub'+(i+1)],500));
-  if(!userId || !sig || !process.env.TRACKING_SIGNING_SECRET || !crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(hmac(canonical(userId,offerId,subs)))))return json(res,403,{ok:false,message:'Invalid or unsigned tracking link'});
+  const expectedSig=hmac(canonical(userId,offerId,subs)); const validSig=Buffer.byteLength(sig)===Buffer.byteLength(expectedSig)&&crypto.timingSafeEqual(Buffer.from(sig),Buffer.from(expectedSig)); if(!userId || !sig || !process.env.TRACKING_SIGNING_SECRET || !validSig)return json(res,403,{ok:false,message:'Invalid or unsigned tracking link'});
 
   let clickId=clean(q.click_id||q.clickid||'',120);
   if(!clickId)clickId=crypto.randomBytes(12).toString('hex');
