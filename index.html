@@ -140,7 +140,48 @@ function seed(){
     statsRange:{from:'',to:''}, emailSmsEnabled:true,
   };
 }
-let state = JSON.parse(localStorage.getItem(LS_KEY)||'null') || seed();
+let state = null;
+try{
+  const raw=localStorage.getItem(LS_KEY);
+  state=raw?JSON.parse(raw):null;
+}catch(e){ state=null; }
+if(!state || !Array.isArray(state.users) || !Array.isArray(state.offers) || !Array.isArray(state.accounts)){
+  state=seed();
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+}
+// Recover older/incomplete local state objects before the first render.
+if(!Array.isArray(state.users)) state.users=[];
+if(!Array.isArray(state.offers)) state.offers=[];
+if(!Array.isArray(state.accounts)) state.accounts=[];
+if(!state.userWallets || typeof state.userWallets!=='object') state.userWallets={};
+if(!state.clicksByDay || typeof state.clicksByDay!=='object') state.clicksByDay=seed().clicksByDay;
+if(!Array.isArray(state.withdrawals)) state.withdrawals=[];
+if(!Array.isArray(state.chatGlobal)) state.chatGlobal=[];
+if(!state.dms || typeof state.dms!=='object') state.dms={};
+if(!Array.isArray(state.notices)) state.notices=[];
+if(!Array.isArray(state.referrals)) state.referrals=[];
+if(!Array.isArray(state.conversions)) state.conversions=[];
+if(!Array.isArray(state.s2sLogs)) state.s2sLogs=[];
+if(!Array.isArray(state.fraudLogs)) state.fraudLogs=[];
+if(!Array.isArray(state.auditLog)) state.auditLog=[];
+if(!Array.isArray(state.faqs)) state.faqs=[];
+if(!Array.isArray(state.tickets)) state.tickets=[];
+if(!state.offerFilter || typeof state.offerFilter!=='object') state.offerFilter={q:'',category:'',country:'',device:''};
+if(!state.statsRange || typeof state.statsRange!=='object') state.statsRange={from:'',to:''};
+if(!state.theme) state.theme='dark';
+if(!state.nav) state.nav='dashboard';
+if(state.sub===undefined) state.sub='';
+if(state.authTab===undefined) state.authTab='login';
+if(state.authError===undefined) state.authError='';
+if(state.antiFraud===undefined) state.antiFraud=true;
+if(!state.lastClick || typeof state.lastClick!=='object') state.lastClick={};
+if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+if(!state.lang) state.lang='en';
+if(state.bellOpen===undefined) state.bellOpen=false;
+if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
+if(state.userSearch===undefined) state.userSearch='';
+if(state.legalOpen===undefined) state.legalOpen='';
+try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
 if(state.sidebarOpen===undefined) state.sidebarOpen=!isMobile();
 if(!state.theme) state.theme='dark';
 if(state.antiFraud===undefined) state.antiFraud=true;
@@ -181,6 +222,9 @@ if(!state.statsRange) state.statsRange={from:'',to:''};
 if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
 if(state.userSearch===undefined) state.userSearch='';
 if(state.legalOpen===undefined) state.legalOpen='';
+// Production authentication is server-side; never persist plaintext demo credentials in the browser.
+state.accounts=[];
+try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
 state.users.forEach(u=>{ if(!u.status) u.status='active'; if(!u.subRole) u.subRole='none'; if(!u.device) u.device='Unknown device'; });
 function generatePublicUserId(){
   const used=new Set(state.users.map(u=>String(u.publicId||'')).filter(x=>/^\d{5}$/.test(x)));
@@ -206,6 +250,37 @@ const T={
 };
 function t(k){ return (T[state.lang]&&T[state.lang][k]) || T.en[k] || k; }
 function toggleLang(){ state.lang = state.lang==='en'?'bn':'en'; save(); render(); }
+function currentUserId(){ return state.impersonating || state.session?.userId || ''; }
+function sessionRole(){
+  const id=state.session?.userId;
+  const u=state.users.find(x=>x.id===id);
+  return u?.role || state.serverUser?.role || state.role || 'user';
+}
+function effRole(){ return state.impersonating ? 'user' : sessionRole(); }
+function userName(id){
+  const u=state.users.find(x=>x.id===id);
+  return u?.name || u?.username || (id==='admin'?'Admin':'User');
+}
+function userPublicId(id){
+  const u=state.users.find(x=>x.id===id);
+  return String(u?.publicId || '');
+}
+function threadKey(a,b){ return [String(a||''),String(b||'')].sort().join(':'); }
+function unreadCountFor(me,other){
+  const arr=state.dms?.[threadKey(me,other)] || [];
+  return arr.filter(m=>m.from!==me && !m.seen).length;
+}
+function notifUnreadCount(){
+  const me=currentUserId();
+  return Array.isArray(state.notices) ? state.notices.filter(n=>!(n.dismissedBy||[]).includes(me)).length : 0;
+}
+function walletOf(id){
+  const w=(state.userWallets&&state.userWallets[id])||{};
+  const main=Number(w.main??w.balance??0);
+  const withdrawal=Number(w.withdrawal??w.balance??main);
+  const pending=Number(w.pending??0);
+  return {main,withdrawal,pending};
+}
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
 function showAuthTab(t){ state.authTab=t; state.authError=''; save(); render(); }
@@ -610,6 +685,19 @@ function offerFilterBar(){
     <select onchange="updateOfferFilter('device',this.value)"><option value="">All Devices</option>${opt(devices,f.device)}</select>
   </div>`;
 }
+async function runAdminTestConversion(){
+ const box=document.getElementById('qaTestResult');
+ if(!box)return;
+ box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Running QA click → conversion → wallet test…</div>';
+ try{
+  const d=await apiCall('/api/payments',{action:'test_conversion',payout:1});
+  await syncServerOffers(); await loadServerWallet(); await refreshServerStats();
+  box.innerHTML='<div class="text-xs mt-2" style="color:var(--ok)">✓ Test conversion completed: +$'+Number(d.payout).toFixed(2)+' credited.<br>Click ID: '+escapeHtml(d.click_id)+'</div>';
+  showToast('QA conversion completed'); render();
+ }catch(e){
+  box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">✕ QA test failed: '+escapeHtml(e.message)+'</div>';
+ }
+}
 function offersAllView(){
   const list=filteredOffers(state.offers);
   const rows=list.map(o=>`<tr>
@@ -623,6 +711,12 @@ function offersAllView(){
     <td class="whitespace-nowrap"><span class="btn2" onclick="toggleOffer('${o.id}')">${o.status==='active'?'Pause':'Activate'}</span> <span class="btn2" style="color:var(--danger)" onclick="delOffer('${o.id}')">Delete</span></td>
   </tr>`).join('');
   return `<div class="p-4 sm:p-8">
+    <div class="card p-4 sm:p-5 mb-5" style="border-color:var(--accent)">
+      <div class="font-semibold mb-1">Admin QA — Test Conversion</div>
+      <div class="text-xs" style="color:var(--muted)">Server test: click → approved conversion → wallet credit. Fixed QA payout: $1.00.</div>
+      <div class="mt-3"><span class="btn" onclick="runAdminTestConversion()">Run Test Conversion</span></div>
+      <div id="qaTestResult"></div>
+    </div>
     <div class="card p-4 sm:p-5 mb-5 flex items-center justify-between flex-wrap gap-3">
       <div>
         <div class="font-semibold">Anti-Fraud Protection</div>
@@ -772,47 +866,21 @@ function updateStatsRange(field,val){
 }
 function paymentView(){
   const er=effRole();
-  if(er==='admin'){
-    const rows=state.withdrawals.map(w=>`<tr>
-      <td>${userName(w.user)}</td><td>${fmt(w.amount)}</td><td>${w.method}</td><td>${w.number}</td>
-      <td><span class="pill" style="background:${w.status==='pending'?'rgba(251,191,36,.15)':w.status==='approved'?'rgba(74,222,128,.15)':'rgba(251,113,133,.15)'};color:${w.status==='pending'?'#FBBF24':w.status==='approved'?'var(--ok)':'var(--danger)'}">${w.status}</span></td>
-      <td class="whitespace-nowrap">${w.status==='pending'?`<span class="btn2" onclick="approveWd('${w.id}')">Approve</span> <span class="btn2" style="color:var(--danger)" onclick="rejectWd('${w.id}')">Reject</span>`:''} <span class="btn2" onclick="showInvoice('${w.id}')">Invoice</span></td>
-    </tr>`).join('');
-    return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
-      <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <div class="font-semibold">Payout Requests</div>
-        <span class="btn2" onclick="exportCSV('withdrawals')">⬇ Export CSV</span>
-      </div>
-      <div class="overflow-x-auto"><table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Number</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>
-    </div></div>`;
+  if(er==='admin'&&!state.impersonating){
+    const filter=state.payoutFilter||'pending';
+    let withdrawals=state.withdrawals.slice();
+    if(filter!=='all') withdrawals=withdrawals.filter(w=>w.status===filter);
+    const count=s=>state.withdrawals.filter(w=>w.status===s).length;
+    const rows=withdrawals.map(w=>{
+      const u=state.users.find(x=>x.id===w.user);
+      return '<tr><td><b>'+escapeHtml(u?.publicId||'-----')+'</b><div class="text-xs" style="color:var(--muted)">'+escapeHtml(userName(w.user))+'</div></td><td><b>'+fmt(w.amount)+'</b></td><td>'+escapeHtml(w.method)+'</td><td title="'+escapeHtml(w.number)+'">'+maskAccount(w.number)+'</td><td>'+payoutStatusPill(w.status)+'</td><td>'+(w.status==='pending'?'<span class="btn2" onclick="openManualPay(\''+String(w.id).replace(/'/g,"\\'")+'\')">💰 Pay</span> <span class="btn2" style="color:var(--danger)" onclick="rejectWd(\''+String(w.id).replace(/'/g,"\\'")+'\')">Reject</span>':'<span class="text-xs" style="color:var(--muted)">'+escapeHtml(w.paymentRef||'')+'</span>')+'</td></tr>';
+    }).join('');
+    return '<div class="p-4 sm:p-8"><div class="flex gap-3 flex-wrap mb-5">'+['pending','approved','rejected','all'].map(f=>'<span class="btn2" onclick="setPayoutFilter(\''+f+'\')">'+(f==='approved'?'Paid':f[0].toUpperCase()+f.slice(1))+(f==='pending'?' ('+count('pending')+')':'')+'</span>').join('')+'</div><div class="card p-4 sm:p-5"><div class="font-semibold mb-1">Manual Payout Management</div><div class="text-xs mb-4" style="color:var(--muted)">Pay users manually via bKash, Nagad or Rocket, then record the transaction reference.</div><div class="overflow-x-auto"><table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Action</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="color:var(--muted)">No withdrawal requests.</td></tr>')+'</tbody></table></div></div></div>';
   }
-  const me=currentUserId(); const w=walletOf(me);
-  const myReqs=state.withdrawals.filter(x=>x.user===me);
-  const rows=myReqs.map(r=>`<tr>
-    <td>${new Date(r.date).toLocaleDateString()}</td><td>${fmt(r.amount)}</td><td>${r.method}</td><td>${r.number}</td>
-    <td><span class="pill" style="background:${r.status==='pending'?'rgba(251,191,36,.15)':r.status==='approved'?'rgba(74,222,128,.15)':'rgba(251,113,133,.15)'};color:${r.status==='pending'?'#FBBF24':r.status==='approved'?'var(--ok)':'var(--danger)'}">${r.status}</span></td>
-    <td class="whitespace-nowrap">${r.status==='pending'?`<span class="btn2" style="color:var(--danger)" onclick="cancelWd('${r.id}')">Cancel</span>`:''} <span class="btn2" onclick="showInvoice('${r.id}')">Invoice</span></td>
-  </tr>`).join('');
-  return `<div class="p-4 sm:p-8">
-    <div class="flex gap-3 sm:gap-4 mb-5 flex-wrap">
-      ${statCard('Main Balance',fmt(w.main),'var(--accent)')}
-      ${statCard('Withdrawal Balance',fmt(w.withdrawal),'var(--accent2)')}
-      ${statCard('Pending Balance',fmt(w.pending),'#FBBF24')}
-    </div>
-    <div class="card p-4 sm:p-5 max-w-md mb-5">
-      <div class="font-semibold mb-3">Request Withdrawal</div>
-      <input id="wdAmt" type="number" placeholder="Amount ($)">
-      <select id="wdMethod" class="mt-2"><option>bKash</option><option>Nagad</option><option>Rocket</option></select>
-      <input id="wdNumber" class="mt-2" placeholder="Account number (e.g. 017XXXXXXXX)">
-      <div class="mt-3"><span class="btn" onclick="requestWd()">Send Request</span></div>
-    </div>
-    <div class="card p-4 sm:p-5">
-      <div class="font-semibold mb-3">My Requests</div>
-      <div class="overflow-x-auto"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Number</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan=6 style="color:var(--muted)">No requests yet.</td></tr>'}</tbody></table></div>
-    </div>
-  </div>`;
+  const me=currentUserId(),w=walletOf(me),my=state.withdrawals.filter(x=>x.user===me);
+  const rows=my.map(r=>'<tr><td>'+new Date(r.date).toLocaleDateString()+'</td><td><b>'+fmt(r.amount)+'</b></td><td>'+escapeHtml(r.method)+'</td><td>'+maskAccount(r.number)+'</td><td>'+payoutStatusPill(r.status)+'</td><td><span class="text-xs" style="color:var(--muted)">'+escapeHtml(r.paymentRef||'')+'</span></td></tr>').join('');
+  return '<div class="p-4 sm:p-8"><div class="flex gap-3 flex-wrap mb-5">'+statCard('Main Balance',fmt(w.main),'var(--accent)')+statCard('Pending Balance',fmt(w.pending),'#FBBF24')+'</div><div class="card p-4 sm:p-5 max-w-md mb-5"><div class="font-semibold mb-2">Request Manual Withdrawal</div><div class="text-xs mb-3" style="color:var(--muted)">Payments are processed manually by TrackNest admin.</div><input id="wdAmt" type="number" min="1" step="0.01" placeholder="Amount ($)"><select id="wdMethod" class="mt-2"><option>bKash</option><option>Nagad</option><option>Rocket</option></select><input id="wdNumber" class="mt-2" inputmode="numeric" placeholder="bKash/Nagad/Rocket number"><div class="mt-3"><span class="btn" onclick="requestWd()">Request Payment</span></div></div><div class="card p-4 sm:p-5"><div class="font-semibold mb-3">Withdrawal History</div><div class="overflow-x-auto"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Reference</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="color:var(--muted)">No requests yet.</td></tr>')+'</tbody></table></div></div></div>';
 }
-
 function toggleEmailSms(){ state.emailSmsEnabled=!state.emailSmsEnabled; save(); render(); }
 async function toggleUserStatus(id){const u=state.users.find(x=>x.id===id);if(!u)return;try{await apiCall('/api/users',{action:'status',userId:id,status:u.status==='active'?'suspended':'active'});await syncServerUsers();showToast('User status updated');render();}catch(e){showToast(e.message);}}
 async function setSubRole(id,val){try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('Sub-role updated');render();}catch(e){showToast(e.message);}}
@@ -1088,6 +1156,10 @@ function bottomNav(){
 }
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
+  if(!state.session || !apiToken()){
+    renderAuthScreen();
+    return;
+  }
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
   let body='';
   if(state.nav==='dashboard') body=dashboardView();
@@ -1095,27 +1167,46 @@ function render(){
     if(state.sub==='all' && effRole()==='admin') body=offersAllView();
     else if(state.sub==='active') body=offersActiveView();
     else body=offersAvailableView();
-  }
-  else if(state.nav==='statistics') body=statisticsView();
+  } else if(state.nav==='statistics') body=statisticsView();
   else if(state.nav==='users' && effRole()==='admin') body=usersView();
-  else if(state.nav==='security' && effRole()==='admin'){
-    body = state.sub==='fraud' ? securityFraudView() : state.sub==='audit' ? securityAuditView() : securityS2SView();
-  }
+  else if(state.nav==='security' && effRole()==='admin') body=state.sub==='fraud'?securityFraudView():state.sub==='audit'?securityAuditView():securityS2SView();
   else if(state.nav==='payment') body=paymentView();
   else if(state.nav==='chat') body=chatView();
   else if(state.nav==='support') body=supportView();
-  const shifted = state.sidebarOpen && !isMobile();
-  const backdrop = state.sidebarOpen && isMobile() ? `<div class="backdrop" onclick="toggleSidebar()"></div>` : '';
-  document.getElementById('app').innerHTML = `${sidebar()}${backdrop}
+  const shifted=state.sidebarOpen && !isMobile();
+  const backdrop=state.sidebarOpen && isMobile()?'<div class="backdrop" onclick="toggleSidebar()"></div>':'';
+  document.getElementById('app').innerHTML=`${sidebar()}${backdrop}
     <div class="main h-full overflow-y-auto" style="margin-left:${shifted?'270px':'0'}">
-      ${topbar(titleMap[state.nav]||'')}
-      <div>${body}</div>
-      ${bottomNav()}
-    </div>
-    <div id="invoiceHost"></div>`;
+      ${topbar(titleMap[state.nav]||'')}<div>${body}</div>${bottomNav()}
+    </div><div id="invoiceHost"></div>`;
   const cb=document.getElementById('chatBox'); if(cb) cb.scrollTop=cb.scrollHeight;
 }
 window.addEventListener('resize', ()=>{ render(); });
+
+function maskAccount(value){
+  const s=String(value||'');
+  return s.length<=4?'••••':'••••••'+s.slice(-4);
+}
+function payoutStatusPill(status){
+  const cfg={pending:['#FBBF24','Pending'],approved:['var(--ok)','Paid'],rejected:['var(--danger)','Rejected'],cancelled:['var(--muted)','Cancelled']};
+  const x=cfg[status]||cfg.pending;
+  return '<span class="pill" style="color:'+x[0]+'">'+x[1]+'</span>';
+}
+function setPayoutFilter(filter){state.payoutFilter=filter;save();render();}
+function openManualPay(id){
+  const w=state.withdrawals.find(x=>x.id===id); if(!w)return;
+  document.getElementById('invoiceHost').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeManualPay()"><div class="card p-6 w-full max-w-md"><div class="font-bold text-lg mb-1">Manual Payment</div><div class="text-xs mb-4" style="color:var(--muted)">'+escapeHtml(userName(w.user))+' · '+fmt(w.amount)+'</div><div class="p-3 rounded-lg mb-4" style="background:var(--panel2);border:1px solid var(--line)"><div class="text-xs" style="color:var(--muted)">Method</div><b>'+escapeHtml(w.method)+'</b><div class="text-xs mt-2" style="color:var(--muted)">Account</div><b>'+escapeHtml(w.number)+'</b></div><input id="manualPayRef" placeholder="Transaction / payment reference"><div class="flex gap-2 mt-4"><span class="btn" onclick="confirmManualPay(\''+String(id).replace(/'/g,"\\'")+'\')">✓ Mark as Paid</span><span class="btn2" onclick="closeManualPay()">Cancel</span></div><div class="text-xs mt-3" style="color:var(--muted)">Send the money manually first, then enter the transaction reference.</div></div></div>';
+}
+function closeManualPay(){document.getElementById('invoiceHost').innerHTML='';}
+async function confirmManualPay(id){
+  const ref=(document.getElementById('manualPayRef')?.value||'').trim();
+  if(!ref)return showToast('Payment reference is required');
+  try{await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});closeManualPay();await syncServerWithdrawals();await loadServerWallet();showToast('Payment marked as Paid');render();}catch(e){showToast(e.message||'Payment update failed');}
+}
+async function rejectWd(id){
+  if(!confirm('Reject this withdrawal? The amount will be returned to the user balance.'))return;
+  try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();await loadServerWallet();showToast('Withdrawal rejected and balance restored');render();}catch(e){showToast(e.message);}
+}
 
 // offers
 async function addOffer(){
@@ -1125,8 +1216,19 @@ async function addOffer(){
  try{await apiCall('/api/offers',payload);await syncServerOffers();showToast('Offer added');render();}catch(e){showToast(e.message);}
 }
 async function testPostback(){
- const box=document.getElementById('pbTestResult');box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Testing TrackNest receiver…</div>';
- try{const r=await fetch('/api/postback-test',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});const data=await r.json();box.innerHTML='<div class="text-xs mt-2" style="color:'+(data.ok?'var(--ok)':'var(--danger)')+'">'+(data.ok?'✓':'✕')+' '+escapeHtml(data.message||'Receiver test completed')+(data.status?'<br>HTTP '+data.status:'')+'</div>';}catch(e){box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';}
+ const box=document.getElementById('pbTestResult');
+ box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
+ try{
+   const r=await fetch('/api/health',{cache:'no-store'});
+   const data=await r.json().catch(()=>({}));
+   const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
+   box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
+     (ok?'✓ Postback receiver is online and database is ready.':'✕ Postback receiver check failed.')+
+     '<br>HTTP '+r.status+(data.error?'<br>'+escapeHtml(data.error):'')+
+     '</div>';
+ }catch(e){
+   box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';
+ }
 }
 async function delOffer(id){try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}catch(e){showToast(e.message);}}
 async function toggleOffer(id){try{const o=state.offers.find(x=>x.id===id);if(!o)return;await apiCall('/api/offers',{action:'status',id,status:o.status==='active'?'paused':'active'});await syncServerOffers();render();}catch(e){showToast(e.message);}}
@@ -1138,27 +1240,38 @@ function getLink(id){
  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Daily cap reached for this offer ('+o.dailyCap+'/day).</div></div>';return;}
  document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · server-side click ID</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
 }
-function buildTrackLink(id){
- const o=state.offers.find(x=>x.id===id);if(!o)return;const me=currentUserId(),key=me+'_'+id;
- if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached');return;}
- const q=new URLSearchParams({user_id:me,offer_id:o.id,url:o.url});
- for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)q.set('sub'+i,v);}
- const link=location.origin+'/api/track?'+q.toString();state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
- const safe=link.replace(/'/g,"\\'");
- document.getElementById('generatedTrackLink').innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Your tracking URL</div><input readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(\''+safe+'\');showToast(\'Link copied\')">Copy</span><span class="btn2" onclick="window.open(\''+safe+'\',\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are passed through to the click record and conversion attribution.</div>';
+async function buildTrackLink(id){
+  const o=state.offers.find(x=>x.id===id);if(!o)return;
+  const me=currentUserId(),key=me+'_'+id;
+  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached');return;}
+  const subs={};
+  for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
+  const box=document.getElementById('generatedTrackLink');
+  if(box)box.innerHTML='<div class="text-xs" style="color:var(--muted)">Signing secure tracking URL…</div>';
+  try{
+    const d=await apiCall('/api/track',{action:'sign',offer_id:o.id,...subs});
+    const link=location.origin+d.url;
+    state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
+    const safe=link.replace(/'/g,"\\'");
+    if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Your secure tracking URL</div><input readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(\\''+safe+'\\');showToast(\\'Link copied\\')">Copy</span><span class="btn2" onclick="window.open(\\''+safe+'\\',\\'_blank\\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are cryptographically signed and passed through to click/conversion attribution.</div>';
+  }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">Could not sign link: '+escapeHtml(e.message)+'</div>';showToast(e.message);}
 }
 
 // payments
-function requestWd(){
+async function requestWd(){
   const amt=Number(document.getElementById('wdAmt').value||0);
   const number=document.getElementById('wdNumber').value.trim();
   const method=document.getElementById('wdMethod').value;
-  const me=currentUserId(); const w=walletOf(me);
+  const w=walletOf(currentUserId());
   if(amt<=0||amt>w.withdrawal){alert('Enter a valid amount');return;}
   if(!number){alert('Please add your bKash/Nagad/Rocket number');return;}
-  w.withdrawal-=amt; w.pending+=amt;
-  state.withdrawals.push({id:uid(),user:me,amount:amt,method,number,status:'pending',date:now()});
-  save(); render();
+  try{
+    await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:number});
+    await loadServerWallet();
+    await syncServerWithdrawals();
+    showToast('Withdrawal request submitted');
+    render();
+  }catch(e){showToast(e.message||'Withdrawal failed');}
 }
 async function cancelWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'cancelled'});await loadServerWallet();showToast('Withdrawal cancelled');render();}catch(e){showToast(e.message);}}
 async function approveWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'approved'});await syncServerWithdrawals();showToast('Withdrawal approved');render();}catch(e){showToast(e.message);}}
@@ -1240,22 +1353,25 @@ async function apiCall(path,body,method='POST'){
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
-async function syncServerWithdrawals(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/wallet',{action:'list'});if(d.withdrawals)state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at}));save();}catch(e){}}async function refreshServerSecurity(){if(effRole()!=='admin')return;try{const d=await apiCall('/api/security?kind=s2s',null,'GET');if(d.logs)state.s2sLogs=d.logs;save();if(state.nav==='security'&&state.sub==='s2s')render();}catch(e){}}
-async function restoreServerSession(){
- const t=apiToken(); if(!t)return;
- try{const d=await apiCall('/api/auth',{action:'me'}); if(d.user){state.serverUser=d.user;state.session={userId:d.user.id};state.role=d.user.role;await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await refreshServerStats();state.nav='dashboard';render();loadServerWallet();}}
- catch(e){localStorage.removeItem(API_TOKEN_KEY);state.session=null;}
+async function syncServerWithdrawals(){
+  try{
+    const d=await apiCall('/api/wallet',{action:'list'});
+    if(d.withdrawals){
+      state.withdrawals=d.withdrawals.map(w=>({id:w.id,user:w.user_id,amount:Number(w.amount),method:w.method,number:w.account_number,status:w.status,date:w.created_at,paymentRef:w.provider_ref||''}));
+      save();
+    }
+  }catch(e){console.error('Withdrawal sync failed:',e);}
 }
 const legacyDoLogin=doLogin;
 doLogin=async function(){
  const identifier=document.getElementById('authLoginId').value.trim(),password=document.getElementById('authLoginPw').value;
- try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();checkAndShowNotice();}
+ try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyDoSignup=doSignup;
 doSignup=async function(){
  const username=document.getElementById('authSuUser').value.trim(),email=document.getElementById('authSuEmail').value.trim(),phone=document.getElementById('authSuPhone').value.trim(),password=document.getElementById('authSuPw').value;
- try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();render();}
+ try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();}
  catch(e){state.authError=e.message;render();}
 };
 const legacyLogout=logout;
@@ -1274,6 +1390,13 @@ requestWd=async function(){
  try{await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:account});showToast('Withdrawal request submitted');await loadServerWallet();}catch(e){showToast(e.message);}
 };
 
+window.addEventListener('error',e=>{
+  const box=document.getElementById('app');
+  if(box && !box.innerHTML.trim()){
+    box.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0E1120;color:#E7E9F5;font-family:system-ui"><div style="max-width:560px;background:#161A2E;border:1px solid #2A2F4A;border-radius:16px;padding:24px"><h2 style="margin:0 0 10px">TrackNest loading error</h2><p style="color:#8A8FB3;margin:0 0 14px">Please refresh the page. If the problem continues, clear this site data and reopen TrackNest.</p><button onclick="localStorage.removeItem(LS_KEY);location.reload()" style="background:#5EEAD4;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer">Reset local app data</button></div></div>';
+  }
+});
+window.addEventListener('unhandledrejection',()=>{});
 restoreServerSession();
 
 render();
