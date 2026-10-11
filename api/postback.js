@@ -8,9 +8,10 @@ function normalizeStatus(v){const s=String(v||'approved').toLowerCase();if(['app
 async function recordPostback(req,input,clickId,payout,status){
  const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key)return;
+ const safeInput={...input};delete safeInput.token;
  try{
   await db('postbacks',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({
-   token:'',click_id:clickId,payout,status,query:req.method==='GET'?input:{},body:req.method==='POST'?input:{},received_at:new Date().toISOString()
+   token:'',click_id:clickId,payout,status,query:req.method==='GET'?safeInput:{},body:req.method==='POST'?safeInput:{},received_at:new Date().toISOString()
   })});
  }catch{/* Logging must not prevent conversion processing. */}
 }
