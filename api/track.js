@@ -3,7 +3,7 @@ import {db,json,auth} from '../backend/_db.js';
 
 const clean=(v,max=500)=>String(v??'').trim().slice(0,max);
 const hmac=(value)=>crypto.createHmac('sha256',String(process.env.TRACKING_SIGNING_SECRET||'')).update(value).digest('hex');
-const canonical=(userId,offerId,subs)=>[userId,offerId,...subs.map(v=>clean(v,500)||'')].join('|');
+const canonical=(userId,offerId,subs,clickId='')=>[userId,offerId,...subs.map(v=>clean(v,500)||''),clean(clickId,120)||''].join('|');
 
 export default async function handler(req,res){
  try{
