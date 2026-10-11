@@ -1228,10 +1228,34 @@ function bottomNav(){
   const items=[{k:'dashboard',sub:'',icon:'📊',label:t('dashboard')},{k:'offers',sub:'available',icon:'🎯',label:t('offers')},{k:'statistics',sub:'',icon:'📈',label:t('statistics')},{k:'payment',sub:'',icon:'💳',label:t('payment')},{k:'chat',sub:'',icon:'💬',label:t('chat')}];
   return `<div class="bottomnav">${items.map(it=>`<div class="bottomnav-item ${state.nav===it.k?'active':''}" onclick="setNav('${it.k}','${it.sub}')"><div style="font-size:16px">${it.icon}</div><div>${it.label}</div></div>`).join('')}</div>`;
 }
+function renderPublicPreview(){
+  const app=document.getElementById('app');
+  if(!app)return;
+  app.innerHTML=`<main style="min-height:100vh;background:radial-gradient(ellipse at top right,rgba(94,234,212,.12),transparent 38%),var(--bg);color:var(--txt);padding:clamp(20px,5vw,56px);font-family:ui-sans-serif,system-ui,sans-serif">
+    <div style="max-width:1120px;margin:0 auto">
+      <header style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:clamp(42px,8vh,84px)">
+        <div style="font-size:23px;font-weight:850;letter-spacing:-.7px"><span style="color:var(--accent)">◈</span> TrackNest</div>
+        <span style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)">Public preview</span>
+      </header>
+      <section style="max-width:760px;margin-bottom:42px">
+        <div style="color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px">Affiliate management, simplified</div>
+        <h1 style="font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:850">Your affiliate network. <span style="color:var(--accent)">One clear view.</span></h1>
+        <p style="font-size:clamp(16px,2vw,19px);line-height:1.75;color:var(--muted);max-width:650px;margin:0">Track offers, clicks, conversions and payouts from one workspace. The sign-in screen is temporarily hidden while the demo experience is being prepared.</p>
+      </section>
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin:30px 0 38px">
+        <article style="padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel)"><div style="font-size:26px;margin-bottom:18px">🎯</div><h2 style="font-size:17px;margin:0 0 9px">Offer Marketplace</h2><p style="font-size:14px;line-height:1.65;color:var(--muted);margin:0">Browse available campaigns and manage offer links.</p></article>
+        <article style="padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel)"><div style="font-size:26px;margin-bottom:18px">📈</div><h2 style="font-size:17px;margin:0 0 9px">Clicks & Conversions</h2><p style="font-size:14px;line-height:1.65;color:var(--muted);margin:0">Review performance and conversion activity.</p></article>
+        <article style="padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel)"><div style="font-size:26px;margin-bottom:18px">💳</div><h2 style="font-size:17px;margin:0 0 9px">Wallet & Payouts</h2><p style="font-size:14px;line-height:1.65;color:var(--muted);margin:0">View earnings and request manual withdrawals.</p></article>
+        <article style="padding:24px;border:1px solid var(--line);border-radius:18px;background:var(--panel)"><div style="font-size:26px;margin-bottom:18px">🛡️</div><h2 style="font-size:17px;margin:0 0 9px">Postback & Security</h2><p style="font-size:14px;line-height:1.65;color:var(--muted);margin:0">Keep server-to-server events and security signals organized.</p></article>
+      </section>
+      <footer style="padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px"><span>TrackNest © ${new Date().getFullYear()}</span><span>Demo preview · Authentication remains protected on the server</span></footer>
+    </div>
+  </main>`;
+}
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
   if(!state.session || !apiToken()){
-    renderAuthScreen();
+    renderPublicPreview();
     return;
   }
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
