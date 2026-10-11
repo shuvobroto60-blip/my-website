@@ -1,4 +1,4 @@
-import { db, auth, json } from '../backend/_db.js';
+import { db, auth, json, auditLog } from '../backend/_db.js';
 import { notifyUser } from '../backend/_notify.js';
 
 function normalizeWithdrawal(w) {
@@ -76,7 +76,8 @@ export default async function handler(req, res) {
             user_id: me.id, amount, method, account_details: { account_number: account }, status: 'pending'
           })
         }))[0];
-        return json(res, 201, { ok: true, withdrawal });
+        await auditLog(me.id,'withdrawal.requested',{withdrawal_id:withdrawal?.id,amount,method});
+        return json(res, 201, { ok: true, withdrawal: normalizeWithdrawal(withdrawal) });
       } catch (error) {
         await patchWallet(me.id, [['balance', oldBalance - amount], ['pending', oldPending + amount]], {
           balance: oldBalance, pending: oldPending
@@ -149,6 +150,7 @@ export default async function handler(req, res) {
         }))[0];
         if (!updated) throw new Error('Withdrawal was changed by another request');
 
+        await auditLog(me.id,'withdrawal.'+next,{withdrawal_id:id,user_id:withdrawal.user_id,amount,payment_ref:paymentRef||null});
         if (next === 'approved') {
           await notifyUser(withdrawal.user_id, 'Withdrawal paid',
             'Your TrackNest withdrawal of $' + amount.toFixed(2) + ' has been paid manually. Reference: ' + paymentRef);
