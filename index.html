@@ -1031,10 +1031,11 @@ function usersView(){
 function adminUserSearch(){ const el=document.getElementById('adminUserSearch'); state.userSearch=el?el.value.trim():''; save(); render(); }
 
 function securityS2SView(){
-  const rows=state.s2sLogs.slice().reverse().map(l=>`<tr>
-    <td>${new Date(l.time).toLocaleString()}</td><td>${l.offer}</td>
-    <td style="color:var(--muted)" class="max-w-[220px] truncate">${l.url}</td>
-    <td><span class="pill" style="background:rgba(74,222,128,.15);color:var(--ok)">${l.status}</span></td>
+  const logs=state.serverSecurity||[];
+  const rows=logs.map(l=>`<tr>
+    <td>${new Date(l.time).toLocaleString()}</td><td>${escapeHtml(l.offer||'Unknown')}</td>
+    <td style="color:var(--muted)" class="max-w-[220px] truncate">${escapeHtml(l.click_id||'—')}</td>
+    <td><span class="pill" style="background:rgba(74,222,128,.15);color:var(--ok)">${escapeHtml(l.status||'received')} · ${fmt(l.payout||0)}</span></td>
   </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No real postback hits received yet. Conversions appear here when an advertiser sends S2S data.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Raw S2S Postback Log</div>
