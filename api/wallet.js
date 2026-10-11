@@ -4,7 +4,7 @@ import { notifyUser } from '../backend/_notify.js';
 function normalizeWithdrawal(w) {
   const details = w?.account_details && typeof w.account_details === 'object' ? w.account_details : {};
   const note = String(w?.admin_note || '');
-  const match = note.match(/Manual payment reference:\s*(.+)$/i);
+  const match = note.match(/(?:Manual payment reference|Provider reference):\s*(.+)$/i);
   return { ...w, account_number: String(details.account_number || details.number || ''),
     provider_ref: match ? match[1].trim() : '', updated_at: w?.processed_at || w?.created_at };
 }
