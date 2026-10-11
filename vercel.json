@@ -1,14 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "has": [
-        { "type": "host", "value": "tracknest-live-.*\\.vercel\\.app" }
-      ],
-      "dest": "https://backend-riponkaku50-8247.vercel.app/api/$1"
-    },
-    { "handle": "filesystem" }
-  ]
+  "version": 2
 }
