@@ -34,6 +34,14 @@ export default async function handler(req,res){
  if(req.method!=='GET'&&req.method!=='POST'){res.setHeader('Allow','GET, POST');return json(res,405,{ok:false,message:'Method not allowed'});}
  try{
   const input=req.method==='GET'?(req.query||{}):(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
+  if(req.method==='GET' && input.health==='1'){
+   const configured=Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY);
+   const postbackConfigured=Boolean(process.env.POSTBACK_TOKEN);
+   let schemaReady=false,error=null;
+   if(configured){try{await db('users?select=id&limit=1');await db('offers?select=id&limit=1');await db('wallets?select=user_id&limit=1');schemaReady=true;}catch(e){error=String(e?.message||'Database health check failed').slice(0,200);}}
+   const ok=configured&&postbackConfigured&&schemaReady;
+   return json(res,ok?200:503,{ok,service:'tracknest',timestamp:new Date().toISOString(),supabaseConfigured:configured,postbackConfigured,schemaReady,error});
+  }
   const expected=process.env.POSTBACK_TOKEN;
   if(!expected)return json(res,503,{ok:false,message:'Postback authentication is not configured'});
   if(!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
