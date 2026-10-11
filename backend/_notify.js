@@ -14,7 +14,7 @@ export async function notifyUser(userId, subject, body) {
     // A notification delivery failure must never undo a completed wallet action.
   }
 
-  const u = (await db('users?id=eq.' + encodeURIComponent(userId) + '&select=email,phone'))[0];
+  let u; try { u = (await db('users?id=eq.' + encodeURIComponent(userId) + '&select=email,phone'))[0]; } catch (error) { return; }
   if (!u) return;
   const jobs = [];
   if (process.env.RESEND_API_KEY && u.email) {
