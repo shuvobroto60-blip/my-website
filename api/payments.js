@@ -9,11 +9,11 @@ export default async function handler(req,res){
    if(String(b.token||'')!==expected)return json(res,401,{ok:false,message:'Invalid webhook token'});
    const id=String(b.withdrawal_id||'');
    const status=String(b.status||'');
-   if(!id||!['processing','approved','rejected','cancelled'].includes(status))return json(res,400,{ok:false,message:'Invalid payment webhook'});
+   if(!id||!['approved','rejected','cancelled'].includes(status))return json(res,400,{ok:false,message:'Invalid payment webhook'});
    const wd=(await db('withdrawals?id=eq.'+encodeURIComponent(id)+'&select=*'))[0];
    if(!wd)return json(res,404,{ok:false,message:'Withdrawal not found'});
    if(wd.status!=='pending' && wd.status!==status)return json(res,409,{ok:false,message:'Withdrawal already settled'});
-   const updated=(await db('withdrawals?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status,admin_note:b.provider_ref?'Provider reference: '+String(b.provider_ref).slice(0,120):('Payment webhook status: '+status),processed_at:['approved','rejected','cancelled'].includes(status)?new Date().toISOString():null})}))[0];
+   const updated=(await db('withdrawals?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status,admin_note:b.provider_ref?'Provider reference: '+String(b.provider_ref).slice(0,120):('Payment webhook status: '+status),processed_at:new Date().toISOString()})}))[0];
    return json(res,200,{ok:true,withdrawal:updated});
   }
   const me=await auth(req);
@@ -29,7 +29,7 @@ export default async function handler(req,res){
    const conversion=(await db('conversions',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:me.id,click_id:clickId,offer_id:offerId,payout,status:'approved',sub1:'tracknest-test',sub2:'admin-qa',raw_data:{test:true,source:'TrackNest Admin QA',created_at:now}})}))[0];
    const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
    if(!url||!key)return json(res,503,{ok:false,message:'Wallet credit service is not configured'});
-   const creditResponse=await fetch(url.replace(/\\/$/,'')+'/rest/v1/rpc/process_wallet_credit',{
+   const creditResponse=await fetch(url.replace(/\/$/,'')+'/rest/v1/rpc/process_wallet_credit',{
     method:'POST',headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},
     body:JSON.stringify({p_click_id:clickId,p_user_id:me.id,p_amount:payout,p_conversion_id:conversion?.id||null})
    });
