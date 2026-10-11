@@ -399,6 +399,7 @@ function doSignup(){
 }
 function logout(){ state.session=null; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
 
+let authDraft = { username:'', email:'', phone:'', password:'' };
 function renderAuthScreen(){
   const err = state.authError ? `<div class="text-sm mb-3" style="color:var(--danger)">${state.authError}</div>` : '';
   const tabs = `<div class="flex rounded-lg overflow-hidden mb-5" style="border:1px solid var(--line)">
@@ -443,10 +444,10 @@ function renderAuthScreen(){
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
         <div class="auth-links"><a onclick="alert('Password reset will be connected to Supabase Auth in production.')">Forgot password?</a><span></span></div>
       ` : `
-        <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false">
-        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
-        <input id="authSuPhone" type="tel" inputmode="tel" placeholder="Phone number" autocomplete="tel">
-        <input id="authSuPw" type="password" placeholder="Password (minimum 6 characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
+        <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.username)}" oninput="authDraft.username=this.value">
+        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.email)}" oninput="authDraft.email=this.value">
+        <input id="authSuPhone" type="tel" inputmode="tel" placeholder="Phone number" autocomplete="tel" value="${escapeHtml(authDraft.phone)}" oninput="authDraft.phone=this.value">
+        <input id="authSuPw" type="password" placeholder="Password (minimum 6 characters)" autocomplete="new-password" value="${escapeHtml(authDraft.password)}" oninput="authDraft.password=this.value" onkeydown="if(event.key==='Enter')doSignup()">
         <button class="auth-submit" onclick="doSignup()">Create account</button>
       `}
       <div class="auth-note">By continuing, you agree to the platform terms and privacy policy.</div>
@@ -1485,7 +1486,7 @@ doLogin=async function(){
  if(btn?.dataset.busy==='1')return;
  if(!identifier||!password){state.authError='Username/email and password are required.';render();return;}
  setActionBusy(btn,true,'Signing in…');
- try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
+ try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);authDraft={username:'',email:'',phone:'',password:''};state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
  catch(e){state.authError=e.message;render();}
  finally{setActionBusy(btn,false,'Sign in');}
 };
