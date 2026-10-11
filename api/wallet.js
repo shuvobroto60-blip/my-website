@@ -1,6 +1,14 @@
 import { db, auth, json } from '../backend/_db.js';
 import { notifyUser } from '../backend/_notify.js';
 
+function normalizeWithdrawal(w) {
+  const details = w?.account_details && typeof w.account_details === 'object' ? w.account_details : {};
+  const note = String(w?.admin_note || '');
+  const match = note.match(/Manual payment reference:\s*(.+)$/i);
+  return { ...w, account_number: String(details.account_number || details.number || ''),
+    provider_ref: match ? match[1].trim() : '', updated_at: w?.processed_at || w?.created_at };
+}
+
 async function patchWallet(userId, filters, values) {
   const query = 'wallets?user_id=eq.' + encodeURIComponent(userId) +
     filters.map(([key, value]) => '&' + key + '=eq.' + encodeURIComponent(String(value))).join('');
@@ -65,7 +73,7 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { Prefer: 'return=representation' },
           body: JSON.stringify({
-            user_id: me.id, amount, method, account_number: account, status: 'pending'
+            user_id: me.id, amount, method, account_details: { account_number: account }, status: 'pending'
           })
         }))[0];
         return json(res, 201, { ok: true, withdrawal });
@@ -81,7 +89,7 @@ export default async function handler(req, res) {
       const query = me.role === 'admin'
         ? 'withdrawals?select=*&order=created_at.desc&limit=200'
         : 'withdrawals?user_id=eq.' + encodeURIComponent(me.id) + '&select=*&order=created_at.desc&limit=200';
-      return json(res, 200, { ok: true, withdrawals: await db(query) });
+      return json(res, 200, { ok: true, withdrawals: (await db(query)).map(normalizeWithdrawal) });
     }
 
     if (body.action === 'update') {
@@ -135,8 +143,8 @@ export default async function handler(req, res) {
           headers: { Prefer: 'return=representation' },
           body: JSON.stringify({
             status: next,
-            provider_ref: paymentRef || null,
-            updated_at: new Date().toISOString()
+            admin_note: next === 'approved' ? ('Manual payment reference: ' + paymentRef) : (next === 'rejected' ? 'Withdrawal rejected by admin' : 'Withdrawal cancelled by admin'),
+            processed_at: new Date().toISOString()
           })
         }))[0];
         if (!updated) throw new Error('Withdrawal was changed by another request');
@@ -151,7 +159,7 @@ export default async function handler(req, res) {
           await notifyUser(withdrawal.user_id, 'Withdrawal cancelled',
             'Your TrackNest withdrawal of $' + amount.toFixed(2) + ' was cancelled.');
         }
-        return json(res, 200, { ok: true, withdrawal: updated });
+        return json(res, 200, { ok: true, withdrawal: normalizeWithdrawal(updated) });
       } catch (error) {
         await patchWallet(withdrawal.user_id, rollbackFilters, rollbackValues).catch(() => {});
         throw error;
