@@ -1491,11 +1491,16 @@ doSignup=async function(){
  const username=document.getElementById('authSuUser')?.value.trim()||'',email=document.getElementById('authSuEmail')?.value.trim()||'',phone=document.getElementById('authSuPhone')?.value.trim()||'',password=document.getElementById('authSuPw')?.value||'';
  const btn=document.querySelector('.auth-card .auth-submit');
  if(btn?.dataset.busy==='1')return;
- if(!username||!email||!phone||!password){state.authError='All fields are required.';render();return;}
- if(password.length<6){state.authError='Password must be at least 6 characters.';render();return;}
+ if(!username||!email||!phone||!password){state.authError='Please fill in all four fields.';let e=document.querySelector('.auth-card .auth-error');if(!e){e=document.createElement('div');e.className='auth-error';document.querySelector('.auth-card .auth-tabs')?.insertAdjacentElement('afterend',e);}if(e)e.textContent=state.authError;return;}
+ if(password.length<6){state.authError='Password must be at least 6 characters.';let e=document.querySelector('.auth-card .auth-error');if(!e){e=document.createElement('div');e.className='auth-error';document.querySelector('.auth-card .auth-tabs')?.insertAdjacentElement('afterend',e);}if(e)e.textContent=state.authError;return;}
  setActionBusy(btn,true,'Creating account…');
  try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();}
- catch(e){state.authError=e.message;render();}
+ catch(e){
+  state.authError=e.message||'Registration failed.';
+  let error=document.querySelector('.auth-card .auth-error');
+  if(!error){error=document.createElement('div');error.className='auth-error';const tabs=document.querySelector('.auth-card .auth-tabs');if(tabs)tabs.insertAdjacentElement('afterend',error);}
+  if(error)error.textContent=state.authError;
+ }
  finally{setActionBusy(btn,false,'Create account');}
 };
 const legacyLogout=logout;
