@@ -61,7 +61,7 @@ export default async function handler(req,res){
   const duplicate=Boolean(conversion);
   if(conversion){
    // A pending conversion may receive its final advertiser status later.
-   if(conversion.status==='pending'&&status!=='pending'){
+   if(conversion.status!=='approved'&&status!=='pending'&&(conversion.status==='pending'||status==='approved')){
     conversion=(await db('conversions?id=eq.'+encodeURIComponent(conversion.id)+'&status=eq.pending',{
      method:'PATCH',headers:{Prefer:'return=representation'},
      body:JSON.stringify({status,payout,raw_data:input})
