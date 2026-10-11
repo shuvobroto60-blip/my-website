@@ -1330,7 +1330,7 @@ async function testPostback(){
  const box=document.getElementById('pbTestResult');
  box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
  try{
-   const r=await fetch('/api/health',{cache:'no-store'});
+   const r=await fetch('/api/postback?health=1',{cache:'no-store'});
    const data=await r.json().catch(()=>({}));
    const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
    box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
