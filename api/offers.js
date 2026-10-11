@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import {db,auth,json} from '../backend/_db.js';
+import {db,auth,json,auditLog} from '../backend/_db.js';
 export default async function handler(req,res){
  try{
   const me=await auth(req); if(!me)return json(res,401,{ok:false,message:'Unauthorized'});
@@ -21,10 +21,11 @@ export default async function handler(req,res){
    if(!b.name||!b.url||!/^https?:\\/\\//i.test(String(b.url)))return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});
    const payout=Number(b.payout||0);if(!Number.isFinite(payout)||payout<0)return json(res,400,{ok:false,message:'Offer payout must be a non-negative number'});
    const row=(await db('offers',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),name:String(b.name).slice(0,200),url:String(b.url),payout,category:String(b.category||'General'),country:String(b.country||'Any'),device:String(b.device||'Any'),daily_cap:b.dailyCap?Number(b.dailyCap):null,s2s:String(b.s2s||''),status:'active'})}))[0];
+   await auditLog(me.id,'offer.created',{offer_id:row?.id,name:row?.name});
    return json(res,201,{ok:true,offer:row});
   }
-  if(b.action==='status'){await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status:b.status==='paused'?'paused':'active'})});return json(res,200,{ok:true});}
-  if(b.action==='delete'){await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'DELETE'});return json(res,200,{ok:true});}
+  if(b.action==='status'){const status=b.status==='paused'?'paused':'active';await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status})});await auditLog(me.id,'offer.status_changed',{offer_id:b.id,status});return json(res,200,{ok:true});}
+  if(b.action==='delete'){await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'DELETE'});await auditLog(me.id,'offer.deleted',{offer_id:b.id});return json(res,200,{ok:true});}
   return json(res,400,{ok:false,message:'Unknown action'});
  }catch(e){return json(res,500,{ok:false,message:e.message});}
 }
