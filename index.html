@@ -110,6 +110,11 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
 /* Mobile dashboard interaction layer */
 @media(max-width:767px){
   html,body{height:100%;overflow:hidden}
+  /* Keep the auth screen scrollable while the phone keyboard is open. */
+  .auth-shell{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;padding-bottom:max(18px,env(safe-area-inset-bottom))!important}
+  .auth-right{min-height:0!important;padding-bottom:28px!important}
+  .auth-card{scroll-margin-top:16px!important;scroll-margin-bottom:24px!important}
+  .auth-card input{scroll-margin-block:24px!important}
   #app{height:100%;overflow:hidden}
   .main{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:82px!important;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
   .sidebar{z-index:200!important;width:min(86vw,320px)!important;max-width:320px!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
@@ -1264,7 +1269,12 @@ function render(){
     </div><div id="invoiceHost"></div>`;
   const cb=document.getElementById('chatBox'); if(cb) cb.scrollTop=cb.scrollHeight;
 }
-window.addEventListener('resize', ()=>{ render(); });
+let lastRenderedMobile=isMobile();
+window.addEventListener('resize', ()=>{
+  const nextMobile=isMobile();
+  // Mobile keyboards trigger resize events; do not rebuild the focused input DOM.
+  if(nextMobile!==lastRenderedMobile){lastRenderedMobile=nextMobile;render();}
+});
 
 function maskAccount(value){
   const s=String(value||'');
