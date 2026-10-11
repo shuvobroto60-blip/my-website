@@ -8,7 +8,7 @@ function normalizeStatus(v){const s=String(v||'approved').toLowerCase();if(['app
 async function supabaseInsert(row){
  const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!url||!key)return false;
- const r=await fetch(url.replace(/\\/$/,'')+'/rest/v1/postbacks',{
+ const r=await fetch(url.replace(/\/$/,'')+'/rest/v1/postbacks',{
   method:'POST',
   headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',Prefer:'return=minimal'},
   body:JSON.stringify(row)
@@ -55,7 +55,7 @@ export default async function handler(req,res){
    const serviceKey=process.env.SUPABASE_SERVICE_ROLE_KEY;
    if(!supabaseUrl||!serviceKey)return json(res,500,{ok:false,message:'Wallet credit service is not configured',click_id:clickId});
 
-   const creditResponse=await fetch(supabaseUrl.replace(/\\/$/,'')+'/rest/v1/rpc/process_wallet_credit',{
+   const creditResponse=await fetch(supabaseUrl.replace(/\/$/,'')+'/rest/v1/rpc/process_wallet_credit',{
     method:'POST',
     headers:{
      apikey:serviceKey,
