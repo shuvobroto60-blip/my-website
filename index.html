@@ -371,7 +371,13 @@ function walletOf(id){
 }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-function showAuthTab(t){ state.authTab=t; state.authError=''; save(); render(); }
+function showAuthTab(t){
+  const ids={authSuUser:'username',authSuEmail:'email',authSuPhone:'phone',authSuPw:'password'};
+  Object.entries(ids).forEach(([id,key])=>{const el=document.getElementById(id);if(el)authDraft[key]=el.value;});
+  state.authTab=t; state.authError=''; save();
+  window.__tracknestForceAuthRender=true;
+  try{render();}finally{window.__tracknestForceAuthRender=false;}
+}
 function doLogin(){
   const idf=document.getElementById('authLoginId').value.trim().toLowerCase();
   const pw=document.getElementById('authLoginPw').value;
@@ -1246,6 +1252,10 @@ function bottomNav(){
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
   if(!state.session || !apiToken()){
+    const focused=document.activeElement;
+    // Ignore incidental renders while an auth input is being edited. This protects
+    // mobile focus/keyboard from storage syncs or other background UI updates.
+    if(!window.__tracknestForceAuthRender && focused && focused.matches && focused.matches('.auth-card input')) return;
     renderAuthScreen();
     return;
   }
@@ -1441,6 +1451,17 @@ function editMsg(key,msgId){
 
 async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
+function showAuthErrorInline(message){
+  state.authError=message;
+  let error=document.querySelector('.auth-card .auth-error');
+  if(!error){
+    error=document.createElement('div');error.className='auth-error';
+    const tabs=document.querySelector('.auth-card .auth-tabs');
+    if(tabs)tabs.insertAdjacentElement('afterend',error);
+  }
+  if(error)error.textContent=message;
+}
+
 /* TrackNest production interaction helpers */
 function setActionBusy(el,busy,label){
   if(!el)return;
@@ -1484,10 +1505,10 @@ doLogin=async function(){
  const identifier=document.getElementById('authLoginId')?.value.trim()||'',password=document.getElementById('authLoginPw')?.value||'';
  const btn=document.querySelector('.auth-card .auth-submit');
  if(btn?.dataset.busy==='1')return;
- if(!identifier||!password){state.authError='Username/email and password are required.';render();return;}
+ if(!identifier||!password){showAuthErrorInline('Username/email and password are required.');return;}
  setActionBusy(btn,true,'Signing in…');
  try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);authDraft={username:'',email:'',phone:'',password:''};state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
- catch(e){state.authError=e.message;render();}
+ catch(e){showAuthErrorInline(e.message||'Sign in failed.');}
  finally{setActionBusy(btn,false,'Sign in');}
 };
 const legacyDoSignup=doSignup;
