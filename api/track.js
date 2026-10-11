@@ -18,7 +18,7 @@ export default async function handler(req,res){
    if(!offerId)return json(res,400,{ok:false,message:'offer_id is required'});
    const offer=(await db('offers?id=eq.'+encodeURIComponent(offerId)+'&status=eq.active&select=id,url,status'))[0];
    if(!offer)return json(res,404,{ok:false,message:'Offer not found or inactive'});
-   if(!offer.url||!/^https?:\\/\\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
+   if(!offer.url||!/^https?:\/\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
    const subs=Array.from({length:8},(_,i)=>clean(q['sub'+(i+1)],500));
    const clickId=clean(q.click_id||q.clickid||'',120);
    if(clickId&&!/^[A-Za-z0-9._:-]{6,120}$/.test(clickId))return json(res,400,{ok:false,message:'Invalid click_id'});
@@ -33,7 +33,7 @@ export default async function handler(req,res){
   if(!offerId)return json(res,400,{ok:false,message:'offer_id is required'});
   const offer=(await db('offers?id=eq.'+encodeURIComponent(offerId)+'&status=eq.active&select=id,url,status'))[0];
   if(!offer)return json(res,404,{ok:false,message:'Offer not found or inactive'});
-  if(!offer.url||!/^https?:\\/\\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
+  if(!offer.url||!/^https?:\/\//i.test(String(offer.url)))return json(res,500,{ok:false,message:'Offer destination URL is invalid'});
 
   const subs=Array.from({length:8},(_,i)=>clean(q['sub'+(i+1)],500));
   const requestedClickId=clean(q.click_id||q.clickid||'',120);
