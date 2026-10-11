@@ -7,3 +7,18 @@ export function token(){return crypto.randomBytes(32).toString('hex');} export f
 export async function auth(req){const h=String(req.headers.authorization||'');if(!h.startsWith('Bearer '))return null;const q=await db('sessions?token_hash=eq.'+encodeURIComponent(tokenHash(h.slice(7)))+'&select=user_id,expires_at');const s=q[0];if(!s||new Date(s.expires_at)<new Date())return null;const u=(await db('users?id=eq.'+s.user_id+'&select=id,public_id,username,email,name,phone,role,status,sub_role'))[0];return u&&u.status==='active'?u:null;}
 export async function publicId(){for(let i=0;i<50;i++){const n=String(10000+crypto.randomInt(90000));if(!(await db('users?public_id=eq.'+n+'&select=id')).length)return n;}throw new Error('User ID allocation failed');}
 export function json(res,status,data){res.status(status).json(data);}
+export async function auditLog(actorId, action, details = {}) {
+  try {
+    await db('audit_logs', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        actor_id: actorId || null,
+        action: String(action || 'unknown').slice(0, 240),
+        details: details && typeof details === 'object' ? details : { value: String(details) }
+      })
+    });
+  } catch (error) {
+    // Auditing should not break the underlying user action.
+  }
+}
