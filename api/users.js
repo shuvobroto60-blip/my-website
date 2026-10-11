@@ -1,4 +1,4 @@
-import {db,auth,json} from '../backend/_db.js';
+import {db,auth,json,auditLog} from '../backend/_db.js';
 export default async function handler(req,res){
  try{
   const me=await auth(req);
@@ -8,6 +8,7 @@ export default async function handler(req,res){
    if(!b.userId)return json(res,400,{ok:false,message:'userId required'});
    const patch=b.action==='status'?{status:String(b.status||'active')}:{sub_role:String(b.subRole||'none')};
    const rows=await db('users?id=eq.'+encodeURIComponent(b.userId),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(patch)});
+   await auditLog(me.id, b.action==='status'?'user.status_changed':'user.subrole_changed',{target_user_id:b.userId,changes:patch});
    return json(res,200,{ok:true,user:rows[0]||null});
   }
   const rows=await db('users?select=id,public_id,username,email,name,phone,role,status,sub_role,created_at&order=created_at.desc&limit=1000');
