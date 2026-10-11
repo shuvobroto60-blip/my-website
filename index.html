@@ -443,9 +443,9 @@ function renderAuthScreen(){
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
         <div class="auth-links"><a onclick="alert('Password reset will be connected to Supabase Auth in production.')">Forgot password?</a><span></span></div>
       ` : `
-        <input id="authSuUser" placeholder="Username" autocomplete="username">
-        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email">
-        <input id="authSuPhone" placeholder="Phone number" autocomplete="tel">
+        <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false">
+        <input id="authSuPhone" type="tel" inputmode="tel" placeholder="Phone number" autocomplete="tel">
         <input id="authSuPw" type="password" placeholder="Password (minimum 6 characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
         <button class="auth-submit" onclick="doSignup()">Create account</button>
       `}
