@@ -1081,24 +1081,23 @@ function suggestFAQ(val){
     🤖 Did this already answer it? <b>${match.q}</b><br><span style="color:var(--muted)">${match.a}</span>
   </div>` : '';
 }
-function raiseTicket(){
-  const subject=document.getElementById('tkSubject').value.trim();
-  const message=document.getElementById('tkMessage').value.trim();
-  if(!subject||!message){ alert('Subject and message are required'); return; }
-  state.tickets.push({id:uid(),userId:currentUserId(),subject,message,status:'open',replies:[],date:now()});
-  save(); render(); showToast('Ticket submitted');
+async function raiseTicket(){
+  const subject=document.getElementById('tkSubject')?.value.trim()||'';
+  const message=document.getElementById('tkMessage')?.value.trim()||'';
+  if(!subject||!message){showToast('Subject and message are required');return;}
+  try{
+    const d=await apiCall('/api/support',{action:'create',subject,message});
+    state.tickets.unshift({...d.ticket,userId:d.ticket.userId||currentUserId(),replies:[]});
+    save();render();showToast('Support ticket submitted');
+  }catch(e){showToast(e.message||'Could not submit ticket');}
 }
-function replyTicket(id){
-  const el=document.getElementById('tkReply_'+id); if(!el)return;
-  const text=el.value.trim(); if(!text)return;
-  const tk=state.tickets.find(t=>t.id===id); if(!tk)return;
-  tk.replies.push({from:currentUserId(),text,time:now()});
-  tk.status='answered';
-  logAudit(`Replied to ticket "${tk.subject}"`);
-  save(); render();
+async function replyTicket(id){
+  const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;
+  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');}
+  catch(e){showToast(e.message||'Reply failed');}
 }
-function closeTicket(id){ const tk=state.tickets.find(t=>t.id===id); if(tk){ tk.status='closed'; save(); render(); } }
-function reopenTicket(id){ const tk=state.tickets.find(t=>t.id===id); if(tk){ tk.status='open'; save(); render(); } }
+async function closeTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();}catch(e){showToast(e.message);}}
+async function reopenTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();}catch(e){showToast(e.message);}}
 function ticketPill(status){
   const c = status==='open'?{bg:'rgba(251,191,36,.15)',fg:'#FBBF24'} : status==='answered'?{bg:'rgba(94,234,212,.15)',fg:'var(--accent)'} : {bg:'rgba(74,222,128,.15)',fg:'var(--ok)'};
   return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status}</span>`;
@@ -1493,6 +1492,7 @@ async function apiCall(path,body,method='POST'){
  const r=await fetch(path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
  const d=await r.json().catch(()=>({ok:false,message:'Invalid server response'})); if(!r.ok) throw new Error(d.message||'Request failed'); return d;
 }
+async function refreshServerTickets(){try{const d=await apiCall('/api/support',null,'GET');if(d.tickets){state.tickets=d.tickets;save();render();}}catch(e){}}
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
@@ -1542,7 +1542,7 @@ const legacySendDM=sendDM;
 sendDM=async function(){const inp=document.getElementById('dmInput'),text=inp.value.trim();if(!text||!state.chatContact)return;try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});inp.value='';await refreshDMChat();}catch(e){showToast(e.message);}};
 async function refreshGlobalChat(){try{const d=await apiCall('/api/chat?kind=global',null,'GET');state.chatGlobal=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,name:(m.users&&m.users.name)||userName(m.sender_id),text:m.body,time:m.created_at,name:(m.users&&m.users.name)||userName(m.sender_id)}));render();}catch(e){}}
 async function refreshDMChat(){try{const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(state.chatContact),null,'GET');const k=threadKey(currentUserId(),state.chatContact);state.dms[k]=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));render();}catch(e){}}
-setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();refreshServerNotifications();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
+setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();if(state.nav==='support')refreshServerTickets();refreshServerNotifications();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
 const legacyRequestWd=requestWd;
 requestWd=async function(){
  const amt=Number(document.getElementById('wdAmt')?.value||0);
