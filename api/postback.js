@@ -34,7 +34,8 @@ export default async function handler(req,res){
  try{
   const input=req.method==='GET'?(req.query||{}):(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
   const expected=process.env.POSTBACK_TOKEN;
-  if(expected&&!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
+  if(!expected)return json(res,503,{ok:false,message:'Postback authentication is not configured'});
+  if(!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
 
   const clickId=String(input.click_id||input.clickid||input.subid||'').trim();
   const payout=Number(input.payout||0);
