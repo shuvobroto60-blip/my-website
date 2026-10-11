@@ -614,6 +614,8 @@ function markAllRead(){
   const me=currentUserId();
   state.conversions.forEach(c=>{ if(c.userId===me) c.read=true; });
   state.notices.forEach(n=>{ if(!n.dismissedBy.includes(me)) n.dismissedBy.push(me); });
+  (state.serverNotifications||[]).forEach(n=>{n.is_read=true;});
+  if(apiToken()) apiCall('/api/notifications',{action:'mark_all_read'}).then(()=>refreshServerNotifications()).catch(()=>{});
   save(); document.getElementById('noticeHost').innerHTML=''; render();
 }
 function bellPanel(){
@@ -622,6 +624,7 @@ function bellPanel(){
   const items=[
     ...state.conversions.filter(c=>c.userId===me).map(c=>({time:c.time,read:c.read,text:`💰 You earned ${fmt(c.amount)} from ${c.offerName}`})),
     ...state.notices.map(n=>({time:n.time,read:n.dismissedBy.includes(me),text:`📢 ${n.text}`})),
+    ...(state.serverNotifications||[]).map(n=>({time:n.created_at,read:Boolean(n.is_read),text:(n.title?n.title+': ':'')+n.message})),
   ].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,20);
   const rows = items.map(i=>`<div class="px-3 py-2.5 text-sm" style="border-bottom:1px solid var(--line);${i.read?'':'background:rgba(94,234,212,.06)'}">
     <div>${i.text}</div><div class="text-xs mt-0.5" style="color:var(--muted)">${new Date(i.time).toLocaleString()}</div>
@@ -1493,6 +1496,7 @@ async function apiCall(path,body,method='POST'){
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
+async function refreshServerNotifications(){try{const d=await apiCall('/api/notifications',null,'GET');if(d.notifications){state.serverNotifications=d.notifications;if(state.bellOpen)render();}}catch(e){}}
 async function syncServerWithdrawals(){
   try{
     const d=await apiCall('/api/wallet',{action:'list'});
@@ -1538,7 +1542,7 @@ const legacySendDM=sendDM;
 sendDM=async function(){const inp=document.getElementById('dmInput'),text=inp.value.trim();if(!text||!state.chatContact)return;try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});inp.value='';await refreshDMChat();}catch(e){showToast(e.message);}};
 async function refreshGlobalChat(){try{const d=await apiCall('/api/chat?kind=global',null,'GET');state.chatGlobal=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,name:(m.users&&m.users.name)||userName(m.sender_id),text:m.body,time:m.created_at,name:(m.users&&m.users.name)||userName(m.sender_id)}));render();}catch(e){}}
 async function refreshDMChat(){try{const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(state.chatContact),null,'GET');const k=threadKey(currentUserId(),state.chatContact);state.dms[k]=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));render();}catch(e){}}
-setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
+setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();refreshServerNotifications();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
 const legacyRequestWd=requestWd;
 requestWd=async function(){
  const amt=Number(document.getElementById('wdAmt')?.value||0);
