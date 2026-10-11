@@ -7,7 +7,7 @@
       "has": [
         { "type": "host", "value": "tracknest-live-.*\\.vercel\\.app" }
       ],
-      "dest": "https://backend-pink-gamma-15.vercel.app/api/$1"
+      "dest": "https://backend-riponkaku50-8247.vercel.app/api/$1"
     },
     { "handle": "filesystem" }
   ]
