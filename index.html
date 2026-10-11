@@ -1271,8 +1271,11 @@ function render(){
 }
 let lastRenderedMobile=isMobile();
 window.addEventListener('resize', ()=>{
+  // Never rebuild the auth form in response to viewport changes: Android/iOS
+  // virtual keyboards can change viewport dimensions (sometimes width too),
+  // and replacing #app destroys the focused input and dismisses the keyboard.
+  if(!state.session || !apiToken()) return;
   const nextMobile=isMobile();
-  // Mobile keyboards trigger resize events; do not rebuild the focused input DOM.
   if(nextMobile!==lastRenderedMobile){lastRenderedMobile=nextMobile;render();}
 });
 
