@@ -1042,10 +1042,11 @@ function securityS2SView(){
   </div></div>`;
 }
 function securityFraudView(){
-  const rows=state.fraudLogs.slice().reverse().map(l=>`<tr>
-    <td>${new Date(l.time).toLocaleString()}</td><td>${userName(l.userId)}</td><td>${l.offerName}</td>
-    <td style="color:var(--danger)">${l.reason}</td>
-  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No flagged activity yet.</td></tr>`;
+  const logs=state.serverFraudLogs||[];
+  const rows=logs.map(l=>`<tr>
+    <td>${new Date(l.time).toLocaleString()}</td><td>${escapeHtml(l.user||userName(l.userId))}</td><td>${escapeHtml(l.offerName||'—')}</td>
+    <td style="color:var(--danger)">${escapeHtml(l.reason||'Flagged activity')}</td>
+  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No high-risk click bursts detected in the last 24 hours.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Fraud Detection Report</div>
     <div class="overflow-x-auto"><table><thead><tr><th>Time</th><th>User</th><th>Offer</th><th>Reason</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1053,8 +1054,9 @@ function securityFraudView(){
 }
 
 function securityAuditView(){
-  const rows=state.auditLog.slice().reverse().map(a=>`<tr><td>${new Date(a.time).toLocaleString()}</td><td>${a.actor}</td><td>${a.action}</td></tr>`).join('')
-    || `<tr><td colspan="3" style="color:var(--muted)">No admin actions logged yet.</td></tr>`;
+  const logs=state.serverAuditLogs||[];
+  const rows=logs.map(a=>`<tr><td>${new Date(a.time).toLocaleString()}</td><td>${escapeHtml(a.actor||'System')}</td><td>${escapeHtml(a.action||'')}</td></tr>`).join('')
+    || `<tr><td colspan="3" style="color:var(--muted)">No server-side admin actions logged yet.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Admin Activity / Audit Log</div>
     <div class="overflow-x-auto"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1496,7 +1498,7 @@ async function refreshServerTickets(){try{const d=await apiCall('/api/support',n
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
-async function refreshServerNotifications(){try{const d=await apiCall('/api/notifications',null,'GET');if(d.notifications){state.serverNotifications=d.notifications;if(state.bellOpen)render();}}catch(e){}}
+async function refreshServerNotifications(){try{const d=await apiCall('/api/notifications',null,'GET');if(d.notifications){state.serverNotifications=d.notifications;if(state.bellOpen){const a=document.activeElement;if(!(a&&a.matches&&a.matches('input,textarea,select')))render();}}}catch(e){}}
 async function syncServerWithdrawals(){
   try{
     const d=await apiCall('/api/wallet',{action:'list'});
@@ -1602,9 +1604,15 @@ async function restoreServerSession(){
 }
 async function refreshServerSecurity(){
   try{
-    const d=await apiCall('/api/security?kind=s2s',null,'GET');
-    if(d.ok) state.serverSecurity=d.logs||[];
-    if(state.nav==='security' && state.sub==='s2s') render();
+    const kind=state.sub==='fraud'?'fraud':state.sub==='audit'?'audit':'s2s';
+    const d=await apiCall('/api/security?kind='+kind,null,'GET');
+    if(d.ok){
+      if(kind==='s2s')state.serverSecurity=d.logs||[];
+      if(kind==='fraud')state.serverFraudLogs=d.logs||[];
+      if(kind==='audit')state.serverAuditLogs=d.logs||[];
+    }
+    const a=document.activeElement;
+    if(state.nav==='security' && !(a&&a.matches&&a.matches('input,textarea,select')))render();
   }catch(e){}
 }
 
