@@ -47,6 +47,7 @@ export default async function handler(req,res){
   const click=(await db('clicks?click_id=eq.'+encodeURIComponent(clickId)+'&select=*'))[0];
   if(!click)return json(res,404,{ok:false,message:'Unknown click_id'});
 
+  await recordPostback(req,input,clickId,payout,status);
   let conversion=(await db('conversions?click_id=eq.'+encodeURIComponent(clickId)+'&select=*&limit=1'))[0];
   const duplicate=Boolean(conversion);
   if(conversion){
@@ -54,17 +55,16 @@ export default async function handler(req,res){
    if(conversion.status==='pending'&&status!=='pending'){
     conversion=(await db('conversions?id=eq.'+encodeURIComponent(conversion.id)+'&status=eq.pending',{
      method:'PATCH',headers:{Prefer:'return=representation'},
-     body:JSON.stringify({status,payout,raw:input,updated_at:new Date().toISOString()})
+     body:JSON.stringify({status,payout,raw_data:input})
     }))[0]||conversion;
    }
   }else{
-   await recordPostback(req,input,clickId,payout,status);
    conversion=(await db('conversions',{
     method:'POST',headers:{Prefer:'return=representation'},
     body:JSON.stringify({
      user_id:click.user_id,click_id:clickId,offer_id:click.offer_id,payout,status,
      sub1:click.sub1,sub2:click.sub2,sub3:click.sub3,sub4:click.sub4,
-     sub5:click.sub5,sub6:click.sub6,sub7:click.sub7,sub8:click.sub8,raw:input
+     sub5:click.sub5,sub6:click.sub6,sub7:click.sub7,sub8:click.sub8,raw_data:input,goal_name:input.goal_name||input.goal||null,transaction_id:input.transaction_id||input.txid||null,ip_address:input.ip_address||input.ip||null,country:input.country||null,city:input.city||null,device:input.device||null,os:input.os||input.device_os||null
     })
    }))[0];
   }
