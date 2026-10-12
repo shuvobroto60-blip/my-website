@@ -936,6 +936,25 @@ function importCSV(e){
   reader.readAsText(file);
 }
 
+// Daily offer usage is tracked locally per user and offer.
+function offerUsageDate(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function offerUsageToday(userId,offerId){
+  if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+  const entry=state.offerUsage[String(userId)+'_'+String(offerId)];
+  if(!entry || typeof entry!=='object' || entry.date!==offerUsageDate()) return 0;
+  return Math.max(0,Number(entry.count)||0);
+}
+function incOfferUsage(userId,offerId){
+  if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+  const key=String(userId)+'_'+String(offerId);
+  const today=offerUsageDate();
+  const previous=state.offerUsage[key];
+  const count=previous && typeof previous==='object' && previous.date===today ? Math.max(0,Number(previous.count)||0) : 0;
+  state.offerUsage[key]={date:today,count:count+1};
+}
 function offerCard(o,mine){
   let capHtml='';
   if(mine && o.dailyCap){
