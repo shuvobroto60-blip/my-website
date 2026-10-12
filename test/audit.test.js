@@ -59,3 +59,18 @@ test('the live-mode checklist keeps the production cutover explicit', async () =
   assert.match(source, /service-role key/i);
   assert.match(source, /Do not migrate demo balances/i);
 });
+
+test('manual withdrawals reserve funds and only debit after admin payment confirmation', async () => {
+  const migration = await readFile(path.join(root, 'supabase/migrations/20261013_manual_withdrawal_atomic.sql'), 'utf8');
+  const api = await readFile(path.join(root, 'api/wallet.js'), 'utf8');
+  assert.match(migration, /create or replace function public\.request_manual_withdrawal/);
+  assert.match(migration, /w\.balance - w\.pending < amt/);
+  assert.match(migration, /set pending = pending \+ amt/);
+  assert.match(migration, /set balance = balance - amt, pending = pending - amt, paid = paid \+ amt/);
+  assert.match(migration, /for update/);
+  assert.match(migration, /revoke all on function public\.process_manual_withdrawal[\s\S]*from public, anon, authenticated/);
+  assert.match(migration, /grant execute on function public\.process_manual_withdrawal[\s\S]*to service_role/);
+  assert.match(api, /rpc\/request_manual_withdrawal/);
+  assert.match(api, /rpc\/process_manual_withdrawal/);
+  assert.match(api, /Payment reference is required/);
+});
