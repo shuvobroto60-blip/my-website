@@ -34,6 +34,7 @@ export default async function handler(req,res){
  if(req.method!=='GET'&&req.method!=='POST'){res.setHeader('Allow','GET, POST');return json(res,405,{ok:false,message:'Method not allowed'});}
  try{
   const input=req.method==='GET'?(req.query||{}):(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
+  const safeInput={...input};delete safeInput.token;
   if(req.method==='GET' && input.health==='1'){
    const configured=Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY);
    const postbackConfigured=Boolean(process.env.POSTBACK_TOKEN);
@@ -46,17 +47,17 @@ export default async function handler(req,res){
   if(!expected)return json(res,503,{ok:false,message:'Postback authentication is not configured'});
   if(!safeEqual(input.token,expected))return json(res,401,{ok:false,message:'Invalid postback token'});
 
-  const clickId=String(input.click_id||input.clickid||input.subid||'').trim();
-  const payout=Number(input.payout||0);
+  const clickId=String(input.click_id||input.clickid||input.subid||'').trim().slice(0,200);
+  const payout=Number(input.payout??0);
   const status=normalizeStatus(input.status||input.conv_status);
   if(!clickId)return json(res,400,{ok:false,message:'click_id is required'});
   if(!status)return json(res,400,{ok:false,message:'Invalid conversion status'});
-  if(!Number.isFinite(payout)||payout<0)return json(res,400,{ok:false,message:'Invalid payout'});
+  if(!Number.isFinite(payout)||payout<0||payout>1000000)return json(res,400,{ok:false,message:'Invalid payout'});
 
   const click=(await db('clicks?click_id=eq.'+encodeURIComponent(clickId)+'&select=*'))[0];
   if(!click)return json(res,404,{ok:false,message:'Unknown click_id'});
 
-  await recordPostback(req,input,clickId,payout,status);
+  await recordPostback(req,safeInput,clickId,payout,status);
   let conversion=(await db('conversions?click_id=eq.'+encodeURIComponent(clickId)+'&select=*&limit=1'))[0];
   const duplicate=Boolean(conversion);
   if(conversion){
@@ -64,7 +65,7 @@ export default async function handler(req,res){
    if(conversion.status!=='approved'&&status!=='pending'&&(conversion.status==='pending'||status==='approved')){
     conversion=(await db('conversions?id=eq.'+encodeURIComponent(conversion.id)+'&status=eq.pending',{
      method:'PATCH',headers:{Prefer:'return=representation'},
-     body:JSON.stringify({status,payout,raw_data:input})
+     body:JSON.stringify({status,payout,raw_data:safeInput})
     }))[0]||conversion;
    }
   }else{
@@ -73,7 +74,7 @@ export default async function handler(req,res){
     body:JSON.stringify({
      user_id:click.user_id,click_id:clickId,offer_id:click.offer_id,payout,status,
      sub1:click.sub1,sub2:click.sub2,sub3:click.sub3,sub4:click.sub4,
-     sub5:click.sub5,sub6:click.sub6,sub7:click.sub7,sub8:click.sub8,raw_data:input,goal_name:input.goal_name||input.goal||null,transaction_id:input.transaction_id||input.txid||null,ip_address:input.ip_address||input.ip||null,country:input.country||null,city:input.city||null,device:input.device||null,os:input.os||input.device_os||null
+     sub5:click.sub5,sub6:click.sub6,sub7:click.sub7,sub8:click.sub8,raw_data:safeInput,goal_name:safeInput.goal_name||safeInput.goal||null,transaction_id:safeInput.transaction_id||safeInput.txid||null,ip_address:safeInput.ip_address||safeInput.ip||null,country:safeInput.country||null,city:safeInput.city||null,device:safeInput.device||null,os:safeInput.os||safeInput.device_os||null
     })
    }))[0];
   }
