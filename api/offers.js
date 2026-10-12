@@ -18,7 +18,7 @@ export default async function handler(req,res){
   }
   if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
   if(b.action==='create'){
-   if(!b.name||!b.url||!/^https?:\\/\\//i.test(String(b.url)))return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});
+   if(!b.name||!b.url||!/^https?:\/\//i.test(String(b.url)))return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});
    const payout=Number(b.payout||0);if(!Number.isFinite(payout)||payout<0)return json(res,400,{ok:false,message:'Offer payout must be a non-negative number'});
    const row=(await db('offers',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),name:String(b.name).slice(0,200),url:String(b.url),payout,category:String(b.category||'General'),country:String(b.country||'Any'),device:String(b.device||'Any'),daily_cap:b.dailyCap?Number(b.dailyCap):null,s2s:String(b.s2s||''),status:'active'})}))[0];
    await auditLog(me.id,'offer.created',{offer_id:row?.id,name:row?.name});
