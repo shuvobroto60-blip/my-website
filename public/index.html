@@ -188,10 +188,7 @@ function seed(){
     chatGlobal:[{from:'admin',name:'Admin',text:'Welcome! Everyone can chat together here.',time:now()}],
     dms:{},
     notices:[],
-    accounts:[
-      {id:'you',username:'rakib',email:'rakib@example.com',phone:'01700000000',password:'123456',role:'user'},
-      {id:'admin',username:'shuvobroto',email:'admin@tracknest.com',phone:'01711111111',password:'shuvo.broto',role:'admin'},
-    ],
+    accounts:[],
     session:null, authTab:'login', authError:'',
     referrals:[],
     conversions:[], s2sLogs:[], fraudLogs:[],
@@ -258,16 +255,9 @@ if(!state.lastClick) state.lastClick={};
 if(!state.dms) state.dms={};
 if(state.chatContact===undefined) state.chatContact=null;
 if(!state.notices) state.notices=[];
-if(!state.accounts) state.accounts=[
-  {id:'you',username:'rakib',email:'rakib@example.com',phone:'01700000000',password:'123456',role:'user'},
-  {id:'admin',username:'shuvobroto',email:'admin@tracknest.com',phone:'01711111111',password:'shuvo.broto',role:'admin'},
-];
+if(!Array.isArray(state.accounts)) state.accounts=[];
 if(state.session===undefined) state.session=null;
-// Admin credential migration: keep the single built-in admin account consistent.
-try{
-  const adminAcc=state.accounts.find(a=>a.role==='admin' || a.id==='admin');
-  if(adminAcc){ adminAcc.id='admin'; adminAcc.username='shuvobroto'; adminAcc.password='shuvo.broto'; adminAcc.role='admin'; }
-}catch(e){}
+// Demo mode has no built-in admin account.
 if(!state.authTab) state.authTab='login';
 if(state.authError===undefined) state.authError='';
 if(!state.referrals) state.referrals=[];
@@ -291,8 +281,10 @@ if(!state.statsRange) state.statsRange={from:'',to:''};
 if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
 if(state.userSearch===undefined) state.userSearch='';
 if(state.legalOpen===undefined) state.legalOpen='';
-// Production authentication is server-side; never persist plaintext demo credentials in the browser.
-state.accounts=[];
+// Demo accounts are stored locally in this browser only; do not use real passwords or sensitive data.
+if(!Array.isArray(state.accounts)) state.accounts=[];
+state.accounts=state.accounts.filter(a=>a && a.role!=='admin' && a.id!=='admin' && String(a.username||'').toLowerCase()!=='shuvobroto');
+if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
 try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
 state.users.forEach(u=>{ if(!u.status) u.status='active'; if(!u.subRole) u.subRole='none'; if(!u.device) u.device='Unknown device'; });
 function generatePublicUserId(){
@@ -353,32 +345,52 @@ function walletOf(id){
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
 function showAuthTab(t){ state.authTab=t; state.authError=''; save(); render(); }
-function doLogin(){
+async function hashDemoPassword(password){
+  if(!window.crypto || !window.crypto.subtle) throw new Error('This browser cannot run demo password hashing. Please use a modern browser.');
+  const bytes=new TextEncoder().encode(String(password));
+  const digest=await window.crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function doLogin(){
   const idf=document.getElementById('authLoginId').value.trim().toLowerCase();
   const pw=document.getElementById('authLoginPw').value;
-  const acc=state.accounts.find(a=>a.username.toLowerCase()===idf || a.email.toLowerCase()===idf);
-  if(!acc || acc.password!==pw){ state.authError='Invalid username/email or password.'; save(); render(); return; }
+  const acc=state.accounts.find(a=>String(a.username||'').toLowerCase()===idf || String(a.email||'').toLowerCase()===idf);
+  let matches=false;
+  if(acc){
+    if(acc.passwordHash) matches=(await hashDemoPassword(pw))===acc.passwordHash;
+    else if(typeof acc.password==='string' && acc.password===pw){
+      acc.passwordHash=await hashDemoPassword(pw);
+      delete acc.password;
+      matches=true;
+    }
+  }
+  if(!acc || !matches){ state.authError='Invalid username/email or password.'; save(); render(); return; }
   state.session={userId:acc.id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
+  if(!state.users.some(u=>u.id===acc.id)) state.users.push({id:acc.id,name:acc.username,username:acc.username,email:acc.email,phone:acc.phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId()});
+  if(!state.userWallets[acc.id]) state.userWallets[acc.id]={main:0,withdrawal:0,pending:0};
   save(); render(); checkAndShowNotice();
 }
-function doSignup(){
+async function doSignup(){
   const username=document.getElementById('authSuUser').value.trim();
-  const email=document.getElementById('authSuEmail').value.trim();
+  const email=document.getElementById('authSuEmail').value.trim().toLowerCase();
   const phone=document.getElementById('authSuPhone').value.trim();
   const pw=document.getElementById('authSuPw').value;
-  if(!username||!email||!phone){ state.authError='All fields are required.'; save(); render(); return; }
+  if(username.length<3){ state.authError='Username must be at least 3 characters.'; save(); render(); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ state.authError='Enter a valid email address.'; save(); render(); return; }
+  if(!phone){ state.authError='Phone number is required.'; save(); render(); return; }
   if(pw.length<6){ state.authError='Password must be at least 6 characters.'; save(); render(); return; }
-  if(state.accounts.some(a=>a.username.toLowerCase()===username.toLowerCase()||a.email.toLowerCase()===email.toLowerCase())){
-    state.authError='Username or email already exists.'; save(); render(); return;
+  if(state.accounts.some(a=>String(a.username||'').toLowerCase()===username.toLowerCase()||String(a.email||'').toLowerCase()===email)){
+    state.authError='Username or email already exists in this browser.'; save(); render(); return;
   }
   const id=uid();
-  state.accounts.push({id,username,email,phone,password:pw,role:'user'});
-  state.users.push({id,name:username,online:true,role:'user',publicId:generatePublicUserId()});
+  const passwordHash=await hashDemoPassword(pw);
+  state.accounts.push({id,username,email,phone,passwordHash,role:'user'});
+  state.users.push({id,name:username,username,email,phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId(),device:'This browser'});
   state.userWallets[id]={main:0,withdrawal:0,pending:0};
   state.session={userId:id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
   save(); render(); checkAndShowNotice();
 }
-function logout(){ state.session=null; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
+function logout(){ state.session=null; state.impersonating=null; state.authError=''; state.authTab='login'; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
 
 function renderAuthScreen(){
   const err = state.authError ? `<div class="text-sm mb-3" style="color:var(--danger)">${state.authError}</div>` : '';
@@ -390,7 +402,7 @@ function renderAuthScreen(){
     <input id="authLoginId" placeholder="Username or Email" class="mb-3">
     <input id="authLoginPw" type="password" placeholder="Password" class="mb-4" onkeydown="if(event.key==='Enter')doLogin()">
     <span class="btn w-full text-center" style="display:block" onclick="doLogin()">Login</span>
-    <div class="text-xs mt-3" style="color:var(--muted)">Production login — credentials are verified server-side</div>
+    <div class="text-xs mt-3" style="color:var(--muted)">Demo mode: no email or phone verification. This account stays in this browser.</div>
   ` : `
     <input id="authSuUser" placeholder="Username" class="mb-3">
     <input id="authSuEmail" placeholder="Email" class="mb-3">
@@ -422,7 +434,7 @@ function renderAuthScreen(){
         <input id="authLoginId" placeholder="Username or email" autocomplete="username">
         <input id="authLoginPw" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
-        <div class="auth-links"><a onclick="alert('Password reset will be connected to Supabase Auth in production.')">Forgot password?</a><span></span></div>
+        <div class="auth-links"><a onclick="alert('Demo mode has no password reset. Use an account created in this browser.')">Forgot password?</a><span></span></div>
       ` : `
         <input id="authSuUser" placeholder="Username" autocomplete="username">
         <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email">
@@ -1249,8 +1261,9 @@ function renderPublicPreview(){
 }
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
-  if(!state.session || !apiToken()){
-    renderPublicPreview();
+  if(!state.session){
+    window.__tracknestAuthRendered=true;
+    renderAuthScreen();
     return;
   }
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
@@ -1457,32 +1470,19 @@ async function syncServerWithdrawals(){
   }catch(e){console.error('Withdrawal sync failed:',e);}
 }
 const legacyDoLogin=doLogin;
-doLogin=async function(){
- const identifier=document.getElementById('authLoginId').value.trim(),password=document.getElementById('authLoginPw').value;
- try{const d=await apiCall('/api/auth',{action:'login',identifier,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();checkAndShowNotice();}
- catch(e){state.authError=e.message;render();}
-};
 const legacyDoSignup=doSignup;
-doSignup=async function(){
- const username=document.getElementById('authSuUser').value.trim(),email=document.getElementById('authSuEmail').value.trim(),phone=document.getElementById('authSuPhone').value.trim(),password=document.getElementById('authSuPw').value;
- try{const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password});localStorage.setItem(API_TOKEN_KEY,d.token);state.session={userId:d.user.id};state.serverUser=d.user;state.nav='dashboard';state.authError='';await syncServerUsers();await syncServerOffers();await syncServerWithdrawals();await loadServerWallet();render();}
- catch(e){state.authError=e.message;render();}
-};
 const legacyLogout=logout;
-logout=async function(){try{await apiCall('/api/auth',{action:'logout'});}catch(e){}localStorage.removeItem(API_TOKEN_KEY);state.session=null;state.impersonating=null;render();};
+// Demo mode deliberately uses browser-local accounts instead of the server auth API.
+doLogin=legacyDoLogin;
+doSignup=legacyDoSignup;
+logout=legacyLogout;
 const legacySendGlobal=sendGlobal;
-sendGlobal=async function(){const inp=document.getElementById('chatInput'),text=inp.value.trim();if(!text)return;try{await apiCall('/api/chat',{kind:'global',text});inp.value='';await refreshGlobalChat();}catch(e){showToast(e.message);}};
 const legacySendDM=sendDM;
-sendDM=async function(){const inp=document.getElementById('dmInput'),text=inp.value.trim();if(!text||!state.chatContact)return;try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});inp.value='';await refreshDMChat();}catch(e){showToast(e.message);}};
-async function refreshGlobalChat(){try{const d=await apiCall('/api/chat?kind=global',null,'GET');state.chatGlobal=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,name:(m.users&&m.users.name)||userName(m.sender_id),text:m.body,time:m.created_at,name:(m.users&&m.users.name)||userName(m.sender_id)}));render();}catch(e){}}
-async function refreshDMChat(){try{const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(state.chatContact),null,'GET');const k=threadKey(currentUserId(),state.chatContact);state.dms[k]=(d.messages||[]).map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));render();}catch(e){}}
+sendGlobal=legacySendGlobal;
+sendDM=legacySendDM;
 setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security'&&state.sub==='s2s')refreshServerSecurity();}},5000);
 const legacyRequestWd=requestWd;
-requestWd=async function(){
- const amt=Number(document.getElementById('wdAmt').value||0),account=document.getElementById('wdNumber').value.trim(),method=document.getElementById('wdMethod').value;
- if(amt<=0||!account)return alert('Enter a valid amount and account number');
- try{await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:account});showToast('Withdrawal request submitted');await loadServerWallet();}catch(e){showToast(e.message);}
-};
+requestWd=legacyRequestWd;
 
 window.addEventListener('error',e=>{
   if(window.__tracknestBootFallback) window.__tracknestBootFallback();
