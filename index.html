@@ -1546,7 +1546,7 @@ const legacySendGlobal=sendGlobal;
 const legacySendDM=sendDM;
 sendGlobal=legacySendGlobal;
 sendDM=legacySendDM;
-setInterval(()=>{if(state.session&&apiToken()){if(state.nav==='chat')refreshGlobalChat();if(state.chatContact)refreshDMChat();if(state.nav==='support')refreshServerTickets();refreshServerNotifications();if(state.nav==='statistics')refreshServerStats();if(effRole()==='admin'&&state.nav==='payment')syncServerWithdrawals();if(effRole()==='admin'&&state.nav==='security')refreshServerSecurity();}},5000);
+setInterval(()=>{},5000);
 const legacyRequestWd=requestWd;
 requestWd=legacyRequestWd;
 
@@ -1599,10 +1599,10 @@ async function refreshServerSecurity(){
   }catch(e){}
 }
 
-restoreServerSession();
-
+localStorage.removeItem(API_TOKEN_KEY);
+state.serverUser=null;
+state.session=null;
 render();
-if(state.session&&apiToken()) refreshServerStats();
 if(state.nav==='dashboard') checkAndShowNotice();
 </script>
 </body>
