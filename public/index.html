@@ -1396,8 +1396,8 @@ async function confirmManualPay(id){
   try{await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});closeManualPay();await syncServerWithdrawals();await loadServerWallet();showToast('Payment marked as Paid');render();}catch(e){showToast(e.message||'Payment update failed');}
 }
 async function rejectWd(id){
-  if(!confirm('Reject this withdrawal? The amount will be returned to the user balance.'))return;
-  try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();await loadServerWallet();showToast('Withdrawal rejected and balance restored');render();}catch(e){showToast(e.message);}
+  if(!confirm('Reject this withdrawal? The reserved amount will become available again.'))return;
+  try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();await loadServerWallet();showToast('Withdrawal rejected and reserved funds released');render();}catch(e){showToast(e.message);}
 }
 
 // offers
@@ -1534,7 +1534,7 @@ function editMsg(key,msgId){
   m.text=t.trim(); m.edited=true; save(); render();
 }
 
-async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
+async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.available??Math.max(0,Number(d.wallet.balance||0)-Number(d.wallet.pending||0))),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
 function showAuthErrorInline(message){
   state.authError=message;
