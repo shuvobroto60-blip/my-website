@@ -17,6 +17,15 @@ alter table public.wallets
 create index if not exists withdrawals_pending_created_idx
   on public.withdrawals(status, created_at desc);
 
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.users(id) on delete set null,
+  action text not null,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.audit_logs enable row level security;
+
 create or replace function public.request_manual_withdrawal(
   p_user_id uuid,
   p_amount numeric,
