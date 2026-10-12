@@ -281,9 +281,24 @@ if(!state.statsRange) state.statsRange={from:'',to:''};
 if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
 if(state.userSearch===undefined) state.userSearch='';
 if(state.legalOpen===undefined) state.legalOpen='';
-// Demo accounts are stored locally in this browser only; do not use real passwords or sensitive data.
+// Demo accounts are stored in this browser only; never use real passwords or sensitive data.
 if(!Array.isArray(state.accounts)) state.accounts=[];
-state.accounts=state.accounts.filter(a=>a && a.role!=='admin' && a.id!=='admin' && String(a.username||'').toLowerCase()!=='shuvobroto');
+state.accounts=state.accounts.filter(a=>a && (a.id==='admin' ? a.role==='admin' : a.role!=='admin' && String(a.username||'').toLowerCase()!=='shuvobroto'));
+// Temporary demo admin: client-side only, NOT secure for a public production service.
+if(!state.accounts.some(a=>a.id==='admin')){
+  state.accounts.push({id:'admin',username:'admin',email:'admin@tracknest.local',phone:'',passwordHash:'b21e6259715161885481c7d963d2eaae13e8a806d095b8878c3cd3699156de6d',role:'admin'});
+}
+let demoAdminUser=state.users.find(u=>u.id==='admin');
+if(demoAdminUser){
+  demoAdminUser.name='Admin';
+  demoAdminUser.username='admin';
+  demoAdminUser.email='admin@tracknest.local';
+  demoAdminUser.role='admin';
+  demoAdminUser.status='active';
+  demoAdminUser.subRole='none';
+}else{
+  state.users.push({id:'admin',name:'Admin',username:'admin',email:'admin@tracknest.local',phone:'',online:false,role:'admin',status:'active',subRole:'none',device:'Demo admin'});
+}
 if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
 try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
 state.users.forEach(u=>{ if(!u.status) u.status='active'; if(!u.subRole) u.subRole='none'; if(!u.device) u.device='Unknown device'; });
