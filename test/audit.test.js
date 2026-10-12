@@ -44,6 +44,8 @@ test('postback endpoint authenticates and never stores the supplied token', asyn
 test('wallet credit migration is idempotent and service-role only', async () => {
   const source = await readFile(path.join(root, 'supabase/migrations/20261013_tracknest_compatibility.sql'), 'utf8');
   assert.match(source, /create table if not exists public\.wallet_credit_ledger/);
+  assert.match(source, /add column if not exists balance_after numeric\(14,2\) not null default 0/);
+  assert.match(source, /insert into public\.wallet_transactions/);
   assert.match(source, /on conflict \(click_id\) do nothing/);
   assert.match(source, /create or replace function public\.process_wallet_credit/);
   assert.match(source, /revoke all on function public\.process_wallet_credit[\s\S]*from public, anon, authenticated/);
