@@ -1042,8 +1042,8 @@ function paymentView(){
   return '<div class="p-4 sm:p-8"><div class="flex gap-3 flex-wrap mb-5">'+statCard('Main Balance',fmt(w.main),'var(--accent)')+statCard('Pending Balance',fmt(w.pending),'#FBBF24')+'</div><div class="card p-4 sm:p-5 max-w-md mb-5"><div class="font-semibold mb-2">Request Manual Withdrawal</div><div class="text-xs mb-3" style="color:var(--muted)">Payments are processed manually by TrackNest admin.</div><input id="wdAmt" type="number" min="1" step="0.01" placeholder="Amount ($)"><select id="wdMethod" class="mt-2"><option>bKash</option><option>Nagad</option><option>Rocket</option></select><input id="wdNumber" class="mt-2" inputmode="numeric" placeholder="bKash/Nagad/Rocket number"><div class="mt-3"><span class="btn" onclick="requestWd()">Request Payment</span></div></div><div class="card p-4 sm:p-5"><div class="font-semibold mb-3">Withdrawal History</div><div class="overflow-x-auto"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Reference</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="color:var(--muted)">No requests yet.</td></tr>')+'</tbody></table></div></div></div>';
 }
 function toggleEmailSms(){ state.emailSmsEnabled=!state.emailSmsEnabled; save(); render(); }
-async function toggleUserStatus(id){const u=state.users.find(x=>x.id===id);if(!u)return;try{await apiCall('/api/users',{action:'status',userId:id,status:u.status==='active'?'suspended':'active'});await syncServerUsers();showToast('User status updated');render();}catch(e){showToast(e.message);}}
-async function setSubRole(id,val){try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('Sub-role updated');render();}catch(e){showToast(e.message);}}
+function toggleUserStatus(id){if(effRole()!=='admin')return showToast('Admin access required');const u=state.users.find(x=>x.id===id);if(!u||u.role==='admin')return;u.status=u.status==='active'?'suspended':'active';save();showToast('Demo user status updated');render();}
+function setSubRole(id,val){if(effRole()!=='admin')return showToast('Admin access required');const u=state.users.find(x=>x.id===id);if(!u||!['none','manager','support'].includes(val))return;u.subRole=val;save();showToast('Demo sub-role updated');render();});await syncServerUsers();showToast('Sub-role updated');render();}catch(e){showToast(e.message);}}
 function setAdminUserFilter(value){ state.userStatusFilter=value||'all'; save(); render(); }
 function filteredAdminUsers(){
   const q=String(state.userSearch||'').trim().toLowerCase();
@@ -1181,23 +1181,10 @@ function suggestFAQ(val){
     🤖 Did this already answer it? <b>${match.q}</b><br><span style="color:var(--muted)">${match.a}</span>
   </div>` : '';
 }
-async function raiseTicket(){
-  const subject=document.getElementById('tkSubject')?.value.trim()||'';
-  const message=document.getElementById('tkMessage')?.value.trim()||'';
-  if(!subject||!message){showToast('Subject and message are required');return;}
-  try{
-    const d=await apiCall('/api/support',{action:'create',subject,message});
-    state.tickets.unshift({...d.ticket,userId:d.ticket.userId||currentUserId(),replies:[]});
-    save();render();showToast('Support ticket submitted');
-  }catch(e){showToast(e.message||'Could not submit ticket');}
-}
-async function replyTicket(id){
-  const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;
-  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');}
-  catch(e){showToast(e.message||'Reply failed');}
-}
-async function closeTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();}catch(e){showToast(e.message);}}
-async function reopenTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();}catch(e){showToast(e.message);}}
+function raiseTicket(){const subject=document.getElementById('tkSubject')?.value.trim()||'';const message=document.getElementById('tkMessage')?.value.trim()||'';if(!subject||!message)return showToast('Subject and message are required');state.tickets.unshift({id:'demo_ticket_'+uid(),userId:currentUserId(),subject,message,status:'open',createdAt:now(),replies:[]});save();showToast('Demo support ticket submitted');render();}
+function replyTicket(id){const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;const tk=state.tickets.find(t=>String(t.id)===String(id));if(!tk)return;tk.replies=Array.isArray(tk.replies)?tk.replies:[];tk.replies.push({from:currentUserId(),text:message,date:now()});if(effRole()==='admin')tk.status='answered';save();showToast('Demo reply sent');render();}
+function closeTicket(id){if(effRole()!=='admin')return showToast('Admin access required');const tk=state.tickets.find(t=>String(t.id)===String(id));if(tk){tk.status='closed';save();render();}}
+function reopenTicket(id){if(effRole()!=='admin')return showToast('Admin access required');const tk=state.tickets.find(t=>String(t.id)===String(id));if(tk){tk.status='open';save();render();}});await refreshServerTickets();}catch(e){showToast(e.message);}}
 function ticketPill(status){
   const c = status==='open'?{bg:'rgba(251,191,36,.15)',fg:'#FBBF24'} : status==='answered'?{bg:'rgba(94,234,212,.15)',fg:'var(--accent)'} : {bg:'rgba(74,222,128,.15)',fg:'var(--ok)'};
   return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status}</span>`;
@@ -1447,31 +1434,12 @@ function confirmManualPay(id){
   closeManualPay();save();showToast('Demo payment marked as Paid');render();
 }
 
-// offers
-async function addOffer(){
- const name=document.getElementById('ofName').value.trim(),url=document.getElementById('ofUrl').value.trim();
- if(!name||!url){alert('Name and URL are required');return;}
- const payload={action:'create',name,url,payout:Number(document.getElementById('ofPayout').value||0),category:document.getElementById('ofCat').value||'General',country:document.getElementById('ofCountry').value||'Any',device:document.getElementById('ofDevice').value||'Any',dailyCap:Number(document.getElementById('ofCap').value||0)||null,s2s:document.getElementById('ofS2S').value||''};
- try{await apiCall('/api/offers',payload);await syncServerOffers();showToast('Offer added');render();}catch(e){showToast(e.message);}
-}
-async function testPostback(){
- const box=document.getElementById('pbTestResult');
- box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
- try{
-   const r=await fetch('/api/postback?health=1',{cache:'no-store'});
-   const data=await r.json().catch(()=>({}));
-   const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
-   box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
-     (ok?'✓ Postback receiver is online and database is ready.':'✕ Postback receiver check failed.')+
-     '<br>HTTP '+r.status+(data.error?'<br>'+escapeHtml(data.error):'')+
-     '</div>';
- }catch(e){
-   box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';
- }
-}
-async function delOffer(id){try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}catch(e){showToast(e.message);}}
-async function toggleOffer(id){try{const o=state.offers.find(x=>x.id===id);if(!o)return;await apiCall('/api/offers',{action:'status',id,status:o.status==='active'?'paused':'active'});await syncServerOffers();render();}catch(e){showToast(e.message);}}
-async function joinOffer(id){try{await apiCall('/api/offers',{action:'join',id});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}catch(e){showToast(e.message);}}
+// Browser-local demo offers; no real advertiser or postback API is called.
+function addOffer(){if(effRole()!=='admin')return showToast('Admin access required');const name=document.getElementById('ofName')?.value.trim()||'',url=document.getElementById('ofUrl')?.value.trim()||'';if(!name||!url){showToast('Name and URL are required');return;}try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error();}catch(e){showToast('Enter a valid http(s) offer URL');return;}const offer={id:'demo_offer_'+uid(),name,url,payout:Number(document.getElementById('ofPayout')?.value||0),category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||'',status:'active',joined:false};state.offers.unshift(offer);save();showToast('Demo offer added');render();}
+function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Demo mode is active. Real postback/API is intentionally not connected yet; this is expected. Demo offer, chat, wallet and withdrawal data stays in this browser.</div>';}
+function delOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const before=state.offers.length;state.offers=state.offers.filter(o=>String(o.id)!==String(id));if(state.offers.length!==before){save();showToast('Demo offer deleted');render();}}
+function toggleOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;o.status=o.status==='active'?'paused':'active';save();showToast('Demo offer status updated');render();}
+function joinOffer(id){const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;o.joined=true;save();showToast('Joined demo offer');setNav('offers','active');});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}catch(e){showToast(e.message);}}
 function getLink(id){
  const o=state.offers.find(x=>x.id===id);if(!o)return;
  const me=currentUserId(),key=me+'_'+id,last=state.lastClick[key]||0;
@@ -1480,21 +1448,16 @@ function getLink(id){
  document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · server-side click ID</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
 }
 async function buildTrackLink(id){
-  const o=state.offers.find(x=>x.id===id);if(!o)return;
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
   const me=currentUserId(),key=me+'_'+id;
   if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached');return;}
-  const subs={};
-  for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
+  const subs={};for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
+  const clickId='demo_click_'+uid();
+  const params=new URLSearchParams({demo_click:clickId,offer_id:String(o.id),user_id:String(me),...subs});
+  const link=location.origin+'/?'+params.toString();
   const box=document.getElementById('generatedTrackLink');
-  if(box)box.innerHTML='<div class="text-xs" style="color:var(--muted)">Signing secure tracking URL…</div>';
-  try{
-    const d=await apiCall('/api/track',{action:'sign',offer_id:o.id,...subs});
-    const link=location.origin+d.url;
-    state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
-    const safe=link.replace(/'/g,"\\'");
-    const jsLink=JSON.stringify(link);
-    if(box)box.innerHTML=`<div class="text-xs mb-1" style="color:var(--muted)">Your secure tracking URL</div><input readonly value="${escapeHtml(link)}" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(${jsLink});showToast('Link copied')">Copy</span><span class="btn2" onclick="window.open(${jsLink},'_blank')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are cryptographically signed and passed through to click/conversion attribution.</div>`;
-  }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">Could not sign link: '+escapeHtml(e.message)+'</div>';showToast(e.message);}
+  state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
+  if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Demo tracking URL — not signed and does not record real advertiser conversions</div><input readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText('+JSON.stringify(link).replace(/</g,'\\u003c')+').then(()=>showToast(\'Demo link copied\'))">Copy</span><span class="btn2" onclick="window.open('+JSON.stringify(link).replace(/</g,'\\u003c')+',\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are included as demo parameters only. Add the real tracking API later.</div>';
 }
 
 // Browser-local demo payments. No real payment or server wallet is used in demo mode.
