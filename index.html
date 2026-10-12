@@ -1196,11 +1196,11 @@ function supportView(){
     const rows = state.tickets.slice().reverse().map(tk=>`
       <div class="card p-4 mb-3">
         <div class="flex justify-between items-start gap-2 mb-1">
-          <div><span class="font-semibold">${tk.subject}</span> <span class="text-xs" style="color:var(--muted)">— ${userName(tk.userId)}</span></div>
+          <div><span class="font-semibold">${escapeHtml(tk.subject)}</span> <span class="text-xs" style="color:var(--muted)">— ${escapeHtml(userName(tk.userId))}</span></div>
           ${ticketPill(tk.status)}
         </div>
-        <div class="text-sm mb-2" style="color:var(--muted)">${tk.message}</div>
-        ${tk.replies.map(r=>`<div class="text-sm pl-3 mb-1" style="border-left:2px solid var(--accent)"><b>${userName(r.from)}:</b> ${r.text}</div>`).join('')}
+        <div class="text-sm mb-2" style="color:var(--muted)">${escapeHtml(tk.message)}</div>
+        ${tk.replies.map(r=>`<div class="text-sm pl-3 mb-1" style="border-left:2px solid var(--accent)"><b>${escapeHtml(userName(r.from))}:</b> ${escapeHtml(r.text)}</div>`).join('')}
         <div class="flex gap-2 mt-2 flex-wrap">
           <input id="tkReply_${tk.id}" placeholder="Write a reply...">
           <span class="btn2" onclick="replyTicket('${tk.id}')">Reply</span>
@@ -1457,7 +1457,7 @@ async function buildTrackLink(id){
   const link=location.origin+'/?'+params.toString();
   const box=document.getElementById('generatedTrackLink');
   state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
-  if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Demo tracking URL — not signed and does not record real advertiser conversions</div><input readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText('+JSON.stringify(link).replace(/</g,'\\u003c')+').then(()=>showToast(\'Demo link copied\'))">Copy</span><span class="btn2" onclick="window.open('+JSON.stringify(link).replace(/</g,'\\u003c')+',\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are included as demo parameters only. Add the real tracking API later.</div>';
+  if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Demo tracking URL — not signed and does not record real advertiser conversions</div><input data-demo-link readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value).then(()=>showToast(\'Demo link copied\'))">Copy</span><span class="btn2" onclick="window.open(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value,\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are included as demo parameters only. Add the real tracking API later.</div>';
 }
 
 // Browser-local demo payments. No real payment or server wallet is used in demo mode.
