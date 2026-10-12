@@ -1535,15 +1535,15 @@ function showInvoice(id){
   document.getElementById('invoiceHost').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeInvoice()">
     <div class="card p-6 w-full max-w-md invoice-print">
       <div class="flex justify-between items-start mb-4">
-        <div><div class="font-bold text-lg">Invoice</div><div class="text-xs" style="color:var(--muted)">#${w.id.toUpperCase()}</div></div>
-        <div class="pill" style="background:${w.status==='approved'?'rgba(74,222,128,.15)':w.status==='pending'?'rgba(251,191,36,.15)':'rgba(251,113,133,.15)'};color:${w.status==='approved'?'var(--ok)':w.status==='pending'?'#FBBF24':'var(--danger)'}">${w.status}</div>
+        <div><div class="font-bold text-lg">Invoice</div><div class="text-xs" style="color:var(--muted)">#${escapeHtml(w.id.toUpperCase())}</div></div>
+        <div class="pill" style="background:${w.status==='approved'?'rgba(74,222,128,.15)':w.status==='pending'?'rgba(251,191,36,.15)':'rgba(251,113,133,.15)'};color:${w.status==='approved'?'var(--ok)':w.status==='pending'?'#FBBF24':'var(--danger)'}">${escapeHtml(w.status)}</div>
       </div>
       <table class="text-sm mb-2">
-        <tr><td style="color:var(--muted)">User</td><td>${userName(w.user)}</td></tr>
-        <tr><td style="color:var(--muted)">Date</td><td>${new Date(w.date).toLocaleString()}</td></tr>
-        <tr><td style="color:var(--muted)">Method</td><td>${w.method}</td></tr>
-        <tr><td style="color:var(--muted)">Account Number</td><td>${w.number}</td></tr>
-        <tr><td style="color:var(--muted)">Amount</td><td class="font-bold" style="color:var(--accent)">${fmt(w.amount)}</td></tr>
+        <tr><td style="color:var(--muted)">User</td><td>${escapeHtml(userName(w.user))}</td></tr>
+        <tr><td style="color:var(--muted)">Date</td><td>${escapeHtml(new Date(w.date).toLocaleString())}</td></tr>
+        <tr><td style="color:var(--muted)">Method</td><td>${escapeHtml(w.method)}</td></tr>
+        <tr><td style="color:var(--muted)">Account Number</td><td>${escapeHtml(w.number)}</td></tr>
+        <tr><td style="color:var(--muted)">Amount</td><td class="font-bold" style="color:var(--accent)">${escapeHtml(fmt(w.amount))}</td></tr>
       </table>
       <div class="flex gap-2 mt-4">
         <span class="btn" onclick="window.print()">Print / Save as PDF</span>
