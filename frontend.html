@@ -1228,7 +1228,7 @@ function editMsg(key,msgId){
   m.text=t.trim(); m.edited=true; save(); render();
 }
 
-async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
+async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.available??Math.max(0,Number(d.wallet.balance||0)-Number(d.wallet.pending||0))),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
