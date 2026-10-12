@@ -340,6 +340,13 @@ for (const d of demoCredentials) {
     state.userWallets[d.id].main=Number(state.userWallets[d.id].main ?? d.balance);
     state.userWallets[d.id].withdrawal=Number(state.userWallets[d.id].withdrawal ?? d.balance);
     state.userWallets[d.id].pending=Number(state.userWallets[d.id].pending ?? 0);
+    // Recover the initial demo balance for older browser-local accounts that were created with an empty wallet.
+    const hasWithdrawalHistory=state.withdrawals.some(w=>w.user===d.id);
+    if(!hasWithdrawalHistory && Number(state.userWallets[d.id].main)<=0 && Number(state.userWallets[d.id].withdrawal)<=0){
+      state.userWallets[d.id].main=d.balance;
+      state.userWallets[d.id].withdrawal=d.balance;
+      state.userWallets[d.id].pending=0;
+    }
   }
 }
 if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
@@ -1435,7 +1442,7 @@ function confirmManualPay(id){
 }
 
 // Browser-local demo offers; no real advertiser or postback API is called.
-function addOffer(){if(effRole()!=='admin')return showToast('Admin access required');const name=document.getElementById('ofName')?.value.trim()||'',url=document.getElementById('ofUrl')?.value.trim()||'';if(!name||!url){showToast('Name and URL are required');return;}try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol))throw new Error();}catch(e){showToast('Enter a valid http(s) offer URL');return;}const offer={id:'demo_offer_'+uid(),name,url,payout:Number(document.getElementById('ofPayout')?.value||0),category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||'',status:'active',joined:false};state.offers.unshift(offer);save();showToast('Demo offer added');render();}
+function addOffer(){if(effRole()!=='admin')return showToast('Admin access required');const name=document.getElementById('ofName')?.value.trim()||'';let url=document.getElementById('ofUrl')?.value.trim()||'';if(!name||!url){showToast('Name and URL are required');return;}if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url))url='https://'+url;try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol)||!parsed.hostname.includes('.'))throw new Error();url=parsed.href;}catch(e){showToast('Enter a valid offer domain, e.g. https://example.com');return;}const offer={id:'demo_offer_'+uid(),name,url,payout:Number(document.getElementById('ofPayout')?.value||0),category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||'',status:'active',joined:false};state.offers.unshift(offer);save();showToast('Demo offer added');render();}
 function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Demo mode is active. Real postback/API is intentionally not connected yet; this is expected. Demo offer, chat, wallet and withdrawal data stays in this browser.</div>';}
 function delOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const before=state.offers.length;state.offers=state.offers.filter(o=>String(o.id)!==String(id));if(state.offers.length!==before){save();showToast('Demo offer deleted');render();}}
 function toggleOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;o.status=o.status==='active'?'paused':'active';save();showToast('Demo offer status updated');render();}
