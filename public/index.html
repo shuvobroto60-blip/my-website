@@ -110,6 +110,11 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
 /* Mobile dashboard interaction layer */
 @media(max-width:767px){
   html,body{height:100%;overflow:hidden}
+  /* Keep the auth screen scrollable while the phone keyboard is open. */
+  .auth-shell{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;padding-bottom:max(18px,env(safe-area-inset-bottom))!important}
+  .auth-right{min-height:0!important;padding-bottom:28px!important}
+  .auth-card{scroll-margin-top:16px!important;scroll-margin-bottom:24px!important}
+  .auth-card input{scroll-margin-block:24px!important}
   #app{height:100%;overflow:hidden}
   .main{height:100dvh!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:82px!important;-webkit-overflow-scrolling:touch;position:relative;z-index:1}
   .sidebar{z-index:200!important;width:min(86vw,320px)!important;max-width:320px!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
@@ -151,6 +156,15 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
 <div id="noticeHost"></div>
 <div id="legalHost"></div>
 
+<script>
+window.addEventListener('error',function(e){
+  var m='TrackNest JS error: '+(e.message||'Unknown error')+' @ line '+(e.lineno||'?')+', col '+(e.colno||'?');
+  var d=document.createElement('div'); d.id='bootError'; d.style='position:fixed;inset:16px;z-index:99999;background:#24121a;color:#fff;border:1px solid #fb7185;border-radius:14px;padding:18px;font:14px system-ui;white-space:pre-wrap;overflow:auto'; d.textContent=m+(e.error&&e.error.stack?'\n\n'+e.error.stack:''); document.body.appendChild(d);
+});
+window.addEventListener('unhandledrejection',function(e){
+  var d=document.createElement('div'); d.style='position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;background:#24121a;color:#fff;border:1px solid #fb7185;border-radius:14px;padding:14px;font:14px system-ui'; d.textContent='TrackNest promise error: '+(e.reason&&e.reason.message||e.reason||'Unknown'); document.body.appendChild(d);
+});
+</script>
 <script>
 const LS_KEY='tracknest_state_v3';
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -361,7 +375,13 @@ function walletOf(id){
 }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-function showAuthTab(t){ state.authTab=t; state.authError=''; save(); render(); }
+function showAuthTab(t){
+  const ids={authSuUser:'username',authSuEmail:'email',authSuPhone:'phone',authSuPw:'password'};
+  Object.entries(ids).forEach(([id,key])=>{const el=document.getElementById(id);if(el)authDraft[key]=el.value;});
+  state.authTab=t; state.authError=''; save();
+  window.__tracknestForceAuthRender=true;
+  try{render();}finally{window.__tracknestForceAuthRender=false;}
+}
 async function hashDemoPassword(password){
   if(!window.crypto || !window.crypto.subtle) throw new Error('This browser cannot run demo password hashing. Please use a modern browser.');
   const bytes=new TextEncoder().encode(String(password));
@@ -453,10 +473,10 @@ function renderAuthScreen(){
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
         <div class="auth-links"><a onclick="alert('Demo mode has no password reset. Use an account created in this browser.')">Forgot password?</a><span></span></div>
       ` : `
-        <input id="authSuUser" placeholder="Username" autocomplete="username">
-        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email">
-        <input id="authSuPhone" placeholder="Phone number" autocomplete="tel">
-        <input id="authSuPw" type="password" placeholder="Password (minimum 6 characters)" autocomplete="new-password" onkeydown="if(event.key==='Enter')doSignup()">
+        <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.username)}" oninput="authDraft.username=this.value">
+        <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.email)}" oninput="authDraft.email=this.value">
+        <input id="authSuPhone" type="tel" inputmode="tel" placeholder="Phone number" autocomplete="tel" value="${escapeHtml(authDraft.phone)}" oninput="authDraft.phone=this.value">
+        <input id="authSuPw" type="password" placeholder="Password (minimum 6 characters)" autocomplete="new-password" value="${escapeHtml(authDraft.password)}" oninput="authDraft.password=this.value" onkeydown="if(event.key==='Enter')doSignup()">
         <button class="auth-submit" onclick="doSignup()">Create account</button>
       `}
       <div class="auth-note">By continuing, you agree to the platform terms and privacy policy.</div>
@@ -617,6 +637,8 @@ function markAllRead(){
   const me=currentUserId();
   state.conversions.forEach(c=>{ if(c.userId===me) c.read=true; });
   state.notices.forEach(n=>{ if(!n.dismissedBy.includes(me)) n.dismissedBy.push(me); });
+  (state.serverNotifications||[]).forEach(n=>{n.is_read=true;});
+  if(apiToken()) apiCall('/api/notifications',{action:'mark_all_read'}).then(()=>refreshServerNotifications()).catch(()=>{});
   save(); document.getElementById('noticeHost').innerHTML=''; render();
 }
 function bellPanel(){
@@ -625,6 +647,7 @@ function bellPanel(){
   const items=[
     ...state.conversions.filter(c=>c.userId===me).map(c=>({time:c.time,read:c.read,text:`💰 You earned ${fmt(c.amount)} from ${c.offerName}`})),
     ...state.notices.map(n=>({time:n.time,read:n.dismissedBy.includes(me),text:`📢 ${n.text}`})),
+    ...(state.serverNotifications||[]).map(n=>({time:n.created_at,read:Boolean(n.is_read),text:(n.title?n.title+': ':'')+n.message})),
   ].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,20);
   const rows = items.map(i=>`<div class="px-3 py-2.5 text-sm" style="border-bottom:1px solid var(--line);${i.read?'':'background:rgba(94,234,212,.06)'}">
     <div>${i.text}</div><div class="text-xs mt-0.5" style="color:var(--muted)">${new Date(i.time).toLocaleString()}</div>
@@ -1066,10 +1089,11 @@ function usersView(){
 function adminUserSearch(){ const el=document.getElementById('adminUserSearch'); state.userSearch=el?el.value.trim():''; save(); render(); }
 
 function securityS2SView(){
-  const rows=state.s2sLogs.slice().reverse().map(l=>`<tr>
-    <td>${new Date(l.time).toLocaleString()}</td><td>${l.offer}</td>
-    <td style="color:var(--muted)" class="max-w-[220px] truncate">${l.url}</td>
-    <td><span class="pill" style="background:rgba(74,222,128,.15);color:var(--ok)">${l.status}</span></td>
+  const logs=state.serverSecurity||[];
+  const rows=logs.map(l=>`<tr>
+    <td>${new Date(l.time).toLocaleString()}</td><td>${escapeHtml(l.offer||'Unknown')}</td>
+    <td style="color:var(--muted)" class="max-w-[220px] truncate">${escapeHtml(l.click_id||'—')}</td>
+    <td><span class="pill" style="background:rgba(74,222,128,.15);color:var(--ok)">${escapeHtml(l.status||'received')} · ${fmt(l.payout||0)}</span></td>
   </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No real postback hits received yet. Conversions appear here when an advertiser sends S2S data.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Raw S2S Postback Log</div>
@@ -1077,10 +1101,11 @@ function securityS2SView(){
   </div></div>`;
 }
 function securityFraudView(){
-  const rows=state.fraudLogs.slice().reverse().map(l=>`<tr>
-    <td>${new Date(l.time).toLocaleString()}</td><td>${userName(l.userId)}</td><td>${l.offerName}</td>
-    <td style="color:var(--danger)">${l.reason}</td>
-  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No flagged activity yet.</td></tr>`;
+  const logs=state.serverFraudLogs||[];
+  const rows=logs.map(l=>`<tr>
+    <td>${new Date(l.time).toLocaleString()}</td><td>${escapeHtml(l.user||userName(l.userId))}</td><td>${escapeHtml(l.offerName||'—')}</td>
+    <td style="color:var(--danger)">${escapeHtml(l.reason||'Flagged activity')}</td>
+  </tr>`).join('') || `<tr><td colspan="4" style="color:var(--muted)">No high-risk click bursts detected in the last 24 hours.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Fraud Detection Report</div>
     <div class="overflow-x-auto"><table><thead><tr><th>Time</th><th>User</th><th>Offer</th><th>Reason</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1088,8 +1113,9 @@ function securityFraudView(){
 }
 
 function securityAuditView(){
-  const rows=state.auditLog.slice().reverse().map(a=>`<tr><td>${new Date(a.time).toLocaleString()}</td><td>${a.actor}</td><td>${a.action}</td></tr>`).join('')
-    || `<tr><td colspan="3" style="color:var(--muted)">No admin actions logged yet.</td></tr>`;
+  const logs=state.serverAuditLogs||[];
+  const rows=logs.map(a=>`<tr><td>${new Date(a.time).toLocaleString()}</td><td>${escapeHtml(a.actor||'System')}</td><td>${escapeHtml(a.action||'')}</td></tr>`).join('')
+    || `<tr><td colspan="3" style="color:var(--muted)">No server-side admin actions logged yet.</td></tr>`;
   return `<div class="p-4 sm:p-8"><div class="card p-4 sm:p-5">
     <div class="font-semibold mb-3">Admin Activity / Audit Log</div>
     <div class="overflow-x-auto"><table><thead><tr><th>Time</th><th>Admin</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1116,24 +1142,23 @@ function suggestFAQ(val){
     🤖 Did this already answer it? <b>${match.q}</b><br><span style="color:var(--muted)">${match.a}</span>
   </div>` : '';
 }
-function raiseTicket(){
-  const subject=document.getElementById('tkSubject').value.trim();
-  const message=document.getElementById('tkMessage').value.trim();
-  if(!subject||!message){ alert('Subject and message are required'); return; }
-  state.tickets.push({id:uid(),userId:currentUserId(),subject,message,status:'open',replies:[],date:now()});
-  save(); render(); showToast('Ticket submitted');
+async function raiseTicket(){
+  const subject=document.getElementById('tkSubject')?.value.trim()||'';
+  const message=document.getElementById('tkMessage')?.value.trim()||'';
+  if(!subject||!message){showToast('Subject and message are required');return;}
+  try{
+    const d=await apiCall('/api/support',{action:'create',subject,message});
+    state.tickets.unshift({...d.ticket,userId:d.ticket.userId||currentUserId(),replies:[]});
+    save();render();showToast('Support ticket submitted');
+  }catch(e){showToast(e.message||'Could not submit ticket');}
 }
-function replyTicket(id){
-  const el=document.getElementById('tkReply_'+id); if(!el)return;
-  const text=el.value.trim(); if(!text)return;
-  const tk=state.tickets.find(t=>t.id===id); if(!tk)return;
-  tk.replies.push({from:currentUserId(),text,time:now()});
-  tk.status='answered';
-  logAudit(`Replied to ticket "${tk.subject}"`);
-  save(); render();
+async function replyTicket(id){
+  const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;
+  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');}
+  catch(e){showToast(e.message||'Reply failed');}
 }
-function closeTicket(id){ const tk=state.tickets.find(t=>t.id===id); if(tk){ tk.status='closed'; save(); render(); } }
-function reopenTicket(id){ const tk=state.tickets.find(t=>t.id===id); if(tk){ tk.status='open'; save(); render(); } }
+async function closeTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();}catch(e){showToast(e.message);}}
+async function reopenTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();}catch(e){showToast(e.message);}}
 function ticketPill(status){
   const c = status==='open'?{bg:'rgba(251,191,36,.15)',fg:'#FBBF24'} : status==='answered'?{bg:'rgba(94,234,212,.15)',fg:'var(--accent)'} : {bg:'rgba(74,222,128,.15)',fg:'var(--ok)'};
   return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status}</span>`;
@@ -1318,6 +1343,7 @@ function render(){
     renderAuthScreen();
     return;
   }
+  window.__tracknestAuthRendered=false;
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
   let body='';
   if(state.nav==='dashboard') body=dashboardView();
@@ -1339,7 +1365,15 @@ function render(){
     </div><div id="invoiceHost"></div>`;
   const cb=document.getElementById('chatBox'); if(cb) cb.scrollTop=cb.scrollHeight;
 }
-window.addEventListener('resize', ()=>{ render(); });
+let lastRenderedMobile=isMobile();
+window.addEventListener('resize', ()=>{
+  // Never rebuild the auth form in response to viewport changes: Android/iOS
+  // virtual keyboards can change viewport dimensions (sometimes width too),
+  // and replacing #app destroys the focused input and dismisses the keyboard.
+  if(!state.session || !apiToken()) return;
+  const nextMobile=isMobile();
+  if(nextMobile!==lastRenderedMobile){lastRenderedMobile=nextMobile;render();}
+});
 
 function maskAccount(value){
   const s=String(value||'');
@@ -1377,7 +1411,7 @@ async function testPostback(){
  const box=document.getElementById('pbTestResult');
  box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
  try{
-   const r=await fetch('/api/health',{cache:'no-store'});
+   const r=await fetch('/api/postback?health=1',{cache:'no-store'});
    const data=await r.json().catch(()=>({}));
    const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
    box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
@@ -1502,6 +1536,36 @@ function editMsg(key,msgId){
 
 async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.balance||0),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
+function showAuthErrorInline(message){
+  state.authError=message;
+  let error=document.querySelector('.auth-card .auth-error');
+  if(!error){
+    error=document.createElement('div');error.className='auth-error';
+    const tabs=document.querySelector('.auth-card .auth-tabs');
+    if(tabs)tabs.insertAdjacentElement('afterend',error);
+  }
+  if(error)error.textContent=message;
+}
+
+/* TrackNest production interaction helpers */
+function setActionBusy(el,busy,label){
+  if(!el)return;
+  if(busy){
+    if(!el.dataset.originalLabel) el.dataset.originalLabel=el.textContent;
+    el.dataset.busy='1';
+    el.style.pointerEvents='none';
+    el.style.opacity='.72';
+    el.textContent=label||'Please wait…';
+    el.setAttribute('aria-busy','true');
+  }else{
+    el.dataset.busy='0';
+    el.style.pointerEvents='';
+    el.style.opacity='';
+    el.textContent=el.dataset.originalLabel||el.textContent;
+    el.removeAttribute('aria-busy');
+  }
+}
+
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
 const apiToken=()=>localStorage.getItem(API_TOKEN_KEY)||'';
@@ -1509,9 +1573,11 @@ async function apiCall(path,body,method='POST'){
  const r=await fetch(path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
  const d=await r.json().catch(()=>({ok:false,message:'Invalid server response'})); if(!r.ok) throw new Error(d.message||'Request failed'); return d;
 }
+async function refreshServerTickets(){try{const d=await apiCall('/api/support',null,'GET');if(d.tickets){state.tickets=d.tickets;save();const a=document.activeElement;if(!(a&&a.matches&&a.matches('input,textarea,select'))&&state.nav==='support')render();}}catch(e){}}
 async function syncServerUsers(){try{const d=await apiCall('/api/users',null,'GET');if(d.users)state.users=d.users.map(u=>({id:u.id,name:u.name||u.username,username:u.username,email:u.email,phone:u.phone,online:false,role:u.role,status:u.status,subRole:u.sub_role||'none',publicId:String(u.public_id||''),device:u.device||'Server account'}));save();}catch(e){}}
 async function syncServerOffers(){try{const d=await apiCall('/api/offers',null,'GET');if(d.offers)state.offers=d.offers.map(o=>({...o,id:String(o.id),dailyCap:o.daily_cap||null,status:o.status,joined:Boolean(o.joined)}));save();}catch(e){}}
 async function refreshServerStats(){try{const d=await apiCall('/api/stats',null,'GET');if(d.ok){state.serverStats=d;save();if(state.nav==='statistics')render();}}catch(e){}}
+async function refreshServerNotifications(){try{const d=await apiCall('/api/notifications',null,'GET');if(d.notifications){state.serverNotifications=d.notifications;if(state.bellOpen){const a=document.activeElement;if(!(a&&a.matches&&a.matches('input,textarea,select')))render();}}}catch(e){}}
 async function syncServerWithdrawals(){
   try{
     const d=await apiCall('/api/wallet',{action:'list'});
@@ -1540,6 +1606,51 @@ window.addEventListener('error',e=>{
   if(window.__tracknestBootFallback) window.__tracknestBootFallback();
 });
 window.addEventListener('unhandledrejection',()=>{});
+async function restoreServerSession(){
+  const token=apiToken();
+  if(!token){ state.session=null; return; }
+  try{
+    const d=await apiCall('/api/auth',{action:'me'});
+    if(!d.user){
+      localStorage.removeItem(API_TOKEN_KEY);
+      state.session=null;
+      state.serverUser=null;
+      window.__tracknestAuthRendered=false;
+      render();
+      return;
+    }
+    state.session={userId:d.user.id};
+    state.serverUser=d.user;
+    state.impersonating=null;
+    await syncServerUsers();
+    await syncServerOffers();
+    await syncServerWithdrawals();
+    await loadServerWallet();
+    render();
+    checkAndShowNotice();
+  }catch(e){
+    localStorage.removeItem(API_TOKEN_KEY);
+    state.session=null;
+    state.serverUser=null;
+    state.impersonating=null;
+    window.__tracknestAuthRendered=false;
+    render();
+  }
+}
+async function refreshServerSecurity(){
+  try{
+    const kind=state.sub==='fraud'?'fraud':state.sub==='audit'?'audit':'s2s';
+    const d=await apiCall('/api/security?kind='+kind,null,'GET');
+    if(d.ok){
+      if(kind==='s2s')state.serverSecurity=d.logs||[];
+      if(kind==='fraud')state.serverFraudLogs=d.logs||[];
+      if(kind==='audit')state.serverAuditLogs=d.logs||[];
+    }
+    const a=document.activeElement;
+    if(state.nav==='security' && !(a&&a.matches&&a.matches('input,textarea,select')))render();
+  }catch(e){}
+}
+
 localStorage.removeItem(API_TOKEN_KEY);
 state.serverUser=null;
 state.session=null;
