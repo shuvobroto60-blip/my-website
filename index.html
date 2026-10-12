@@ -1419,6 +1419,7 @@ function openManualPay(id){
 }
 function closeManualPay(){document.getElementById('invoiceHost').innerHTML='';}
 function confirmManualPay(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
   const ref=(document.getElementById('manualPayRef')?.value||'').trim();
   if(!ref)return showToast('Demo payment reference is required');
   const w=state.withdrawals.find(x=>x.id===id);
@@ -1491,7 +1492,7 @@ function requestWd(){
   const number=String(document.getElementById('wdNumber')?.value||'').trim();
   const method=String(document.getElementById('wdMethod')?.value||'bKash');
   const me=currentUserId(), w=walletOf(me);
-  const available=Math.max(0,Number(w.withdrawal||0)-Number(w.pending||0));
+  const available=Math.max(0,Math.min(Number(w.withdrawal||0),Number(w.main||0))-Number(w.pending||0));
   if(!Number.isFinite(amt)||amt<=0||amt>available){showToast('Enter an amount within your available balance');return;}
   if(!number){showToast('Please add your bKash/Nagad/Rocket number');return;}
   if(!['bKash','Nagad','Rocket'].includes(method)){showToast('Unsupported payment method');return;}
@@ -1510,6 +1511,7 @@ function cancelWd(id){
 }
 function approveWd(id){ confirmManualPay(id); }
 function rejectWd(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
   const w=state.withdrawals.find(x=>x.id===id);
   if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be rejected');
   const wallet=walletOf(w.user);wallet.pending=Math.max(0,wallet.pending-Number(w.amount||0));
