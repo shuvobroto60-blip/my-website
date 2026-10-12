@@ -220,6 +220,7 @@ function seed(){
     statsRange:{from:'',to:''}, emailSmsEnabled:true,
   };
 }
+let authDraft = {username:'', email:'', phone:'', password:''};
 let state = null;
 try{
   const raw=localStorage.getItem(LS_KEY);
@@ -313,6 +314,33 @@ if(demoAdminUser){
   demoAdminUser.subRole='none';
 }else{
   state.users.push({id:'admin',name:'Admin',username:'admin',email:'admin@tracknest.local',phone:'',online:false,role:'admin',status:'active',subRole:'none',device:'Demo admin'});
+}
+// Fixed browser-local demo accounts for QA. These are NOT production credentials.
+const demoCredentials = [
+  {id:'admin', username:'admin', email:'admin@tracknest.local', phone:'', password:'AdminDemo123!', role:'admin', name:'Admin', balance:0},
+  {id:'demo_user_1', username:'demo_user1', email:'demo_user1@example.test', phone:'01700000001', password:'UserDemo123!', role:'user', name:'Demo User 1', balance:1000},
+  {id:'demo_user_2', username:'demo_user2', email:'demo_user2@example.test', phone:'01700000002', password:'UserDemo123!', role:'user', name:'Demo User 2', balance:1000}
+];
+for (const d of demoCredentials) {
+  let account = state.accounts.find(a=>a.id===d.id || String(a.username||'').toLowerCase()===d.username);
+  if (!account) {
+    account = {id:d.id, username:d.username, email:d.email, phone:d.phone, role:d.role};
+    state.accounts.push(account);
+  }
+  Object.assign(account,{id:d.id,username:d.username,email:d.email,phone:d.phone,role:d.role,password:d.password});
+  delete account.passwordHash;
+  let user = state.users.find(u=>u.id===d.id);
+  if (!user) {
+    user = {id:d.id,name:d.name,username:d.username,email:d.email,phone:d.phone,online:false,role:d.role,status:'active',subRole:'none',device:'Demo account'};
+    state.users.push(user);
+  }
+  Object.assign(user,{name:d.name,username:d.username,email:d.email,phone:d.phone,role:d.role,status:'active',subRole:'none',device:'Demo account'});
+  if (!state.userWallets[d.id]) state.userWallets[d.id]={main:d.balance,withdrawal:d.balance,pending:0};
+  else if (d.role==='user') {
+    state.userWallets[d.id].main=Number(state.userWallets[d.id].main ?? d.balance);
+    state.userWallets[d.id].withdrawal=Number(state.userWallets[d.id].withdrawal ?? d.balance);
+    state.userWallets[d.id].pending=Number(state.userWallets[d.id].pending ?? 0);
+  }
 }
 if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
 try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
@@ -1390,14 +1418,21 @@ function openManualPay(id){
   document.getElementById('invoiceHost').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeManualPay()"><div class="card p-6 w-full max-w-md"><div class="font-bold text-lg mb-1">Manual Payment</div><div class="text-xs mb-4" style="color:var(--muted)">'+escapeHtml(userName(w.user))+' · '+fmt(w.amount)+'</div><div class="p-3 rounded-lg mb-4" style="background:var(--panel2);border:1px solid var(--line)"><div class="text-xs" style="color:var(--muted)">Method</div><b>'+escapeHtml(w.method)+'</b><div class="text-xs mt-2" style="color:var(--muted)">Account</div><b>'+escapeHtml(w.number)+'</b></div><input id="manualPayRef" placeholder="Transaction / payment reference"><div class="flex gap-2 mt-4"><span class="btn" onclick="confirmManualPay(\''+String(id).replace(/'/g,"\\'")+'\')">✓ Mark as Paid</span><span class="btn2" onclick="closeManualPay()">Cancel</span></div><div class="text-xs mt-3" style="color:var(--muted)">Send the money manually first, then enter the transaction reference.</div></div></div>';
 }
 function closeManualPay(){document.getElementById('invoiceHost').innerHTML='';}
-async function confirmManualPay(id){
+function confirmManualPay(id){
   const ref=(document.getElementById('manualPayRef')?.value||'').trim();
-  if(!ref)return showToast('Payment reference is required');
-  try{await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});closeManualPay();await syncServerWithdrawals();await loadServerWallet();showToast('Payment marked as Paid');render();}catch(e){showToast(e.message||'Payment update failed');}
-}
-async function rejectWd(id){
-  if(!confirm('Reject this withdrawal? The reserved amount will become available again.'))return;
-  try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();await loadServerWallet();showToast('Withdrawal rejected and reserved funds released');render();}catch(e){showToast(e.message);}
+  if(!ref)return showToast('Demo payment reference is required');
+  const w=state.withdrawals.find(x=>x.id===id);
+  if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be marked paid');
+  const wallet=walletOf(w.user), amount=Number(w.amount||0);
+  if(Number(wallet.pending||0)<amount || Number(wallet.withdrawal||0)<amount || Number(wallet.main||0)<amount)
+    return showToast('Wallet balance check failed; request was not approved');
+  wallet.pending=Math.max(0,Number(wallet.pending||0)-amount);
+  wallet.withdrawal=Math.max(0,Number(wallet.withdrawal||0)-amount);
+  wallet.main=Math.max(0,Number(wallet.main||0)-amount);
+  state.userWallets[w.user]={...state.userWallets[w.user],main:wallet.main,withdrawal:wallet.withdrawal,pending:wallet.pending};
+  w.status='approved';w.paymentRef=ref;w.processedAt=now();
+  logAudit('Demo withdrawal marked paid: '+fmt(amount)+' · '+ref);
+  closeManualPay();save();showToast('Demo payment marked as Paid');render();
 }
 
 // offers
@@ -1450,25 +1485,37 @@ async function buildTrackLink(id){
   }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">Could not sign link: '+escapeHtml(e.message)+'</div>';showToast(e.message);}
 }
 
-// payments
-async function requestWd(){
-  const amt=Number(document.getElementById('wdAmt').value||0);
-  const number=document.getElementById('wdNumber').value.trim();
-  const method=document.getElementById('wdMethod').value;
-  const w=walletOf(currentUserId());
-  if(amt<=0||amt>w.withdrawal){alert('Enter a valid amount');return;}
-  if(!number){alert('Please add your bKash/Nagad/Rocket number');return;}
-  try{
-    await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:number});
-    await loadServerWallet();
-    await syncServerWithdrawals();
-    showToast('Withdrawal request submitted');
-    render();
-  }catch(e){showToast(e.message||'Withdrawal failed');}
+// Browser-local demo payments. No real payment or server wallet is used in demo mode.
+function requestWd(){
+  const amt=Number(document.getElementById('wdAmt')?.value||0);
+  const number=String(document.getElementById('wdNumber')?.value||'').trim();
+  const method=String(document.getElementById('wdMethod')?.value||'bKash');
+  const me=currentUserId(), w=walletOf(me);
+  const available=Math.max(0,Number(w.withdrawal||0)-Number(w.pending||0));
+  if(!Number.isFinite(amt)||amt<=0||amt>available){showToast('Enter an amount within your available balance');return;}
+  if(!number){showToast('Please add your bKash/Nagad/Rocket number');return;}
+  if(!['bKash','Nagad','Rocket'].includes(method)){showToast('Unsupported payment method');return;}
+  if(!/^[0-9+ -]{8,25}$/.test(number)){showToast('Enter a valid test account number');return;}
+  state.withdrawals.unshift({id:'wd_'+uid()+'_'+Date.now().toString(36),user:me,amount:amt,method,number,status:'pending',date:now(),paymentRef:''});
+  state.userWallets[me]={...state.userWallets[me],pending:Number(w.pending||0)+amt};
+  logAudit('Demo withdrawal requested: '+fmt(amt));
+  save();showToast('Demo withdrawal request submitted');render();
 }
-async function cancelWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'cancelled'});await loadServerWallet();showToast('Withdrawal cancelled');render();}catch(e){showToast(e.message);}}
-async function approveWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'approved'});await syncServerWithdrawals();showToast('Withdrawal approved');render();}catch(e){showToast(e.message);}}
-async function rejectWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();showToast('Withdrawal rejected');render();}catch(e){showToast(e.message);}}
+function cancelWd(id){
+  const w=state.withdrawals.find(x=>x.id===id);
+  if(!w||w.status!=='pending'||w.user!==currentUserId())return showToast('Only your pending requests can be cancelled');
+  const wallet=walletOf(w.user); wallet.pending=Math.max(0,wallet.pending-Number(w.amount||0));
+  state.userWallets[w.user]={...state.userWallets[w.user],pending:wallet.pending};
+  w.status='cancelled';save();showToast('Demo withdrawal cancelled; funds released');render();
+}
+function approveWd(id){ confirmManualPay(id); }
+function rejectWd(id){
+  const w=state.withdrawals.find(x=>x.id===id);
+  if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be rejected');
+  const wallet=walletOf(w.user);wallet.pending=Math.max(0,wallet.pending-Number(w.amount||0));
+  state.userWallets[w.user]={...state.userWallets[w.user],pending:wallet.pending};
+  w.status='rejected';save();showToast('Demo withdrawal rejected; funds released');render();
+}
 
 function showInvoice(id){
   const w=state.withdrawals.find(x=>x.id===id); if(!w)return;
@@ -1587,20 +1634,13 @@ async function syncServerWithdrawals(){
     }
   }catch(e){console.error('Withdrawal sync failed:',e);}
 }
+// Demo mode deliberately uses browser-local accounts and browser-local chat/payment state.
 const legacyDoLogin=doLogin;
 const legacyDoSignup=doSignup;
 const legacyLogout=logout;
-// Demo mode deliberately uses browser-local accounts instead of the server auth API.
 doLogin=legacyDoLogin;
 doSignup=legacyDoSignup;
 logout=legacyLogout;
-const legacySendGlobal=sendGlobal;
-const legacySendDM=sendDM;
-sendGlobal=legacySendGlobal;
-sendDM=legacySendDM;
-setInterval(()=>{},5000);
-const legacyRequestWd=requestWd;
-requestWd=legacyRequestWd;
 
 window.addEventListener('error',e=>{
   if(window.__tracknestBootFallback) window.__tracknestBootFallback();
