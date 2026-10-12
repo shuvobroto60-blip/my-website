@@ -316,7 +316,8 @@ if(demoAdminUser){
 }
 if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
 try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
-state.users.forEach(u=>{ if(!u.status) u.status='active'; if(!u.subRole) u.subRole='none'; if(!u.device) u.device='Unknown device'; });
+const demoMemberProfiles={you:{username:'rakib_demo',email:'rakib@example.test',phone:'01700000001',publicId:'10001'},u_mim:{username:'mim_demo',email:'mim@example.test',phone:'01700000002',publicId:'10002'},u_karim:{username:'karim_demo',email:'karim@example.test',phone:'01700000003',publicId:'10003'}};
+state.users.forEach(u=>{if(!u.status)u.status='active';if(!u.subRole)u.subRole='none';if(!u.device)u.device='Unknown device';const demo=demoMemberProfiles[u.id];if(demo)Object.entries(demo).forEach(([k,v])=>{if(!u[k])u[k]=v;});});
 function generatePublicUserId(){
   const used=new Set(state.users.map(u=>String(u.publicId||'')).filter(x=>/^\d{5}$/.test(x)));
   if(used.size>=90000) throw new Error('No available 5-digit User IDs');
@@ -1019,7 +1020,7 @@ function exportAdminUsersCsv(){
   const columns=[['User ID','publicId'],['Name','name'],['Username','username'],['Email','email'],['Phone','phone'],['Role','role'],['Status','status'],['Sub-role','subRole'],['Device','device']];
   const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const csv=[columns.map(c=>cell(c[0])).join(','),...users.map(u=>columns.map(c=>cell(u[c[1]])).join(','))].join('\r\n');
-  const blob=new Blob(['\\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
+  const blob=new Blob(['\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='tracknest-members-'+new Date().toISOString().slice(0,10)+'.csv';
   document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
