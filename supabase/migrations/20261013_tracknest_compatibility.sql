@@ -9,11 +9,34 @@ alter table public.notifications
   add column if not exists type text not null default 'system',
   add column if not exists is_read boolean not null default false;
 
-update public.notifications
-set title = coalesce(title, subject, 'TrackNest notification'),
-    message = coalesce(message, body, ''),
-    type = coalesce(type, channel, 'system')
-where title is null or message is null or type is null;
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'subject'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'body'
+  ) and exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'channel'
+  ) then
+    execute $sql$
+      update public.notifications
+      set title = coalesce(title, subject, 'TrackNest notification'),
+          message = coalesce(message, body, ''),
+          type = coalesce(type, channel, 'system')
+      where title is null or message is null or type is null
+    $sql$;
+  else
+    update public.notifications
+    set title = coalesce(title, 'TrackNest notification'),
+        message = coalesce(message, ''),
+        type = coalesce(type, 'system')
+    where title is null or message is null or type is null;
+  end if;
+end;
+$$;
 
 -- Withdrawal API uses structured account details and processing metadata.
 alter table public.withdrawals
