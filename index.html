@@ -422,11 +422,16 @@ async function doLogin(){
   const acc=state.accounts.find(a=>String(a.username||'').toLowerCase()===idf || String(a.email||'').toLowerCase()===idf);
   let matches=false;
   if(acc){
-    if(acc.passwordHash) matches=(await hashDemoPassword(pw))===acc.passwordHash;
-    else if(typeof acc.password==='string' && acc.password===pw){
-      acc.passwordHash=await hashDemoPassword(pw);
-      delete acc.password;
-      matches=true;
+    try {
+      if(acc.passwordHash) matches=(await hashDemoPassword(pw))===acc.passwordHash;
+      else if(typeof acc.password==='string' && acc.password===pw){
+        acc.passwordHash=await hashDemoPassword(pw);
+        delete acc.password;
+        matches=true;
+      }
+    } catch(error) {
+      state.authError='Unable to verify the password in this browser. Please use a modern browser.';
+      save(); render(); return;
     }
   }
   if(!acc || !matches){ state.authError='Invalid username/email or password.'; save(); render(); return; }
@@ -448,7 +453,13 @@ async function doSignup(){
     state.authError='Username or email already exists in this browser.'; save(); render(); return;
   }
   const id=uid();
-  const passwordHash=await hashDemoPassword(pw);
+  let passwordHash;
+  try {
+    passwordHash=await hashDemoPassword(pw);
+  } catch(error) {
+    state.authError='Unable to create an account in this browser. Please use a modern browser.';
+    save(); render(); return;
+  }
   state.accounts.push({id,username,email,phone,passwordHash,role:'user'});
   state.users.push({id,name:username,username,email,phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId(),device:'This browser'});
   state.userWallets[id]={main:0,withdrawal:0,pending:0};
