@@ -5,18 +5,16 @@ function normalizeWithdrawal(w) {
   const details = w?.account_details && typeof w.account_details === 'object' ? w.account_details : {};
   const note = String(w?.admin_note || '');
   const match = note.match(/(?:Manual payment reference|Provider reference):\s*(.+)$/i);
-  return { ...w, account_number: String(details.account_number || details.number || ''),
-    provider_ref: match ? match[1].trim() : '', updated_at: w?.processed_at || w?.created_at };
+  return {
+    ...w,
+    account_number: String(details.account_number || details.number || w?.account_number || ''),
+    provider_ref: w?.provider_ref || (match ? match[1].trim() : ''),
+    updated_at: w?.processed_at || w?.updated_at || w?.created_at
+  };
 }
 
-async function patchWallet(userId, filters, values) {
-  const query = 'wallets?user_id=eq.' + encodeURIComponent(userId) +
-    filters.map(([key, value]) => '&' + key + '=eq.' + encodeURIComponent(String(value))).join('');
-  return db(query, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ ...values, updated_at: new Date().toISOString() })
-  });
+function rpcPayload(result) {
+  return Array.isArray(result) ? result[0] : result;
 }
 
 export default async function handler(req, res) {
@@ -39,7 +37,9 @@ export default async function handler(req, res) {
           body: JSON.stringify({ user_id: me.id, balance: 0, pending: 0, paid: 0 })
         }))[0];
       }
-      return json(res, 200, { ok: true, wallet });
+      const balance = Number(wallet?.balance || 0);
+      const pending = Number(wallet?.pending || 0);
+      return json(res, 200, { ok: true, wallet: { ...wallet, balance, pending, available: Math.max(0, balance - pending) } });
     }
 
     if (body.action === 'withdraw') {
@@ -56,34 +56,20 @@ export default async function handler(req, res) {
         return json(res, 400, { ok: false, message: 'Invalid account number' });
       }
 
-      const wallet = (await db('wallets?user_id=eq.' + encodeURIComponent(me.id) + '&select=*'))[0];
-      if (!wallet || Number(wallet.balance || 0) < amount) {
-        return json(res, 400, { ok: false, message: 'Insufficient balance' });
+      const result = rpcPayload(await db('rpc/request_manual_withdrawal', {
+        method: 'POST',
+        body: JSON.stringify({ p_user_id: me.id, p_amount: amount, p_method: method, p_account_number: account })
+      }));
+      if (!result?.ok) {
+        const status = Number(result?.status || 400);
+        return json(res, status >= 400 && status <= 599 ? status : 400,
+          { ok: false, message: result?.message || 'Withdrawal request failed' });
       }
-      const oldBalance = Number(wallet.balance || 0);
-      const oldPending = Number(wallet.pending || 0);
-      const changed = await patchWallet(me.id, [['balance', oldBalance]], {
-        balance: oldBalance - amount,
-        pending: oldPending + amount
+      await auditLog(me.id, 'withdrawal.requested', {
+        withdrawal_id: result.withdrawal?.id, amount, method
       });
-      if (!changed.length) return json(res, 409, { ok: false, message: 'Balance changed. Please try again.' });
-
-      try {
-        const withdrawal = (await db('withdrawals', {
-          method: 'POST',
-          headers: { Prefer: 'return=representation' },
-          body: JSON.stringify({
-            user_id: me.id, amount, method, account_details: { account_number: account }, status: 'pending'
-          })
-        }))[0];
-        await auditLog(me.id,'withdrawal.requested',{withdrawal_id:withdrawal?.id,amount,method});
-        return json(res, 201, { ok: true, withdrawal: normalizeWithdrawal(withdrawal) });
-      } catch (error) {
-        await patchWallet(me.id, [['balance', oldBalance - amount], ['pending', oldPending + amount]], {
-          balance: oldBalance, pending: oldPending
-        }).catch(() => {});
-        throw error;
-      }
+      return json(res, 201, { ok: true, withdrawal: normalizeWithdrawal(result.withdrawal),
+        available_balance: result.available_balance, pending: result.pending });
     }
 
     if (body.action === 'list') {
@@ -102,70 +88,35 @@ export default async function handler(req, res) {
         return json(res, 400, { ok: false, message: 'Invalid withdrawal status update' });
       }
       if (next === 'approved' && !paymentRef) {
-        return json(res, 400, { ok: false, message: 'Payment reference is required when marking a manual payment as paid' });
+        return json(res, 400, { ok: false, message: 'Payment reference is required after sending the manual payment' });
       }
 
-      const withdrawal = (await db('withdrawals?id=eq.' + encodeURIComponent(id) + '&select=*'))[0];
-      if (!withdrawal) return json(res, 404, { ok: false, message: 'Withdrawal not found' });
-      if (withdrawal.status !== 'pending') {
-        return json(res, 409, { ok: false, message: 'Withdrawal is already ' + withdrawal.status });
+      const result = rpcPayload(await db('rpc/process_manual_withdrawal', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_withdrawal_id: id,
+          p_admin_id: me.id,
+          p_status: next,
+          p_payment_ref: paymentRef || null
+        })
+      }));
+      if (!result?.ok) {
+        const status = Number(result?.status || 400);
+        return json(res, status >= 400 && status <= 599 ? status : 400,
+          { ok: false, message: result?.message || 'Withdrawal update failed' });
       }
 
-      const wallet = (await db('wallets?user_id=eq.' + encodeURIComponent(withdrawal.user_id) + '&select=*'))[0];
-      if (!wallet) return json(res, 500, { ok: false, message: 'Wallet not found' });
-      const amount = Number(withdrawal.amount);
-      const balance = Number(wallet.balance || 0);
-      const pending = Number(wallet.pending || 0);
-      const paid = Number(wallet.paid || 0);
-
-      let walletUpdated;
-      let rollbackFilters;
-      let rollbackValues;
+      const withdrawal = normalizeWithdrawal(result.withdrawal);
       if (next === 'approved') {
-        walletUpdated = await patchWallet(withdrawal.user_id, [['pending', pending]], {
-          pending: Math.max(0, pending - amount), paid: paid + amount
-        });
-        rollbackFilters = [['pending', Math.max(0, pending - amount)], ['paid', paid + amount]];
-        rollbackValues = { pending, paid };
+        await notifyUser(withdrawal.user_id, 'Withdrawal paid',
+          'Your TrackNest withdrawal of ৳' + Number(withdrawal.amount).toFixed(2) +
+          ' has been paid manually. Reference: ' + paymentRef);
       } else {
-        walletUpdated = await patchWallet(withdrawal.user_id, [['balance', balance], ['pending', pending]], {
-          balance: balance + amount, pending: Math.max(0, pending - amount)
-        });
-        rollbackFilters = [['balance', balance + amount], ['pending', Math.max(0, pending - amount)]];
-        rollbackValues = { balance, pending };
+        await notifyUser(withdrawal.user_id, next === 'rejected' ? 'Withdrawal rejected' : 'Withdrawal cancelled',
+          'Your TrackNest withdrawal of ৳' + Number(withdrawal.amount).toFixed(2) +
+          ' was ' + next + '. The reserved amount is available again.');
       }
-      if (!walletUpdated.length) {
-        return json(res, 409, { ok: false, message: 'Wallet changed. Refresh and try again.' });
-      }
-
-      try {
-        const updated = (await db('withdrawals?id=eq.' + encodeURIComponent(id) + '&status=eq.pending', {
-          method: 'PATCH',
-          headers: { Prefer: 'return=representation' },
-          body: JSON.stringify({
-            status: next,
-            admin_note: next === 'approved' ? ('Manual payment reference: ' + paymentRef) : (next === 'rejected' ? 'Withdrawal rejected by admin' : 'Withdrawal cancelled by admin'),
-            processed_at: new Date().toISOString()
-          })
-        }))[0];
-        if (!updated) throw new Error('Withdrawal was changed by another request');
-
-        await auditLog(me.id,'withdrawal.'+next,{withdrawal_id:id,user_id:withdrawal.user_id,amount,payment_ref:paymentRef||null});
-        if (next === 'approved') {
-          await notifyUser(withdrawal.user_id, 'Withdrawal paid',
-            'Your TrackNest withdrawal of $' + amount.toFixed(2) + ' has been paid manually. Reference: ' + paymentRef);
-        } else if (next === 'rejected') {
-          await notifyUser(withdrawal.user_id, 'Withdrawal rejected',
-            'Your TrackNest withdrawal of $' + amount.toFixed(2) + ' was rejected and returned to your balance.');
-        } else {
-          await notifyUser(withdrawal.user_id, 'Withdrawal cancelled',
-            'Your TrackNest withdrawal of $' + amount.toFixed(2) + ' was cancelled.');
-        }
-        return json(res, 200, { ok: true, withdrawal: normalizeWithdrawal(updated) });
-      } catch (error) {
-        await patchWallet(withdrawal.user_id, rollbackFilters, rollbackValues).catch(() => {});
-        throw error;
-      }
+      return json(res, 200, { ok: true, withdrawal });
     }
 
     return json(res, 400, { ok: false, message: 'Unknown action' });
