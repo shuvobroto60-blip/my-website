@@ -246,6 +246,7 @@ if(!state.lang) state.lang='en';
 if(state.bellOpen===undefined) state.bellOpen=false;
 if(state.emailSmsEnabled===undefined) state.emailSmsEnabled=true;
 if(state.userSearch===undefined) state.userSearch='';
+ if(state.userStatusFilter===undefined) state.userStatusFilter='all';
 if(state.legalOpen===undefined) state.legalOpen='';
 try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
 if(state.sidebarOpen===undefined) state.sidebarOpen=!isMobile();
@@ -980,32 +981,59 @@ function paymentView(){
 function toggleEmailSms(){ state.emailSmsEnabled=!state.emailSmsEnabled; save(); render(); }
 async function toggleUserStatus(id){const u=state.users.find(x=>x.id===id);if(!u)return;try{await apiCall('/api/users',{action:'status',userId:id,status:u.status==='active'?'suspended':'active'});await syncServerUsers();showToast('User status updated');render();}catch(e){showToast(e.message);}}
 async function setSubRole(id,val){try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('Sub-role updated');render();}catch(e){showToast(e.message);}}
+function setAdminUserFilter(value){ state.userStatusFilter=value||'all'; save(); render(); }
+function filteredAdminUsers(){
+  const q=String(state.userSearch||'').trim().toLowerCase();
+  const status=String(state.userStatusFilter||'all');
+  return state.users.filter(u=>u.role!=='admin').filter(u=>{
+    if(status!=='all' && String(u.status||'active')!==status) return false;
+    if(!q) return true;
+    return [u.publicId,u.name,u.email,u.username,u.phone,u.device].filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+}
+function exportAdminUsersCsv(){
+  const users=filteredAdminUsers();
+  const columns=[['User ID','publicId'],['Name','name'],['Username','username'],['Email','email'],['Phone','phone'],['Role','role'],['Status','status'],['Sub-role','subRole'],['Device','device']];
+  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv=[columns.map(c=>cell(c[0])).join(','),...users.map(u=>columns.map(c=>cell(u[c[1]])).join(','))].join('\r\n');
+  const blob=new Blob(['\\uFEFF',csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='tracknest-members-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
 function usersView(){
+  const allUsers=state.users.filter(u=>u.role!=='admin');
   const deviceGroups={};
-  state.users.forEach(u=>{ if(!deviceGroups[u.device]) deviceGroups[u.device]=[]; deviceGroups[u.device].push(u.name); });
+  allUsers.forEach(u=>{ const d=u.device||'Unknown device'; if(!deviceGroups[d]) deviceGroups[d]=[]; deviceGroups[d].push(u.name||u.username||'Member'); });
   const flagged = Object.entries(deviceGroups).filter(([d,names])=>names.length>1);
   const flagHtml = flagged.length ? `<div class="card p-4 sm:p-5 mb-5" style="border-color:var(--danger)">
     <div class="font-semibold mb-2" style="color:var(--danger)">⚠ Possible Multiple Accounts (same device)</div>
-    ${flagged.map(([d,names])=>`<div class="text-sm mb-1"><b>${names.join(', ')}</b> — <span style="color:var(--muted)">${d}</span></div>`).join('')}
+    ${flagged.map(([d,names])=>`<div class="text-sm mb-1"><b>${names.map(escapeHtml).join(', ')}</b> — <span style="color:var(--muted)">${escapeHtml(d)}</span></div>`).join('')}
   </div>` : '';
-  const q=String(state.userSearch||'').trim().toLowerCase();
-  const rows = state.users.filter(u=>u.role!=='admin').filter(u=>{
-    if(!q) return true;
-    return [u.publicId,u.name,u.email,u.username].filter(Boolean).join(' ').toLowerCase().includes(q);
-  }).map(u=>`<tr>
-    <td><b>${u.publicId||'-----'}</b></td>
-    <td>${u.name}</td>
+  const users=filteredAdminUsers();
+  const rows = users.map(u=>`<tr>
+    <td><b>${escapeHtml(u.publicId||'-----')}</b></td>
+    <td>${escapeHtml(u.name||u.username||'Member')}<div class="text-xs" style="color:var(--muted)">${escapeHtml(u.username||'')}</div></td>
+    <td>${escapeHtml(u.email||'—')}</td>
+    <td>${escapeHtml(u.phone||'—')}</td>
     <td><span class="dotstatus" style="background:${u.online?'var(--ok)':'var(--muted)'}"></span>${u.online?'Online':'Offline'}</td>
-    <td style="color:var(--muted)" class="text-xs">${u.device}</td>
-    <td><select onchange="setSubRole('${u.id}',this.value)">
+    <td style="color:var(--muted)" class="text-xs">${escapeHtml(u.device||'Unknown device')}</td>
+    <td><select aria-label="Sub-role for ${escapeHtml(u.username||u.name||'member')}" onchange="setSubRole('${String(u.id).replace(/'/g,"\\'")}',this.value)">
       <option value="none" ${u.subRole==='none'?'selected':''}>None</option>
       <option value="manager" ${u.subRole==='manager'?'selected':''}>Manager</option>
       <option value="support" ${u.subRole==='support'?'selected':''}>Support Agent</option>
     </select></td>
     <td><span class="pill" style="background:${u.status==='active'?'rgba(74,222,128,.15)':'rgba(251,113,133,.15)'};color:${u.status==='active'?'var(--ok)':'var(--danger)'}">${u.status==='active'?'Active':'Suspended'}</span></td>
-    <td><span class="btn2 mr-1" onclick="startImpersonateByPublicId('${u.publicId}')">View</span><span class="btn2" style="color:${u.status==='active'?'var(--danger)':'var(--ok)'}" onclick="toggleUserStatus('${u.id}')">${u.status==='active'?'Suspend':'Activate'}</span></td>
+    <td><span class="btn2 mr-1" onclick="startImpersonateByPublicId('${String(u.publicId||'').replace(/'/g,"\\'")}')">View</span><span class="btn2" style="color:${u.status==='active'?'var(--danger)':'var(--ok)'}" onclick="toggleUserStatus('${String(u.id).replace(/'/g,"\\'")}')">${u.status==='active'?'Suspend':'Activate'}</span></td>
   </tr>`).join('');
+  const activeCount=allUsers.filter(u=>u.status==='active').length;
+  const suspendedCount=allUsers.filter(u=>u.status==='suspended').length;
   return `<div class="p-4 sm:p-8">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+      <div class="card p-4"><div class="text-xs" style="color:var(--muted)">Total Members</div><div class="text-2xl font-bold mt-1">${allUsers.length}</div></div>
+      <div class="card p-4"><div class="text-xs" style="color:var(--muted)">Active Members</div><div class="text-2xl font-bold mt-1" style="color:var(--ok)">${activeCount}</div></div>
+      <div class="card p-4"><div class="text-xs" style="color:var(--muted)">Suspended Members</div><div class="text-2xl font-bold mt-1" style="color:var(--danger)">${suspendedCount}</div></div>
+    </div>
     <div class="card p-4 sm:p-5 mb-5 flex items-center justify-between flex-wrap gap-3">
       <div>
         <div class="font-semibold">Email/SMS Notifications</div>
@@ -1015,14 +1043,22 @@ function usersView(){
     </div>
     ${flagHtml}
     <div class="card p-4 sm:p-5">
-      <div class="font-semibold mb-3">User Management</div>
-      <div class="text-xs mb-3" style="color:var(--muted)">Search by 5-digit User ID, name, email or username. Use View to open that user's dashboard and manage issues.</div>
-      <div class="flex gap-2 mb-4 flex-wrap">
-        <input id="adminUserSearch" value="${state.userSearch||''}" inputmode="text" placeholder="Search User ID / name / email" onkeydown="if(event.key==='Enter')adminUserSearch()" style="max-width:320px">
-        <span class="btn2" onclick="adminUserSearch()">Search</span>
-        <span class="btn2" onclick="state.userSearch='';save();render()">Clear</span>
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div><div class="font-semibold">All Members</div><div class="text-xs mt-1" style="color:var(--muted)">Showing ${users.length} of ${allUsers.length} members</div></div>
+        <button class="btn" onclick="exportAdminUsersCsv()">Export CSV</button>
       </div>
-      <div class="overflow-x-auto"><table><thead><tr><th>User ID</th><th>Name</th><th>Status</th><th>Device</th><th>Sub-Role</th><th>Account</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="7" style="color:var(--muted)">No matching users found.</td></tr>'}</tbody></table></div>
+      <div class="text-xs mb-3" style="color:var(--muted)">Search by User ID, name, username, email, phone or device. Use View to inspect a member dashboard.</div>
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <input id="adminUserSearch" value="${escapeHtml(state.userSearch||'')}" inputmode="search" placeholder="Search members..." onkeydown="if(event.key==='Enter')adminUserSearch()" style="max-width:320px">
+        <select aria-label="Filter members by status" onchange="setAdminUserFilter(this.value)" style="max-width:180px">
+          <option value="all" ${!state.userStatusFilter||state.userStatusFilter==='all'?'selected':''}>All statuses</option>
+          <option value="active" ${state.userStatusFilter==='active'?'selected':''}>Active only</option>
+          <option value="suspended" ${state.userStatusFilter==='suspended'?'selected':''}>Suspended only</option>
+        </select>
+        <span class="btn2" onclick="adminUserSearch()">Search</span>
+        <span class="btn2" onclick="state.userSearch='';state.userStatusFilter='all';save();render()">Clear filters</span>
+      </div>
+      <div class="overflow-x-auto"><table><thead><tr><th>User ID</th><th>Name / Username</th><th>Email</th><th>Phone</th><th>Presence</th><th>Device</th><th>Sub-Role</th><th>Account Status</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="9" style="color:var(--muted)">No matching members found.</td></tr>'}</tbody></table></div>
     </div>
   </div>`;
 }
