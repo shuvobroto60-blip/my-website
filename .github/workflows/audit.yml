@@ -1,0 +1,23 @@
+name: TrackNest audit checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, fix/tracknest-demo-audit]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run audit smoke tests
+        run: npm test
