@@ -13,8 +13,8 @@ test('staging API fails closed when required secrets are missing or weak', () =>
 test('CORS uses an explicit origin allowlist instead of wildcard credentials', () => {
   assert.match(source, /const allowedOrigins = new Set/);
   assert.match(source, /allowedOrigins\.has\(origin\)/);
-  assert.doesNotMatch(source, /origin:\s*process\.env\.FRONTEND_ORIGIN\?\.split\(', '\)\s*\|\|\s*'\*'/);
-  assert.doesNotMatch(source, /origin:\s*'\*'/);
+  assert.doesNotMatch(source, /\|\|\s*['"]\*['"]/);
+  assert.doesNotMatch(source, /origin:\s*['"]\*['"]/);
 });
 
 test('API and login routes have rate limits', () => {
