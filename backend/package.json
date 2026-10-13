@@ -1,1 +1,19 @@
-{"name":"tracknest-backend","private":true,"type":"module","scripts":{"dev":"node server.js","start":"node server.js"},"dependencies":{"@supabase/supabase-js":"latest","cors":"latest","dotenv":"latest","express":"latest","helmet":"latest","jsonwebtoken":"latest","bcryptjs":"latest"}}
+{
+  "name": "tracknest-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "latest",
+    "jsonwebtoken": "latest",
+    "bcryptjs": "latest"
+  }
+}
