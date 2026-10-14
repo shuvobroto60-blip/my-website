@@ -1,0 +1,1 @@
+window.TRACKNEST_API_BASE = window.TRACKNEST_API_BASE || '';
