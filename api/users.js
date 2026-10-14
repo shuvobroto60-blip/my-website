@@ -11,7 +11,6 @@ export default async function handler(req,res){
    return json(res,200,{ok:true,users:rows});
   }
   if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
-  const b=typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{});
   if(b.action==='status'||b.action==='subrole'){
    if(!b.userId)return json(res,400,{ok:false,message:'userId required'});
    const patch=b.action==='status'?{status:String(b.status||'active')}:{sub_role:String(b.subRole||'none')};
