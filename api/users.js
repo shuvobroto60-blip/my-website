@@ -1,8 +1,16 @@
-import {db,auth,json,auditLog} from '../backend/_db.js';
 export default async function handler(req,res){
  try{
   const me=await auth(req);
-  if(!me||me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
+  if(!me)return json(res,401,{ok:false,message:'Unauthorized'});
+  const b=typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{});
+  if(req.method==='GET'){
+   const query=me.role==='admin'
+    ? 'users?select=id,public_id,username,email,name,phone,role,status,sub_role,created_at&order=created_at.desc&limit=1000'
+    : 'users?status=eq.active&select=id,public_id,username,name,role,status,sub_role&order=username.asc&limit=500';
+   const rows=await db(query);
+   return json(res,200,{ok:true,users:rows});
+  }
+  if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
   const b=typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{});
   if(b.action==='status'||b.action==='subrole'){
    if(!b.userId)return json(res,400,{ok:false,message:'userId required'});
