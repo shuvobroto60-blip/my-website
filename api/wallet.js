@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     }
 
     return json(res, 400, { ok: false, message: 'Unknown action' });
-  } catch (error) {
-    return json(res, 500, { ok: false, message: error.message || 'Server error' });
+  } catch {
+    return json(res, 500, { ok: false, message: 'Wallet request could not be completed' });
   }
 }
