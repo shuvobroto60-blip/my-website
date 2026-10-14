@@ -71,10 +71,7 @@ for (const [path, handler] of [
   ['/api/postback', postbackHandler]
 ]) app.all(path, adapt(handler));
 
-app.all('/api/postback/:token', (req, res, next) => {
-  req.query = { ...req.query, token: req.params.token };
-  return adapt(postbackHandler)(req, res, next);
-});
+app.all('/api/postback/:token', adapt(postbackHandler));
 
 app.use((error, _req, res, _next) => {
   if (res.headersSent) return;
