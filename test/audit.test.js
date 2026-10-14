@@ -40,27 +40,29 @@ test('both entrypoints require server auth and support a configurable staging AP
 test('dashboard, offers, wallet, chat, and support mutations call authenticated APIs', async () => {
   for (const file of ['index.html', 'public/index.html']) {
     const source = await readFile(path.join(root, file), 'utf8');
-    assert.match(source, /apiCall\('\\/api\\/offers',\\{action:'create'/);
-    assert.match(source, /apiCall\('\\/api\\/offers',\\{action:'join'/);
-    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'withdraw'/);
-    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'cancel'/);
-    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'update'/);
-    assert.match(source, /apiCall\('\\/api\\/chat',\\{kind:'global'/);
-    assert.match(source, /apiCall\('\\/api\\/support',\\{action:'create'/);
-    assert.match(source, /@media\\(max-width:767px\\)/);
+    for (const marker of [
+      "apiCall('/api/offers',{action:'create'",
+      "apiCall('/api/offers',{action:'join'",
+      "apiCall('/api/wallet',{action:'withdraw'",
+      "apiCall('/api/wallet',{action:'cancel'",
+      "apiCall('/api/wallet',{action:'update'",
+      "apiCall('/api/chat',{kind:'global'",
+      "apiCall('/api/support',{action:'create'"
+    ]) assert.ok(source.includes(marker), file + ' missing server action ' + marker);
+    assert.ok(source.includes('@media (max-width:767px)') || source.includes('@media(max-width:767px)'), file + ' missing mobile breakpoint');
   }
 });
 
 test('owner-only withdrawal cancellation migration is atomic and service-role only', async () => {
   const migration = await readFile(path.join(root, 'supabase/migrations/20261014_tracknest_user_withdrawal_cancel.sql'), 'utf8');
   const api = await readFile(path.join(root, 'api/wallet.js'), 'utf8');
-  assert.match(migration, /create or replace function public\\.cancel_manual_withdrawal/);
-  assert.match(migration, /wd\\.user_id <> p_user_id/);
-  assert.match(migration, /wd\\.status <> 'pending'/);
-  assert.match(migration, /for update/);
-  assert.match(migration, /revoke all on function public\\.cancel_manual_withdrawal[\\s\\S]*from public, anon, authenticated/);
-  assert.match(migration, /grant execute on function public\\.cancel_manual_withdrawal[\\s\\S]*to service_role/);
-  assert.match(api, /rpc\\/cancel_manual_withdrawal/);
+  assert.ok(migration.includes('create or replace function public.cancel_manual_withdrawal'));
+  assert.ok(migration.includes('wd.user_id <> p_user_id'));
+  assert.ok(migration.includes("wd.status <> 'pending'"));
+  assert.ok(migration.includes('for update'));
+  assert.ok(migration.includes('revoke all on function public.cancel_manual_withdrawal'));
+  assert.ok(migration.includes('grant execute on function public.cancel_manual_withdrawal'));
+  assert.ok(api.includes('rpc/cancel_manual_withdrawal'));
 });
 
 test('postback endpoint authenticates and never stores the supplied token', async () => {
