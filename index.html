@@ -1549,7 +1549,14 @@ async function buildTrackLink(id){
     const d=await apiCall('/api/clicks',{action:'create',offerId:String(o.id),subs});
     if(!d.url)throw new Error('Tracking link was not returned by the server');
     state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
-    if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Signed staging tracking URL. A click is recorded when the link opens; conversions require a valid postback.</div><input data-demo-link readonly value="'+escapeHtml(d.url)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(this.closest(\\'.card\\').querySelector(\\'[data-demo-link]\\').value).then(()=>showToast(\\'Tracking link copied\\'))">Copy</span><span class="btn2" onclick="window.open(this.closest(\\'.card\\').querySelector(\\'[data-demo-link]\\').value,\\'_blank\\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are forwarded to the offer URL. Actual advertiser conversion approval depends on its postback setup.</div>';
+    if(box){
+      box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Signed staging tracking URL. A click is recorded when the link opens; conversions require a valid postback.</div><input data-demo-link readonly value="'+escapeHtml(d.url)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><button type="button" class="btn2" id="copyStagingLink">Copy</button><button type="button" class="btn2" id="openStagingLink">Open</button></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are forwarded to the offer URL. Actual advertiser conversion approval depends on its postback setup.</div>';
+      const field=box.querySelector('[data-demo-link]');
+      const copy=box.querySelector('#copyStagingLink');
+      const open=box.querySelector('#openStagingLink');
+      if(copy)copy.addEventListener('click',()=>navigator.clipboard.writeText(field.value).then(()=>showToast('Tracking link copied')).catch(()=>showToast('Clipboard access unavailable')));
+      if(open)open.addEventListener('click',()=>window.open(field.value,'_blank','noopener'));
+    }
   }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">'+escapeHtml(e?.message||'Could not create tracking link')+'</div>';}
 }
 async function requestWd(){
