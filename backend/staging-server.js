@@ -19,7 +19,7 @@ import postbackHandler from '../api/postback.js';
 const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'FRONTEND_ORIGIN'];
 for (const name of required) {
   if (!String(process.env[name] || '').trim()) {
-    throw new Error(\`Missing required server environment variable: \${name}\`);
+    throw new Error('Missing required server environment variable: ' + name);
   }
 }
 const allowedOrigins = new Set(String(process.env.FRONTEND_ORIGIN).split(',').map(x => x.trim()).filter(Boolean));
