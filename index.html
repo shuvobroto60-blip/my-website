@@ -436,7 +436,7 @@ async function completeServerAuth(d){
   state.users=[...(state.users||[]).filter(x=>x.id!==u.id),u];
   if(!state.userWallets[d.user.id]) state.userWallets[d.user.id]={main:0,withdrawal:0,pending:0};
   save();
-  await Promise.all([syncServerUsers(),syncServerOffers(),syncServerWithdrawals(),loadServerWallet()]);
+  await Promise.all([syncServerUsers(),syncServerOffers(),syncServerWithdrawals(),loadServerWallet(),refreshServerStats(),refreshServerNotifications(),refreshServerTickets()]);
   render();
   checkAndShowNotice();
 }
@@ -597,7 +597,7 @@ function showToast(text){
   setTimeout(()=>el.remove(),3000);
 }
 
-function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); }
+function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); if(nav==='chat') refreshServerChat(); }
 function startImpersonate(){ const v=document.getElementById('impersonateSelect').value; state.impersonating=v; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function startImpersonateByPublicId(){ const el=document.getElementById('impersonatePublicId'); const pid=(el?el.value:'').trim(); const u=state.users.find(x=>x.role==='user' && String(x.publicId)===pid); if(!/^\d{5}$/.test(pid) || !u){ state.authError='User ID not found.'; save(); render(); return; } state.authError=''; state.impersonating=u.id; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function exitImpersonate(){ state.impersonating=null; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
@@ -1212,10 +1212,29 @@ function suggestFAQ(val){
     🤖 Did this already answer it? <b>${match.q}</b><br><span style="color:var(--muted)">${match.a}</span>
   </div>` : '';
 }
-function raiseTicket(){const subject=document.getElementById('tkSubject')?.value.trim()||'';const message=document.getElementById('tkMessage')?.value.trim()||'';if(!subject||!message)return showToast('Subject and message are required');state.tickets.unshift({id:'demo_ticket_'+uid(),userId:currentUserId(),subject,message,status:'open',createdAt:now(),replies:[]});save();showToast('Demo support ticket submitted');render();}
-function replyTicket(id){const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;const tk=state.tickets.find(t=>String(t.id)===String(id));if(!tk)return;tk.replies=Array.isArray(tk.replies)?tk.replies:[];tk.replies.push({from:currentUserId(),text:message,date:now()});if(effRole()==='admin')tk.status='answered';save();showToast('Demo reply sent');render();}
-function closeTicket(id){if(effRole()!=='admin')return showToast('Admin access required');const tk=state.tickets.find(t=>String(t.id)===String(id));if(tk){tk.status='closed';save();render();}}
-function reopenTicket(id){if(effRole()!=='admin')return showToast('Admin access required');const tk=state.tickets.find(t=>String(t.id)===String(id));if(tk){tk.status='open';save();render();}}
+async function raiseTicket(){
+  const subject=document.getElementById('tkSubject')?.value.trim()||'';
+  const message=document.getElementById('tkMessage')?.value.trim()||'';
+  if(!subject||!message)return showToast('Subject and message are required');
+  try{await apiCall('/api/support',{action:'create',subject,message});await refreshServerTickets();showToast('Support ticket saved');render();}
+  catch(e){showToast(e?.message||'Could not create support ticket');}
+}
+async function replyTicket(id){
+  const message=document.getElementById('tkReply_'+id)?.value.trim()||'';
+  if(!message)return;
+  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');render();}
+  catch(e){showToast(e?.message||'Could not send reply');}
+}
+async function closeTicket(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();render();}
+  catch(e){showToast(e?.message||'Could not close ticket');}
+}
+async function reopenTicket(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();render();}
+  catch(e){showToast(e?.message||'Could not reopen ticket');}
+}
 function ticketPill(status){
   const c = status==='open'?{bg:'rgba(251,191,36,.15)',fg:'#FBBF24'} : status==='answered'?{bg:'rgba(94,234,212,.15)',fg:'var(--accent)'} : {bg:'rgba(74,222,128,.15)',fg:'var(--ok)'};
   return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status}</span>`;
@@ -1447,30 +1466,53 @@ function openManualPay(id){
   document.getElementById('invoiceHost').innerHTML='<div class="modal-overlay" onclick="if(event.target===this)closeManualPay()"><div class="card p-6 w-full max-w-md"><div class="font-bold text-lg mb-1">Manual Payment</div><div class="text-xs mb-4" style="color:var(--muted)">'+escapeHtml(userName(w.user))+' · '+fmt(w.amount)+'</div><div class="p-3 rounded-lg mb-4" style="background:var(--panel2);border:1px solid var(--line)"><div class="text-xs" style="color:var(--muted)">Method</div><b>'+escapeHtml(w.method)+'</b><div class="text-xs mt-2" style="color:var(--muted)">Account</div><b>'+escapeHtml(w.number)+'</b></div><input id="manualPayRef" placeholder="Transaction / payment reference"><div class="flex gap-2 mt-4"><span class="btn" onclick="confirmManualPay(\''+String(id).replace(/'/g,"\\'")+'\')">✓ Mark as Paid</span><span class="btn2" onclick="closeManualPay()">Cancel</span></div><div class="text-xs mt-3" style="color:var(--muted)">Send the money manually first, then enter the transaction reference.</div></div></div>';
 }
 function closeManualPay(){document.getElementById('invoiceHost').innerHTML='';}
-function confirmManualPay(id){
+async function confirmManualPay(id){
   if(effRole()!=='admin')return showToast('Admin access required');
   const ref=(document.getElementById('manualPayRef')?.value||'').trim();
-  if(!ref)return showToast('Demo payment reference is required');
-  const w=state.withdrawals.find(x=>x.id===id);
+  if(!ref)return showToast('Payment reference is required');
+  const w=state.withdrawals.find(x=>String(x.id)===String(id));
   if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be marked paid');
-  const wallet=walletOf(w.user), amount=Number(w.amount||0);
-  if(Number(wallet.pending||0)<amount || Number(wallet.withdrawal||0)<amount || Number(wallet.main||0)<amount)
-    return showToast('Wallet balance check failed; request was not approved');
-  wallet.pending=Math.max(0,Number(wallet.pending||0)-amount);
-  wallet.withdrawal=Math.max(0,Number(wallet.withdrawal||0)-amount);
-  wallet.main=Math.max(0,Number(wallet.main||0)-amount);
-  state.userWallets[w.user]={...state.userWallets[w.user],main:wallet.main,withdrawal:wallet.withdrawal,pending:wallet.pending};
-  w.status='approved';w.paymentRef=ref;w.processedAt=now();
-  logAudit('Demo withdrawal marked paid: '+fmt(amount)+' · '+ref);
-  closeManualPay();save();showToast('Demo payment marked as Paid');render();
+  try{
+    await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});
+    closeManualPay();
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Staging record marked paid; this does not send money');render();
+  }catch(e){showToast(e?.message||'Could not update withdrawal');}
 }
-
-// Browser-local demo offers; no real advertiser or postback API is called.
-function addOffer(){if(effRole()!=='admin')return showToast('Admin access required');const name=document.getElementById('ofName')?.value.trim()||'';let url=document.getElementById('ofUrl')?.value.trim()||'';if(!name||!url){showToast('Name and URL are required');return;}if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url))url='https://'+url;try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol)||!parsed.hostname.includes('.'))throw new Error();url=parsed.href;}catch(e){showToast('Enter a valid offer domain, e.g. https://example.com');return;}const offer={id:'demo_offer_'+uid(),name,url,payout:Number(document.getElementById('ofPayout')?.value||0),category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||'',status:'active',joined:false};state.offers.unshift(offer);save();showToast('Demo offer added');render();}
+async function addOffer(){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const name=document.getElementById('ofName')?.value.trim()||'';
+  let url=document.getElementById('ofUrl')?.value.trim()||'';
+  if(!name||!url)return showToast('Name and URL are required');
+  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url))url='https://'+url;
+  try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol)||!parsed.hostname.includes('.'))throw new Error();url=parsed.href;}
+  catch(e){return showToast('Enter a valid offer URL');}
+  const payout=Number(document.getElementById('ofPayout')?.value||0);
+  if(!Number.isFinite(payout)||payout<0)return showToast('Enter a valid payout amount');
+  try{
+    await apiCall('/api/offers',{action:'create',name,url,payout,category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||''});
+    await syncServerOffers();showToast('Offer saved to staging database');render();
+  }catch(e){showToast(e?.message||'Could not create offer');}
+}
 function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Demo mode is active. Real postback/API is intentionally not connected yet; this is expected. Demo offer, chat, wallet and withdrawal data stays in this browser.</div>';}
-function delOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const before=state.offers.length;state.offers=state.offers.filter(o=>String(o.id)!==String(id));if(state.offers.length!==before){save();showToast('Demo offer deleted');render();}}
-function toggleOffer(id){if(effRole()!=='admin')return showToast('Admin access required');const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;o.status=o.status==='active'?'paused':'active';save();showToast('Demo offer status updated');render();}
-function joinOffer(id){const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;o.joined=true;save();showToast('Joined demo offer');setNav('offers','active');}
+async function delOffer(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  if(!confirm('Delete this offer from the staging database?'))return;
+  try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}
+  catch(e){showToast(e?.message||'Could not delete offer');}
+}
+async function toggleOffer(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
+  const status=o.status==='active'?'paused':'active';
+  try{await apiCall('/api/offers',{action:'status',id,status});await syncServerOffers();showToast('Offer status updated');render();}
+  catch(e){showToast(e?.message||'Could not update offer');}
+}
+async function joinOffer(id){
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
+  try{await apiCall('/api/offers',{action:'join',id});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}
+  catch(e){showToast(e?.message||'Could not join offer');}
+}
 function getLink(id){
  const o=state.offers.find(x=>x.id===id);if(!o)return;
  const me=currentUserId(),key=me+'_'+id,last=state.lastClick[key]||0;
@@ -1492,38 +1534,37 @@ async function buildTrackLink(id){
 }
 
 // Browser-local demo payments. No real payment or server wallet is used in demo mode.
-function requestWd(){
+async function requestWd(){
   const amt=Number(document.getElementById('wdAmt')?.value||0);
   const number=String(document.getElementById('wdNumber')?.value||'').trim();
   const method=String(document.getElementById('wdMethod')?.value||'bKash');
-  const me=currentUserId(), w=walletOf(me);
-  const available=Math.max(0,Math.min(Number(w.withdrawal||0),Number(w.main||0))-Number(w.pending||0));
-  if(!Number.isFinite(amt)||amt<=0||amt>available){showToast('Enter an amount within your available balance');return;}
-  if(!number){showToast('Please add your bKash/Nagad/Rocket number');return;}
-  if(!['bKash','Nagad','Rocket'].includes(method)){showToast('Unsupported payment method');return;}
-  if(!/^[0-9+ -]{8,25}$/.test(number)){showToast('Enter a valid test account number');return;}
-  state.withdrawals.unshift({id:'wd_'+uid()+'_'+Date.now().toString(36),user:me,amount:amt,method,number,status:'pending',date:now(),paymentRef:''});
-  state.userWallets[me]={...state.userWallets[me],pending:Number(w.pending||0)+amt};
-  logAudit('Demo withdrawal requested: '+fmt(amt));
-  save();showToast('Demo withdrawal request submitted');render();
+  if(!Number.isFinite(amt)||amt<=0||amt>1000000)return showToast('Enter a valid withdrawal amount');
+  if(!['bKash','Nagad','Rocket'].includes(method))return showToast('Unsupported payment method');
+  if(!/^[0-9+ -]{8,25}$/.test(number))return showToast('Enter a valid test account number');
+  try{
+    await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:number});
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Staging withdrawal requested; funds are reserved, not paid');render();
+  }catch(e){showToast(e?.message||'Withdrawal request failed');}
 }
-function cancelWd(id){
-  const w=state.withdrawals.find(x=>x.id===id);
-  if(!w||w.status!=='pending'||w.user!==currentUserId())return showToast('Only your pending requests can be cancelled');
-  const wallet=walletOf(w.user); wallet.pending=Math.max(0,wallet.pending-Number(w.amount||0));
-  state.userWallets[w.user]={...state.userWallets[w.user],pending:wallet.pending};
-  w.status='cancelled';save();showToast('Demo withdrawal cancelled; funds released');render();
+async function cancelWd(id){
+  try{
+    await apiCall('/api/wallet',{action:'cancel',id});
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Withdrawal cancelled; reserved funds released');render();
+  }catch(e){showToast(e?.message||'Could not cancel withdrawal');}
 }
 function approveWd(id){ confirmManualPay(id); }
-function rejectWd(id){
+async function rejectWd(id){
   if(effRole()!=='admin')return showToast('Admin access required');
-  const w=state.withdrawals.find(x=>x.id===id);
+  const w=state.withdrawals.find(x=>String(x.id)===String(id));
   if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be rejected');
-  const wallet=walletOf(w.user);wallet.pending=Math.max(0,wallet.pending-Number(w.amount||0));
-  state.userWallets[w.user]={...state.userWallets[w.user],pending:wallet.pending};
-  w.status='rejected';save();showToast('Demo withdrawal rejected; funds released');render();
+  try{
+    await apiCall('/api/wallet',{action:'update',id,status:'rejected'});
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Withdrawal rejected; reserved funds released');render();
+  }catch(e){showToast(e?.message||'Could not reject withdrawal');}
 }
-
 function showInvoice(id){
   const w=state.withdrawals.find(x=>x.id===id); if(!w)return;
   document.getElementById('invoiceHost').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeInvoice()">
@@ -1568,18 +1609,29 @@ function syncFromStorage(){
   }catch(e){}
 }
 window.addEventListener('storage',e=>{ if(e.key===LS_KEY) syncFromStorage(); });
-function sendGlobal(){
-  const inp=document.getElementById('chatInput'); const text=inp.value.trim(); if(!text)return;
-  state.chatGlobal.push({from:currentUserId(),name:userName(currentUserId()),text,time:now()});
-  inp.value=''; save(); render();
+async function refreshServerChat(){
+  try{
+    if(state.chatContact){
+      const other=String(state.chatContact);
+      const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(other),null,'GET');
+      if(d.messages){const key=threadKey(currentUserId(),other);state.dms[key]=d.messages.map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));}
+    }else{
+      const d=await apiCall('/api/chat?kind=global',null,'GET');
+      if(d.messages)state.chatGlobal=d.messages.map(m=>({id:m.id,from:m.sender_id,name:m.users?.name||m.users?.username||'User',text:m.body,time:m.created_at}));
+    }
+    save();
+  }catch(e){showToast(e?.message||'Could not load chat messages');}
+}
+async function sendGlobal(){
+  const inp=document.getElementById('chatInput');const text=inp?.value.trim()||'';if(!text)return;
+  try{await apiCall('/api/chat',{kind:'global',text});if(inp)inp.value='';await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not send message');}
 }
 function openContact(id){ state.chatContact=id; save(); render(); }
-function sendDM(){
-  const inp=document.getElementById('dmInput'); const text=inp.value.trim(); if(!text || !state.chatContact)return;
-  const me=currentUserId(); const other=state.chatContact; const key=threadKey(me,other);
-  if(!state.dms[key]) state.dms[key]=[];
-  state.dms[key].push({id:uid(),from:me,text,time:now(),seen:false,edited:false});
-  inp.value=''; save(); render();
+async function sendDM(){
+  const inp=document.getElementById('dmInput');const text=inp?.value.trim()||'';if(!text||!state.chatContact)return;
+  try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});if(inp)inp.value='';await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not send direct message');}
 }
 function sidebarBadgeRefresh(){ const el=document.getElementById('app'); if(el) render(); }
 function editMsg(key,msgId){
@@ -1666,6 +1718,7 @@ async function restoreServerSession(){
     await syncServerOffers();
     await syncServerWithdrawals();
     await loadServerWallet();
+    await Promise.all([refreshServerStats(),refreshServerNotifications(),refreshServerTickets()]);
     render();
     checkAndShowNotice();
   }catch(e){
