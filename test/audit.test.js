@@ -24,18 +24,19 @@ test('all server-side JavaScript parses', async () => {
   }
 });
 
-test('full demo opens the dashboard without login and remains explicit in both entrypoints', async () => {
+test('both entrypoints require server auth and support a configurable staging API origin', async () => {
   for (const file of ['index.html', 'public/index.html']) {
     const source = await readFile(path.join(root, file), 'utf8');
-    assert.match(source, /DEMO_MODE|demo mode|Demo mode/i, `${file} should clearly retain demo-mode handling`);
-    assert.match(source, /LS_KEY/);
-    assert.match(source, /DEMO MODE.*browser-local data/);
-    assert.match(source, /state\.session=\{userId:'you'\}/);
-    assert.match(source, /Auth is intentionally deferred/);
-    assert.match(source, /function logout\(\)\{ state\.session=\{userId:'you'\}/);
+    assert.match(source, /API_BASE_URL/);
+    assert.match(source, /action:'login'/);
+    assert.match(source, /action:'signup'/);
+    assert.match(source, /action:'logout'/);
+    assert.match(source, /restoreServerSession\(\)/);
+    assert.match(source, /if\(!state\.session\)[\s\S]*renderAuthScreen\(\)/);
+    assert.doesNotMatch(source, /Auth is intentionally deferred/);
+    assert.doesNotMatch(source, /Full demo mode: skip login\/signup/);
   }
 });
-
 test('postback endpoint authenticates and never stores the supplied token', async () => {
   const source = await readFile(path.join(root, 'api/postback.js'), 'utf8');
   assert.match(source, /POSTBACK_TOKEN/);
