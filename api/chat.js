@@ -12,7 +12,25 @@ export default async function handler(req,res){
     const users=ids.length?await db('users?id=in.('+ids.join(',')+')&select=id,name,username'):[];const map=Object.fromEntries(users.map(u=>[u.id,u]));
     return json(res,200,{ok:true,messages:messages.map(m=>({...m,users:map[m.sender_id]||null}))});
    }
-   const text=String(b.text||'').trim();if(!text)return json(res,400,{ok:false,message:'Message required'});
+   if(b.action==='edit'){
+    const id=String(b.id||''), text=String(b.text||'').trim().slice(0,2000);
+    if(!id||!text)return json(res,400,{ok:false,message:'Message id and text are required'});
+    const msg=(await db('messages?id=eq.'+encodeURIComponent(id)+'&select=id,sender_id,conversation_id'))[0];
+    if(!msg)return json(res,404,{ok:false,message:'Message not found'});
+    if(msg.sender_id!==me.id||msg.conversation_id!==c.id)return json(res,403,{ok:false,message:'Not allowed'});
+    await db('messages?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({body:text,edited_at:new Date().toISOString()})});
+    return json(res,200,{ok:true});
+   }
+      if(b.action==='edit'){
+      const id=String(b.id||''), text=String(b.text||'').trim().slice(0,2000);
+      if(!id||!text)return json(res,400,{ok:false,message:'Message id and text are required'});
+      const msg=(await db('messages?id=eq.'+encodeURIComponent(id)+'&select=id,sender_id,conversation_id'))[0];
+      if(!msg)return json(res,404,{ok:false,message:'Message not found'});
+      if(msg.sender_id!==me.id||msg.conversation_id!==c.id)return json(res,403,{ok:false,message:'Not allowed'});
+      await db('messages?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({body:text,edited_at:new Date().toISOString()})});
+      return json(res,200,{ok:true});
+     }
+    const text=String(b.text||'').trim();if(!text)return json(res,400,{ok:false,message:'Message required'});
    await db('messages',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({conversation_id:c.id,sender_id:me.id,body:text.slice(0,2000)})});
    return json(res,201,{ok:true});
   }
