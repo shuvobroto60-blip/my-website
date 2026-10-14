@@ -473,7 +473,7 @@ async function doSignup(){
   state.session={userId:id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
   save(); render(); checkAndShowNotice();
 }
-function logout(){ state.session=null; state.impersonating=null; state.authError=''; state.authTab='login'; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
+function logout(){ state.session={userId:'you'}; state.impersonating=null; state.authError=''; state.authTab='login'; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
 
 function renderAuthScreen(){
   const err = state.authError ? `<div class="text-sm mb-3" style="color:var(--danger)">${state.authError}</div>` : '';
@@ -717,7 +717,7 @@ function topbar(title){
       <span class="btn2 px-2.5 py-1.5 shrink-0" onclick="toggleSidebar()">☰</span>
       <div class="min-w-0">
         <div class="text-lg sm:text-xl font-bold truncate">${title}</div>
-        <div class="text-xs truncate" style="color:var(--muted)">${effRole()==='admin'?t('admin_panel'):t('user_panel')}</div>
+        <div class="text-xs truncate" style="color:var(--muted)">${effRole()==='admin'?t('admin_panel'):t('user_panel')} · DEMO MODE · browser-local data</div>
       </div>
     </div>
     <div class="flex items-center gap-4 shrink-0">
@@ -1391,9 +1391,10 @@ function renderPublicPreview(){
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
   if(!state.session){
-    window.__tracknestAuthRendered=true;
-    renderAuthScreen();
-    return;
+    // Auth is intentionally deferred: the public demo always opens as a non-admin demo user.
+    state.session={userId:'you'};
+    state.impersonating=null;
+    save();
   }
   window.__tracknestAuthRendered=false;
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
@@ -1695,7 +1696,14 @@ async function refreshServerSecurity(){
 
 localStorage.removeItem(API_TOKEN_KEY);
 state.serverUser=null;
-state.session=null;
+// Full demo mode: skip login/signup and open the dashboard with a browser-local user.
+if(!state.users.some(u=>u.id==='you')) state.users.unshift({id:'you',name:'Demo User',username:'demo_user',online:true,role:'user',status:'active',subRole:'none',publicId:'10001',device:'This browser'});
+const demoUser=state.users.find(u=>u.id==='you');
+demoUser.role='user'; demoUser.status='active';
+if(!state.userWallets.you) state.userWallets.you={main:0,withdrawal:0,pending:0};
+state.session={userId:'you'};
+state.impersonating=null;
+state.role='user';
 render();
 if(state.nav==='dashboard') checkAndShowNotice();
 </script>
