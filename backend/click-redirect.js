@@ -47,6 +47,7 @@ export async function handleClickRedirect(req, res) {
       })
     });
     const target = new URL(offer.url);
+    if (!['http:', 'https:'].includes(target.protocol) || !target.hostname.includes('.')) return res.status(400).send('Offer destination is invalid.');
     target.searchParams.set('click_id', clickId);
     for (let i = 1; i <= 8; i++) if (subs['sub' + i]) target.searchParams.set('sub' + i, String(subs['sub' + i]));
     return res.redirect(302, target.toString());
