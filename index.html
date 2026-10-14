@@ -806,7 +806,7 @@ function dashboardView(){
   const w = walletOf(currentUserId());
   const totalClicks=Number(state.serverStats?.totalClicks||0);
   const totalConv=Number(state.serverStats?.totalConversions||0);
-  const noticeComposer = (effRole()==='admin' && !state.impersonating) ? `
+  const noticeComposer = (effRole()==='admin' && !state.serverUser && !state.impersonating) ? `
     <div class="card p-4 sm:p-5 mb-5">
       <div class="font-semibold mb-2">Send Notice to All Users</div>
       <div class="text-xs mb-2" style="color:var(--muted)">This will appear as a popup on every user's dashboard until they close it.</div>
@@ -1645,7 +1645,7 @@ async function sendGlobal(){
   try{await apiCall('/api/chat',{kind:'global',text});if(inp)inp.value='';await refreshServerChat();render();}
   catch(e){showToast(e?.message||'Could not send message');}
 }
-function openContact(id){ state.chatContact=id; save(); render(); }
+function openContact(id){ state.chatContact=id; save(); render(); refreshServerChat(); }
 async function sendDM(){
   const inp=document.getElementById('dmInput');const text=inp?.value.trim()||'';if(!text||!state.chatContact)return;
   try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});if(inp)inp.value='';await refreshServerChat();render();}
