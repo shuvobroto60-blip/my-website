@@ -137,13 +137,14 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
   .main{padding-bottom:78px!important}
 }
 </style>
+<script src="/runtime-config.js"></script>
 </head>
 <body>
 <script>
 (function(){
   function bootPublicPreview(){
     var app=document.getElementById('app'); if(!app || app.children.length) return;
-    app.innerHTML=`<main style="min-height:100vh;background:linear-gradient(135deg,#07111f,#102b35);color:#f8fafc;padding:clamp(20px,5vw,56px);font-family:system-ui,sans-serif"><div style="max-width:1120px;margin:0 auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:clamp(42px,8vh,84px)"><div style="font-weight:850;font-size:23px">◈ TrackNest</div><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #35505b;border-radius:999px;padding:8px 12px;color:#b8c7d9">Public preview</span></header><section style="max-width:760px;margin-bottom:42px"><div style="color:#5eead4;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px">Affiliate management, simplified</div><h1 style="font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:850">Your affiliate network. <span style="color:#5eead4">One clear view.</span></h1><p style="font-size:clamp(16px,2vw,19px);line-height:1.75;color:#b8c7d9;max-width:650px;margin:0">Track offers, clicks, conversions and payouts from one workspace. The sign-in screen is temporarily hidden while the demo experience is being prepared.</p></section><section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin:30px 0 38px"><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🎯</div><h2 style="font-size:17px;margin:0 0 9px">Offer Marketplace</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Browse campaigns and manage offer links.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">📈</div><h2 style="font-size:17px;margin:0 0 9px">Clicks & Conversions</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Review performance and conversion activity.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">💳</div><h2 style="font-size:17px;margin:0 0 9px">Wallet & Payouts</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">View earnings and request manual withdrawals.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🛡️</div><h2 style="font-size:17px;margin:0 0 9px">Postback & Security</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Organize server-to-server events and security signals.</p></article></section><footer style="padding-top:22px;border-top:1px solid #29424c;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#9fb0bf;font-size:12px"><span>TrackNest © ${new Date().getFullYear()}</span><span>Demo preview · Authentication remains protected on the server</span></footer></div></main>`;
+    app.innerHTML=`<main style="min-height:100vh;background:linear-gradient(135deg,#07111f,#102b35);color:#f8fafc;padding:clamp(20px,5vw,56px);font-family:system-ui,sans-serif"><div style="max-width:1120px;margin:0 auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:clamp(42px,8vh,84px)"><div style="font-weight:850;font-size:23px">◈ TrackNest</div><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #35505b;border-radius:999px;padding:8px 12px;color:#b8c7d9">Public preview</span></header><section style="max-width:760px;margin-bottom:42px"><div style="color:#5eead4;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px">Affiliate management, simplified</div><h1 style="font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:850">Your affiliate network. <span style="color:#5eead4">One clear view.</span></h1><p style="font-size:clamp(16px,2vw,19px);line-height:1.75;color:#b8c7d9;max-width:650px;margin:0">Track offers, clicks, conversions and payouts from one workspace. The sign-in screen is temporarily hidden while the demo experience is being prepared.</p></section><section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin:30px 0 38px"><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🎯</div><h2 style="font-size:17px;margin:0 0 9px">Offer Marketplace</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Browse campaigns and manage offer links.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">📈</div><h2 style="font-size:17px;margin:0 0 9px">Clicks & Conversions</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Review performance and conversion activity.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">💳</div><h2 style="font-size:17px;margin:0 0 9px">Wallet & Payouts</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">View earnings and request manual withdrawals.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🛡️</div><h2 style="font-size:17px;margin:0 0 9px">Postback & Security</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Organize server-to-server events and security signals.</p></article></section><footer style="padding-top:22px;border-top:1px solid #29424c;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#9fb0bf;font-size:12px"><span>TrackNest © ${new Date().getFullYear()}</span><span>Staging preview · Account and session data are server-managed</span></footer></div></main>`;
   }
   window.__tracknestBootFallback=bootPublicPreview;
   window.addEventListener('error',function(){setTimeout(bootPublicPreview,0);});
@@ -220,6 +221,7 @@ function seed(){
     statsRange:{from:'',to:''}, emailSmsEnabled:true,
   };
 }
+let authDraft = {username:'', email:'', phone:'', password:''};
 let state = null;
 try{
   const raw=localStorage.getItem(LS_KEY);
@@ -314,6 +316,40 @@ if(demoAdminUser){
 }else{
   state.users.push({id:'admin',name:'Admin',username:'admin',email:'admin@tracknest.local',phone:'',online:false,role:'admin',status:'active',subRole:'none',device:'Demo admin'});
 }
+// Fixed browser-local demo accounts for QA. These are NOT production credentials.
+const demoCredentials = [
+  {id:'admin', username:'admin', email:'admin@tracknest.local', phone:'', password:'AdminDemo123!', role:'admin', name:'Admin', balance:0},
+  {id:'demo_user_1', username:'demo_user1', email:'demo_user1@example.test', phone:'01700000001', password:'UserDemo123!', role:'user', name:'Demo User 1', balance:1000},
+  {id:'demo_user_2', username:'demo_user2', email:'demo_user2@example.test', phone:'01700000002', password:'UserDemo123!', role:'user', name:'Demo User 2', balance:1000}
+];
+for (const d of demoCredentials) {
+  let account = state.accounts.find(a=>a.id===d.id || String(a.username||'').toLowerCase()===d.username);
+  if (!account) {
+    account = {id:d.id, username:d.username, email:d.email, phone:d.phone, role:d.role};
+    state.accounts.push(account);
+  }
+  Object.assign(account,{id:d.id,username:d.username,email:d.email,phone:d.phone,role:d.role,password:d.password});
+  delete account.passwordHash;
+  let user = state.users.find(u=>u.id===d.id);
+  if (!user) {
+    user = {id:d.id,name:d.name,username:d.username,email:d.email,phone:d.phone,online:false,role:d.role,status:'active',subRole:'none',device:'Demo account'};
+    state.users.push(user);
+  }
+  Object.assign(user,{name:d.name,username:d.username,email:d.email,phone:d.phone,role:d.role,status:'active',subRole:'none',device:'Demo account'});
+  if (!state.userWallets[d.id]) state.userWallets[d.id]={main:d.balance,withdrawal:d.balance,pending:0};
+  else if (d.role==='user') {
+    state.userWallets[d.id].main=Number(state.userWallets[d.id].main ?? d.balance);
+    state.userWallets[d.id].withdrawal=Number(state.userWallets[d.id].withdrawal ?? d.balance);
+    state.userWallets[d.id].pending=Number(state.userWallets[d.id].pending ?? 0);
+    // Recover the initial demo balance for older browser-local accounts that were created with an empty wallet.
+    const hasWithdrawalHistory=state.withdrawals.some(w=>w.user===d.id);
+    if(!hasWithdrawalHistory && Number(state.userWallets[d.id].main)<=0 && Number(state.userWallets[d.id].withdrawal)<=0){
+      state.userWallets[d.id].main=d.balance;
+      state.userWallets[d.id].withdrawal=d.balance;
+      state.userWallets[d.id].pending=0;
+    }
+  }
+}
 if(state.session && !state.accounts.some(a=>a.id===state.session.userId)) state.session=null;
 try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}
 const demoMemberProfiles={you:{username:'rakib_demo',email:'rakib@example.test',phone:'01700000001',publicId:'10001'},u_mim:{username:'mim_demo',email:'mim@example.test',phone:'01700000002',publicId:'10002'},u_karim:{username:'karim_demo',email:'karim@example.test',phone:'01700000003',publicId:'10003'}};
@@ -388,47 +424,63 @@ async function hashDemoPassword(password){
   const digest=await window.crypto.subtle.digest('SHA-256',bytes);
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
+async function completeServerAuth(d){
+  if(!d?.ok || !d.token || !d.user) throw new Error(d?.message || 'Authentication response was incomplete');
+  localStorage.setItem(API_TOKEN_KEY,d.token);
+  state.serverUser=d.user;
+  state.offers=[];state.withdrawals=[];state.chatGlobal=[];state.dms={};state.tickets=[];state.userWallets={};
+  state.session={userId:d.user.id};
+  state.impersonating=null;
+  state.nav='dashboard';
+  state.authError='';
+  const u={id:d.user.id,name:d.user.name||d.user.username,username:d.user.username,email:d.user.email,phone:d.user.phone||'',online:true,role:d.user.role||'user',status:'active',subRole:d.user.subRole||'none',publicId:String(d.user.publicId||''),device:'Server account'};
+  state.users=[...(state.users||[]).filter(x=>x.id!==u.id),u];
+  if(!state.userWallets[d.user.id]) state.userWallets[d.user.id]={main:0,withdrawal:0,pending:0};
+  save();
+  await Promise.all([syncServerUsers(),syncServerOffers(),syncServerWithdrawals(),loadServerWallet(),refreshServerStats(),refreshServerNotifications(),refreshServerTickets()]);
+  render();
+  checkAndShowNotice();
+}
 async function doLogin(){
-  const idf=document.getElementById('authLoginId').value.trim().toLowerCase();
-  const pw=document.getElementById('authLoginPw').value;
-  const acc=state.accounts.find(a=>String(a.username||'').toLowerCase()===idf || String(a.email||'').toLowerCase()===idf);
-  let matches=false;
-  if(acc){
-    if(acc.passwordHash) matches=(await hashDemoPassword(pw))===acc.passwordHash;
-    else if(typeof acc.password==='string' && acc.password===pw){
-      acc.passwordHash=await hashDemoPassword(pw);
-      delete acc.password;
-      matches=true;
-    }
-  }
-  if(!acc || !matches){ state.authError='Invalid username/email or password.'; save(); render(); return; }
-  state.session={userId:acc.id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
-  if(!state.users.some(u=>u.id===acc.id)) state.users.push({id:acc.id,name:acc.username,username:acc.username,email:acc.email,phone:acc.phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId()});
-  if(!state.userWallets[acc.id]) state.userWallets[acc.id]={main:0,withdrawal:0,pending:0};
-  save(); render(); checkAndShowNotice();
+  const idf=document.getElementById('authLoginId')?.value.trim()||'';
+  const pw=document.getElementById('authLoginPw')?.value||'';
+  if(!idf||!pw){state.authError='Enter your username/email and password.';render();return;}
+  const btn=document.querySelector('.auth-card .auth-submit');
+  setActionBusy(btn,true,'Signing in…');
+  try{
+    const d=await apiCall('/api/auth',{action:'login',identifier:idf,password:pw});
+    await completeServerAuth(d);
+  }catch(e){
+    state.authError=e?.message||'Unable to sign in. Please try again.';
+    render();
+  }finally{setActionBusy(btn,false);}
 }
 async function doSignup(){
-  const username=document.getElementById('authSuUser').value.trim();
-  const email=document.getElementById('authSuEmail').value.trim().toLowerCase();
-  const phone=document.getElementById('authSuPhone').value.trim();
-  const pw=document.getElementById('authSuPw').value;
-  if(username.length<3){ state.authError='Username must be at least 3 characters.'; save(); render(); return; }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ state.authError='Enter a valid email address.'; save(); render(); return; }
-  if(!phone){ state.authError='Phone number is required.'; save(); render(); return; }
-  if(pw.length<6){ state.authError='Password must be at least 6 characters.'; save(); render(); return; }
-  if(state.accounts.some(a=>String(a.username||'').toLowerCase()===username.toLowerCase()||String(a.email||'').toLowerCase()===email)){
-    state.authError='Username or email already exists in this browser.'; save(); render(); return;
-  }
-  const id=uid();
-  const passwordHash=await hashDemoPassword(pw);
-  state.accounts.push({id,username,email,phone,passwordHash,role:'user'});
-  state.users.push({id,name:username,username,email,phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId(),device:'This browser'});
-  state.userWallets[id]={main:0,withdrawal:0,pending:0};
-  state.session={userId:id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
-  save(); render(); checkAndShowNotice();
+  const username=document.getElementById('authSuUser')?.value.trim()||'';
+  const email=document.getElementById('authSuEmail')?.value.trim().toLowerCase()||'';
+  const phone=document.getElementById('authSuPhone')?.value.trim()||'';
+  const pw=document.getElementById('authSuPw')?.value||'';
+  if(username.length<3){state.authError='Username must be at least 3 characters.';render();return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){state.authError='Enter a valid email address.';render();return;}
+  if(!/^[0-9+ -]{8,25}$/.test(phone)){state.authError='Enter a valid phone number.';render();return;}
+  if(pw.length<6||pw.length>200){state.authError='Password must be between 6 and 200 characters.';render();return;}
+  const btn=document.querySelector('.auth-card .auth-submit');
+  setActionBusy(btn,true,'Creating account…');
+  try{
+    const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password:pw});
+    await completeServerAuth(d);
+  }catch(e){
+    state.authError=e?.message||'Unable to create your account. Please try again.';
+    render();
+  }finally{setActionBusy(btn,false);}
 }
-function logout(){ state.session=null; state.impersonating=null; state.authError=''; state.authTab='login'; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
-
+async function logout(){
+  try{if(apiToken())await apiCall('/api/auth',{action:'logout'});}catch(e){}
+  localStorage.removeItem(API_TOKEN_KEY);
+  state.serverUser=null;state.session=null;state.impersonating=null;state.authError='';state.authTab='login';
+  state.nav='dashboard';document.getElementById('noticeHost').innerHTML='';
+  render();
+}
 function renderAuthScreen(){
   const err = state.authError ? `<div class="text-sm mb-3" style="color:var(--danger)">${state.authError}</div>` : '';
   const tabs = `<div class="flex rounded-lg overflow-hidden mb-5" style="border:1px solid var(--line)">
@@ -439,7 +491,7 @@ function renderAuthScreen(){
     <input id="authLoginId" placeholder="Username or Email" class="mb-3">
     <input id="authLoginPw" type="password" placeholder="Password" class="mb-4" onkeydown="if(event.key==='Enter')doLogin()">
     <span class="btn w-full text-center" style="display:block" onclick="doLogin()">Login</span>
-    <div class="text-xs mt-3" style="color:var(--muted)">Demo mode: no email or phone verification. This account stays in this browser.</div>
+    <div class="text-xs mt-3" style="color:var(--muted)">Sign in with an account registered on this TrackNest server.</div>
   ` : `
     <input id="authSuUser" placeholder="Username" class="mb-3">
     <input id="authSuEmail" placeholder="Email" class="mb-3">
@@ -471,7 +523,7 @@ function renderAuthScreen(){
         <input id="authLoginId" placeholder="Username or email" autocomplete="username">
         <input id="authLoginPw" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
-        <div class="auth-links"><a onclick="alert('Demo mode has no password reset. Use an account created in this browser.')">Forgot password?</a><span></span></div>
+        <div class="auth-links"><a onclick="alert('Password reset is not configured yet.')">Forgot password?</a><span></span></div>
       ` : `
         <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.username)}" oninput="authDraft.username=this.value">
         <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.email)}" oninput="authDraft.email=this.value">
@@ -546,9 +598,19 @@ function showToast(text){
   setTimeout(()=>el.remove(),3000);
 }
 
-function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); }
-function startImpersonate(){ const v=document.getElementById('impersonateSelect').value; state.impersonating=v; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
-function startImpersonateByPublicId(){ const el=document.getElementById('impersonatePublicId'); const pid=(el?el.value:'').trim(); const u=state.users.find(x=>x.role==='user' && String(x.publicId)===pid); if(!/^\d{5}$/.test(pid) || !u){ state.authError='User ID not found.'; save(); render(); return; } state.authError=''; state.impersonating=u.id; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
+function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); if(nav==='chat') refreshServerChat(); }
+function startImpersonate(){
+  if(state.serverUser)return showToast('Server-account impersonation is disabled for safety');
+  const v=document.getElementById('impersonateSelect')?.value;if(!v)return;
+  state.impersonating=v;state.nav='dashboard';save();render();checkAndShowNotice();
+}
+function startImpersonateByPublicId(){
+  if(state.serverUser)return showToast('Server-account impersonation is disabled for safety');
+  const el=document.getElementById('impersonatePublicId');const pid=(el?el.value:'').trim();
+  const u=state.users.find(x=>x.role!=='admin'&&String(x.publicId)===pid);
+  if(!u)return showToast('User not found');
+  state.impersonating=u.id;state.nav='dashboard';save();render();checkAndShowNotice();
+}
 function exitImpersonate(){ state.impersonating=null; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function toggleSidebar(){ state.sidebarOpen=!state.sidebarOpen; save(); render(); }
 function toggleTheme(){ state.theme = state.theme==='dark'?'light':'dark'; save(); render(); }
@@ -671,7 +733,7 @@ function topbar(title){
       <span class="btn2 px-2.5 py-1.5 shrink-0" onclick="toggleSidebar()">☰</span>
       <div class="min-w-0">
         <div class="text-lg sm:text-xl font-bold truncate">${title}</div>
-        <div class="text-xs truncate" style="color:var(--muted)">${effRole()==='admin'?t('admin_panel'):t('user_panel')}</div>
+        <div class="text-xs truncate" style="color:var(--muted)">${effRole()==='admin'?t('admin_panel'):t('user_panel')} · DEMO MODE · browser-local data</div>
       </div>
     </div>
     <div class="flex items-center gap-4 shrink-0">
@@ -687,23 +749,18 @@ function topbar(title){
 
 function sparkline(){
   const serverDays=state.serverStats&&state.serverStats.daily||null;
-  const days=serverDays?Object.keys(serverDays):Object.keys(state.clicksByDay);
-  const clicks=days.map(d=>serverDays?Number(serverDays[d].clicks||0):state.clicksByDay[d].clicks);
-  const conv=days.map(d=>serverDays?Number(serverDays[d].conversions||0):state.clicksByDay[d].conv);
-  const W=560,H=160,pad=20, maxC=Math.max(...clicks,1);
-  const pts=arr=>arr.map((v,i)=>`${pad+i*((W-2*pad)/(arr.length-1))},${H-pad-(v/maxC)*(H-2*pad)}`).join(' ');
-  const dots=(arr,color)=>arr.map((v,i)=>`<circle cx="${pad+i*((W-2*pad)/(arr.length-1))}" cy="${H-pad-(v/maxC)*(H-2*pad)}" r="3.5" fill="${color}"/>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" class="w-full h-36 sm:h-40">
-    <polyline points="${pts(clicks)}" fill="none" stroke="var(--accent2)" stroke-width="2.5"/>
-    <polyline points="${pts(conv)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-    ${dots(clicks,'#818CF8')}${dots(conv,'#5EEAD4')}
-  </svg>
-  <div class="flex gap-4 text-xs mt-1" style="color:var(--muted)">
-    <span><span style="color:var(--accent2)">●</span> Clicks</span>
-    <span><span style="color:var(--accent)">●</span> Conversions</span>
-  </div>`;
+  if(!serverDays)return '<div class="text-sm py-8 text-center" style="color:var(--muted)">No server analytics loaded yet.</div>';
+  const days=Object.keys(serverDays);
+  if(!days.length)return '<div class="text-sm py-8 text-center" style="color:var(--muted)">No analytics data yet.</div>';
+  const clicks=days.map(d=>Number(serverDays[d].clicks||0));
+  const conv=days.map(d=>Number(serverDays[d].conversions||0));
+  const W=560,H=160,pad=20,maxC=Math.max(...clicks,...conv,1);
+  const x=i=>pad+i*(W-2*pad)/Math.max(days.length-1,1);
+  const y=v=>H-pad-(v/maxC)*(H-2*pad);
+  const pts=arr=>arr.map((v,i)=>x(i)+','+y(v)).join(' ');
+  const dots=(arr,color)=>arr.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+color+'"/>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="w-full h-36 sm:h-40"><polyline points="'+pts(clicks)+'" fill="none" stroke="var(--accent2)" stroke-width="2.5"/><polyline points="'+pts(conv)+'" fill="none" stroke="var(--accent)" stroke-width="2.5"/>'+dots(clicks,'#818CF8')+dots(conv,'#5EEAD4')+'</svg><div class="flex gap-4 text-xs mt-1" style="color:var(--muted)"><span><span style="color:var(--accent2)">●</span> Clicks</span><span><span style="color:var(--accent)">●</span> Conversions</span></div>';
 }
-
 function maskName(name){ if(!name||name.length<2) return name||'User'; return name[0]+'***'+name[name.length-1]; }
 function paymentProofFeed(){
   const approved = state.withdrawals.filter(w=>w.status==='approved').slice().reverse().slice(0,6);
@@ -747,9 +804,9 @@ function statCard(label,val,color){
 
 function dashboardView(){
   const w = walletOf(currentUserId());
-  const totalClicks=Object.values(state.clicksByDay).reduce((a,d)=>a+d.clicks,0);
-  const totalConv=Object.values(state.clicksByDay).reduce((a,d)=>a+d.conv,0);
-  const noticeComposer = (state.role==='admin' && !state.impersonating) ? `
+  const totalClicks=Number(state.serverStats?.totalClicks||0);
+  const totalConv=Number(state.serverStats?.totalConversions||0);
+  const noticeComposer = (effRole()==='admin' && !state.serverUser && !state.impersonating) ? `
     <div class="card p-4 sm:p-5 mb-5">
       <div class="font-semibold mb-2">Send Notice to All Users</div>
       <div class="text-xs mb-2" style="color:var(--muted)">This will appear as a popup on every user's dashboard until they close it.</div>
@@ -890,6 +947,25 @@ function importCSV(e){
   reader.readAsText(file);
 }
 
+// Daily offer usage is tracked locally per user and offer.
+function offerUsageDate(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function offerUsageToday(userId,offerId){
+  if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+  const entry=state.offerUsage[String(userId)+'_'+String(offerId)];
+  if(!entry || typeof entry!=='object' || entry.date!==offerUsageDate()) return 0;
+  return Math.max(0,Number(entry.count)||0);
+}
+function incOfferUsage(userId,offerId){
+  if(!state.offerUsage || typeof state.offerUsage!=='object') state.offerUsage={};
+  const key=String(userId)+'_'+String(offerId);
+  const today=offerUsageDate();
+  const previous=state.offerUsage[key];
+  const count=previous && typeof previous==='object' && previous.date===today ? Math.max(0,Number(previous.count)||0) : 0;
+  state.offerUsage[key]={date:today,count:count+1};
+}
 function offerCard(o,mine){
   let capHtml='';
   if(mine && o.dailyCap){
@@ -1003,8 +1079,19 @@ function paymentView(){
   return '<div class="p-4 sm:p-8"><div class="flex gap-3 flex-wrap mb-5">'+statCard('Main Balance',fmt(w.main),'var(--accent)')+statCard('Pending Balance',fmt(w.pending),'#FBBF24')+'</div><div class="card p-4 sm:p-5 max-w-md mb-5"><div class="font-semibold mb-2">Request Manual Withdrawal</div><div class="text-xs mb-3" style="color:var(--muted)">Payments are processed manually by TrackNest admin.</div><input id="wdAmt" type="number" min="1" step="0.01" placeholder="Amount ($)"><select id="wdMethod" class="mt-2"><option>bKash</option><option>Nagad</option><option>Rocket</option></select><input id="wdNumber" class="mt-2" inputmode="numeric" placeholder="bKash/Nagad/Rocket number"><div class="mt-3"><span class="btn" onclick="requestWd()">Request Payment</span></div></div><div class="card p-4 sm:p-5"><div class="font-semibold mb-3">Withdrawal History</div><div class="overflow-x-auto"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Reference</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="color:var(--muted)">No requests yet.</td></tr>')+'</tbody></table></div></div></div>';
 }
 function toggleEmailSms(){ state.emailSmsEnabled=!state.emailSmsEnabled; save(); render(); }
-async function toggleUserStatus(id){const u=state.users.find(x=>x.id===id);if(!u)return;try{await apiCall('/api/users',{action:'status',userId:id,status:u.status==='active'?'suspended':'active'});await syncServerUsers();showToast('User status updated');render();}catch(e){showToast(e.message);}}
-async function setSubRole(id,val){try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('Sub-role updated');render();}catch(e){showToast(e.message);}}
+async function toggleUserStatus(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const u=state.users.find(x=>String(x.id)===String(id));if(!u||u.role==='admin')return;
+  const status=u.status==='active'?'suspended':'active';
+  try{await apiCall('/api/users',{action:'status',userId:id,status});await syncServerUsers();showToast('User status updated on server');render();}
+  catch(e){showToast(e?.message||'Could not update user status');}
+}
+async function setSubRole(id,val){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  if(!['none','manager','support'].includes(val))return;
+  try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('User role updated on server');render();}
+  catch(e){showToast(e?.message||'Could not update user role');}
+}
 function setAdminUserFilter(value){ state.userStatusFilter=value||'all'; save(); render(); }
 function filteredAdminUsers(){
   const q=String(state.userSearch||'').trim().toLowerCase();
@@ -1145,20 +1232,26 @@ function suggestFAQ(val){
 async function raiseTicket(){
   const subject=document.getElementById('tkSubject')?.value.trim()||'';
   const message=document.getElementById('tkMessage')?.value.trim()||'';
-  if(!subject||!message){showToast('Subject and message are required');return;}
-  try{
-    const d=await apiCall('/api/support',{action:'create',subject,message});
-    state.tickets.unshift({...d.ticket,userId:d.ticket.userId||currentUserId(),replies:[]});
-    save();render();showToast('Support ticket submitted');
-  }catch(e){showToast(e.message||'Could not submit ticket');}
+  if(!subject||!message)return showToast('Subject and message are required');
+  try{await apiCall('/api/support',{action:'create',subject,message});await refreshServerTickets();showToast('Support ticket saved');render();}
+  catch(e){showToast(e?.message||'Could not create support ticket');}
 }
 async function replyTicket(id){
-  const el=document.getElementById('tkReply_'+id);const message=el?.value.trim()||'';if(!message)return;
-  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');}
-  catch(e){showToast(e.message||'Reply failed');}
+  const message=document.getElementById('tkReply_'+id)?.value.trim()||'';
+  if(!message)return;
+  try{await apiCall('/api/support',{action:'reply',id,message});await refreshServerTickets();showToast('Reply sent');render();}
+  catch(e){showToast(e?.message||'Could not send reply');}
 }
-async function closeTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();}catch(e){showToast(e.message);}}
-async function reopenTicket(id){try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();}catch(e){showToast(e.message);}}
+async function closeTicket(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  try{await apiCall('/api/support',{action:'status',id,status:'closed'});await refreshServerTickets();render();}
+  catch(e){showToast(e?.message||'Could not close ticket');}
+}
+async function reopenTicket(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  try{await apiCall('/api/support',{action:'status',id,status:'open'});await refreshServerTickets();render();}
+  catch(e){showToast(e?.message||'Could not reopen ticket');}
+}
 function ticketPill(status){
   const c = status==='open'?{bg:'rgba(251,191,36,.15)',fg:'#FBBF24'} : status==='answered'?{bg:'rgba(94,234,212,.15)',fg:'var(--accent)'} : {bg:'rgba(74,222,128,.15)',fg:'var(--ok)'};
   return `<span class="pill" style="background:${c.bg};color:${c.fg}">${status}</span>`;
@@ -1170,11 +1263,11 @@ function supportView(){
     const rows = state.tickets.slice().reverse().map(tk=>`
       <div class="card p-4 mb-3">
         <div class="flex justify-between items-start gap-2 mb-1">
-          <div><span class="font-semibold">${tk.subject}</span> <span class="text-xs" style="color:var(--muted)">— ${userName(tk.userId)}</span></div>
+          <div><span class="font-semibold">${escapeHtml(tk.subject)}</span> <span class="text-xs" style="color:var(--muted)">— ${escapeHtml(userName(tk.userId))}</span></div>
           ${ticketPill(tk.status)}
         </div>
-        <div class="text-sm mb-2" style="color:var(--muted)">${tk.message}</div>
-        ${tk.replies.map(r=>`<div class="text-sm pl-3 mb-1" style="border-left:2px solid var(--accent)"><b>${userName(r.from)}:</b> ${r.text}</div>`).join('')}
+        <div class="text-sm mb-2" style="color:var(--muted)">${escapeHtml(tk.message)}</div>
+        ${tk.replies.map(r=>`<div class="text-sm pl-3 mb-1" style="border-left:2px solid var(--accent)"><b>${escapeHtml(userName(r.from))}:</b> ${escapeHtml(r.text)}</div>`).join('')}
         <div class="flex gap-2 mt-2 flex-wrap">
           <input id="tkReply_${tk.id}" placeholder="Write a reply...">
           <span class="btn2" onclick="replyTicket('${tk.id}')">Reply</span>
@@ -1228,12 +1321,13 @@ function chatGlobalView(){
     </div>
   </div>`;
 }
-function editGlobalMsg(i){
-  const m=state.chatGlobal[i]; if(!m)return;
-  const t=prompt('Edit message:', m.text); if(t===null || !t.trim())return;
-  m.text=t.trim(); m.edited=true; save(); render();
+async function editGlobalMsg(i){
+  const m=state.chatGlobal[i];if(!m)return;
+  const text=prompt('Edit message:',m.text);if(text===null||!text.trim())return;
+  if(!m.id)return showToast('Reload server chat before editing this message');
+  try{await apiCall('/api/chat',{kind:'global',action:'edit',id:m.id,text:text.trim()});await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not edit message');}
 }
-
 function chatPersonalView(){
   const me=currentUserId();
   const contacts=state.users.filter(u=>u.id!==me);
@@ -1391,99 +1485,125 @@ function openManualPay(id){
 }
 function closeManualPay(){document.getElementById('invoiceHost').innerHTML='';}
 async function confirmManualPay(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
   const ref=(document.getElementById('manualPayRef')?.value||'').trim();
   if(!ref)return showToast('Payment reference is required');
-  try{await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});closeManualPay();await syncServerWithdrawals();await loadServerWallet();showToast('Payment marked as Paid');render();}catch(e){showToast(e.message||'Payment update failed');}
+  const w=state.withdrawals.find(x=>String(x.id)===String(id));
+  if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be marked paid');
+  try{
+    await apiCall('/api/wallet',{action:'update',id,status:'approved',payment_ref:ref});
+    closeManualPay();
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Staging record marked paid; this does not send money');render();
+  }catch(e){showToast(e?.message||'Could not update withdrawal');}
 }
-async function rejectWd(id){
-  if(!confirm('Reject this withdrawal? The reserved amount will become available again.'))return;
-  try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();await loadServerWallet();showToast('Withdrawal rejected and reserved funds released');render();}catch(e){showToast(e.message);}
-}
-
-// offers
 async function addOffer(){
- const name=document.getElementById('ofName').value.trim(),url=document.getElementById('ofUrl').value.trim();
- if(!name||!url){alert('Name and URL are required');return;}
- const payload={action:'create',name,url,payout:Number(document.getElementById('ofPayout').value||0),category:document.getElementById('ofCat').value||'General',country:document.getElementById('ofCountry').value||'Any',device:document.getElementById('ofDevice').value||'Any',dailyCap:Number(document.getElementById('ofCap').value||0)||null,s2s:document.getElementById('ofS2S').value||''};
- try{await apiCall('/api/offers',payload);await syncServerOffers();showToast('Offer added');render();}catch(e){showToast(e.message);}
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const name=document.getElementById('ofName')?.value.trim()||'';
+  let url=document.getElementById('ofUrl')?.value.trim()||'';
+  if(!name||!url)return showToast('Name and URL are required');
+  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(url))url='https://'+url;
+  try{const parsed=new URL(url);if(!['http:','https:'].includes(parsed.protocol)||!parsed.hostname.includes('.'))throw new Error();url=parsed.href;}
+  catch(e){return showToast('Enter a valid offer URL');}
+  const payout=Number(document.getElementById('ofPayout')?.value||0);
+  if(!Number.isFinite(payout)||payout<0)return showToast('Enter a valid payout amount');
+  try{
+    await apiCall('/api/offers',{action:'create',name,url,payout,category:document.getElementById('ofCat')?.value||'General',country:document.getElementById('ofCountry')?.value||'Any',device:document.getElementById('ofDevice')?.value||'Any',dailyCap:Number(document.getElementById('ofCap')?.value||0)||null,s2s:document.getElementById('ofS2S')?.value||''});
+    await syncServerOffers();showToast('Offer saved to staging database');render();
+  }catch(e){showToast(e?.message||'Could not create offer');}
 }
-async function testPostback(){
- const box=document.getElementById('pbTestResult');
- box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Checking TrackNest postback receiver…</div>';
- try{
-   const r=await fetch('/api/postback?health=1',{cache:'no-store'});
-   const data=await r.json().catch(()=>({}));
-   const ok=r.ok && data.ok && data.postbackConfigured && data.schemaReady;
-   box.innerHTML='<div class="text-xs mt-2" style="color:'+(ok?'var(--ok)':'var(--danger)')+'">'+
-     (ok?'✓ Postback receiver is online and database is ready.':'✕ Postback receiver check failed.')+
-     '<br>HTTP '+r.status+(data.error?'<br>'+escapeHtml(data.error):'')+
-     '</div>';
- }catch(e){
-   box.innerHTML='<div class="text-xs mt-2" style="color:var(--danger)">Postback receiver is unavailable.</div>';
- }
+function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">This button does not send a postback. Configure the staging POSTBACK_TOKEN and test the endpoint separately; no conversion is recorded here.</div>';}
+async function delOffer(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  if(!confirm('Delete this offer from the staging database?'))return;
+  try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}
+  catch(e){showToast(e?.message||'Could not delete offer');}
 }
-async function delOffer(id){try{await apiCall('/api/offers',{action:'delete',id});await syncServerOffers();showToast('Offer deleted');render();}catch(e){showToast(e.message);}}
-async function toggleOffer(id){try{const o=state.offers.find(x=>x.id===id);if(!o)return;await apiCall('/api/offers',{action:'status',id,status:o.status==='active'?'paused':'active'});await syncServerOffers();render();}catch(e){showToast(e.message);}}
-async function joinOffer(id){try{await apiCall('/api/offers',{action:'join',id});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}catch(e){showToast(e.message);}}
+async function toggleOffer(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
+  const status=o.status==='active'?'paused':'active';
+  try{await apiCall('/api/offers',{action:'status',id,status});await syncServerOffers();showToast('Offer status updated');render();}
+  catch(e){showToast(e?.message||'Could not update offer');}
+}
+async function joinOffer(id){
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
+  try{await apiCall('/api/offers',{action:'join',id});await syncServerOffers();showToast('Offer joined');setNav('offers','active');}
+  catch(e){showToast(e?.message||'Could not join offer');}
+}
 function getLink(id){
  const o=state.offers.find(x=>x.id===id);if(!o)return;
  const me=currentUserId(),key=me+'_'+id,last=state.lastClick[key]||0;
  if(state.antiFraud&&Date.now()-last<15000){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Please wait a few seconds before generating another link.</div></div>';return;}
  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Daily cap reached for this offer ('+o.dailyCap+'/day).</div></div>';return;}
- document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · server-side click ID</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
+ document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · staging link preview</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
 }
 async function buildTrackLink(id){
-  const o=state.offers.find(x=>x.id===id);if(!o)return;
+  const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
   const me=currentUserId(),key=me+'_'+id;
-  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached');return;}
-  const subs={};
-  for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
+  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached in this browser; server also enforces the cap');return;}
+  const subs={};for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
   const box=document.getElementById('generatedTrackLink');
-  if(box)box.innerHTML='<div class="text-xs" style="color:var(--muted)">Signing secure tracking URL…</div>';
+  if(box)box.innerHTML='<div class="text-xs" style="color:var(--muted)">Creating signed staging tracking link…</div>';
   try{
-    const d=await apiCall('/api/track',{action:'sign',offer_id:o.id,...subs});
-    const link=location.origin+d.url;
+    const d=await apiCall('/api/clicks',{action:'create',offerId:String(o.id),subs});
+    if(!d.url)throw new Error('Tracking link was not returned by the server');
     state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
-    const safe=link.replace(/'/g,"\\'");
-    const jsLink=JSON.stringify(link);
-    if(box)box.innerHTML=`<div class="text-xs mb-1" style="color:var(--muted)">Your secure tracking URL</div><input readonly value="${escapeHtml(link)}" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(${jsLink});showToast('Link copied')">Copy</span><span class="btn2" onclick="window.open(${jsLink},'_blank')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are cryptographically signed and passed through to click/conversion attribution.</div>`;
-  }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">Could not sign link: '+escapeHtml(e.message)+'</div>';showToast(e.message);}
+    if(box){
+      box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Signed staging tracking URL. A click is recorded when the link opens; conversions require a valid postback.</div><input data-demo-link readonly value="'+escapeHtml(d.url)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><button type="button" class="btn2" id="copyStagingLink">Copy</button><button type="button" class="btn2" id="openStagingLink">Open</button></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are forwarded to the offer URL. Actual advertiser conversion approval depends on its postback setup.</div>';
+      const field=box.querySelector('[data-demo-link]');
+      const copy=box.querySelector('#copyStagingLink');
+      const open=box.querySelector('#openStagingLink');
+      if(copy)copy.addEventListener('click',()=>navigator.clipboard.writeText(field.value).then(()=>showToast('Tracking link copied')).catch(()=>showToast('Clipboard access unavailable')));
+      if(open)open.addEventListener('click',()=>window.open(field.value,'_blank','noopener'));
+    }
+  }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">'+escapeHtml(e?.message||'Could not create tracking link')+'</div>';}
 }
-
-// payments
 async function requestWd(){
-  const amt=Number(document.getElementById('wdAmt').value||0);
-  const number=document.getElementById('wdNumber').value.trim();
-  const method=document.getElementById('wdMethod').value;
-  const w=walletOf(currentUserId());
-  if(amt<=0||amt>w.withdrawal){alert('Enter a valid amount');return;}
-  if(!number){alert('Please add your bKash/Nagad/Rocket number');return;}
+  const amt=Number(document.getElementById('wdAmt')?.value||0);
+  const number=String(document.getElementById('wdNumber')?.value||'').trim();
+  const method=String(document.getElementById('wdMethod')?.value||'bKash');
+  if(!Number.isFinite(amt)||amt<=0||amt>1000000)return showToast('Enter a valid withdrawal amount');
+  if(!['bKash','Nagad','Rocket'].includes(method))return showToast('Unsupported payment method');
+  if(!/^[0-9+ -]{8,25}$/.test(number))return showToast('Enter a valid test account number');
   try{
     await apiCall('/api/wallet',{action:'withdraw',amount:amt,method,account_number:number});
-    await loadServerWallet();
-    await syncServerWithdrawals();
-    showToast('Withdrawal request submitted');
-    render();
-  }catch(e){showToast(e.message||'Withdrawal failed');}
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Staging withdrawal requested; funds are reserved, not paid');render();
+  }catch(e){showToast(e?.message||'Withdrawal request failed');}
 }
-async function cancelWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'cancelled'});await loadServerWallet();showToast('Withdrawal cancelled');render();}catch(e){showToast(e.message);}}
-async function approveWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'approved'});await syncServerWithdrawals();showToast('Withdrawal approved');render();}catch(e){showToast(e.message);}}
-async function rejectWd(id){try{await apiCall('/api/wallet',{action:'update',id,status:'rejected'});await syncServerWithdrawals();showToast('Withdrawal rejected');render();}catch(e){showToast(e.message);}}
-
+async function cancelWd(id){
+  try{
+    await apiCall('/api/wallet',{action:'cancel',id});
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Withdrawal cancelled; reserved funds released');render();
+  }catch(e){showToast(e?.message||'Could not cancel withdrawal');}
+}
+function approveWd(id){ confirmManualPay(id); }
+async function rejectWd(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const w=state.withdrawals.find(x=>String(x.id)===String(id));
+  if(!w||w.status!=='pending')return showToast('Only pending withdrawals can be rejected');
+  try{
+    await apiCall('/api/wallet',{action:'update',id,status:'rejected'});
+    await Promise.all([syncServerWithdrawals(),loadServerWallet()]);
+    showToast('Withdrawal rejected; reserved funds released');render();
+  }catch(e){showToast(e?.message||'Could not reject withdrawal');}
+}
 function showInvoice(id){
   const w=state.withdrawals.find(x=>x.id===id); if(!w)return;
   document.getElementById('invoiceHost').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeInvoice()">
     <div class="card p-6 w-full max-w-md invoice-print">
       <div class="flex justify-between items-start mb-4">
-        <div><div class="font-bold text-lg">Invoice</div><div class="text-xs" style="color:var(--muted)">#${w.id.toUpperCase()}</div></div>
-        <div class="pill" style="background:${w.status==='approved'?'rgba(74,222,128,.15)':w.status==='pending'?'rgba(251,191,36,.15)':'rgba(251,113,133,.15)'};color:${w.status==='approved'?'var(--ok)':w.status==='pending'?'#FBBF24':'var(--danger)'}">${w.status}</div>
+        <div><div class="font-bold text-lg">Invoice</div><div class="text-xs" style="color:var(--muted)">#${escapeHtml(w.id.toUpperCase())}</div></div>
+        <div class="pill" style="background:${w.status==='approved'?'rgba(74,222,128,.15)':w.status==='pending'?'rgba(251,191,36,.15)':'rgba(251,113,133,.15)'};color:${w.status==='approved'?'var(--ok)':w.status==='pending'?'#FBBF24':'var(--danger)'}">${escapeHtml(w.status)}</div>
       </div>
       <table class="text-sm mb-2">
-        <tr><td style="color:var(--muted)">User</td><td>${userName(w.user)}</td></tr>
-        <tr><td style="color:var(--muted)">Date</td><td>${new Date(w.date).toLocaleString()}</td></tr>
-        <tr><td style="color:var(--muted)">Method</td><td>${w.method}</td></tr>
-        <tr><td style="color:var(--muted)">Account Number</td><td>${w.number}</td></tr>
-        <tr><td style="color:var(--muted)">Amount</td><td class="font-bold" style="color:var(--accent)">${fmt(w.amount)}</td></tr>
+        <tr><td style="color:var(--muted)">User</td><td>${escapeHtml(userName(w.user))}</td></tr>
+        <tr><td style="color:var(--muted)">Date</td><td>${escapeHtml(new Date(w.date).toLocaleString())}</td></tr>
+        <tr><td style="color:var(--muted)">Method</td><td>${escapeHtml(w.method)}</td></tr>
+        <tr><td style="color:var(--muted)">Account Number</td><td>${escapeHtml(w.number)}</td></tr>
+        <tr><td style="color:var(--muted)">Amount</td><td class="font-bold" style="color:var(--accent)">${escapeHtml(fmt(w.amount))}</td></tr>
       </table>
       <div class="flex gap-2 mt-4">
         <span class="btn" onclick="window.print()">Print / Save as PDF</span>
@@ -1514,26 +1634,38 @@ function syncFromStorage(){
   }catch(e){}
 }
 window.addEventListener('storage',e=>{ if(e.key===LS_KEY) syncFromStorage(); });
-function sendGlobal(){
-  const inp=document.getElementById('chatInput'); const text=inp.value.trim(); if(!text)return;
-  state.chatGlobal.push({from:currentUserId(),name:userName(currentUserId()),text,time:now()});
-  inp.value=''; save(); render();
+async function refreshServerChat(){
+  try{
+    if(state.chatContact){
+      const other=String(state.chatContact);
+      const d=await apiCall('/api/chat?kind=dm&userId='+encodeURIComponent(other),null,'GET');
+      if(d.messages){const key=threadKey(currentUserId(),other);state.dms[key]=d.messages.map(m=>({id:m.id,from:m.sender_id,text:m.body,time:m.created_at,seen:true,edited:Boolean(m.edited_at)}));}
+    }else{
+      const d=await apiCall('/api/chat?kind=global',null,'GET');
+      if(d.messages)state.chatGlobal=d.messages.map(m=>({id:m.id,from:m.sender_id,name:m.users?.name||m.users?.username||'User',text:m.body,time:m.created_at}));
+    }
+    save();
+  }catch(e){showToast(e?.message||'Could not load chat messages');}
 }
-function openContact(id){ state.chatContact=id; save(); render(); }
-function sendDM(){
-  const inp=document.getElementById('dmInput'); const text=inp.value.trim(); if(!text || !state.chatContact)return;
-  const me=currentUserId(); const other=state.chatContact; const key=threadKey(me,other);
-  if(!state.dms[key]) state.dms[key]=[];
-  state.dms[key].push({id:uid(),from:me,text,time:now(),seen:false,edited:false});
-  inp.value=''; save(); render();
+async function sendGlobal(){
+  const inp=document.getElementById('chatInput');const text=inp?.value.trim()||'';if(!text)return;
+  try{await apiCall('/api/chat',{kind:'global',text});if(inp)inp.value='';await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not send message');}
+}
+function openContact(id){ state.chatContact=id; save(); render(); refreshServerChat(); }
+async function sendDM(){
+  const inp=document.getElementById('dmInput');const text=inp?.value.trim()||'';if(!text||!state.chatContact)return;
+  try{await apiCall('/api/chat',{kind:'dm',userId:state.chatContact,text});if(inp)inp.value='';await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not send direct message');}
 }
 function sidebarBadgeRefresh(){ const el=document.getElementById('app'); if(el) render(); }
-function editMsg(key,msgId){
-  const arr=state.dms[key]; const m=arr.find(x=>x.id===msgId); if(!m)return;
-  const t=prompt('Edit message:', m.text); if(t===null || !t.trim())return;
-  m.text=t.trim(); m.edited=true; save(); render();
+async function editMsg(key,msgId){
+  const arr=state.dms[key]||[];const m=arr.find(x=>String(x.id)===String(msgId));if(!m)return;
+  const text=prompt('Edit message:',m.text);if(text===null||!text.trim())return;
+  if(!state.chatContact||!m.id)return showToast('Reload server chat before editing this message');
+  try{await apiCall('/api/chat',{kind:'dm',action:'edit',userId:state.chatContact,id:m.id,text:text.trim()});await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not edit message');}
 }
-
 async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.available??Math.max(0,Number(d.wallet.balance||0)-Number(d.wallet.pending||0))),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
 function showAuthErrorInline(message){
@@ -1568,9 +1700,10 @@ function setActionBusy(el,busy,label){
 
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
+const API_BASE_URL=String(window.TRACKNEST_API_BASE||'').replace(/\/+$/,'');
 const apiToken=()=>localStorage.getItem(API_TOKEN_KEY)||'';
 async function apiCall(path,body,method='POST'){
- const r=await fetch(path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
+ const r=await fetch(API_BASE_URL+path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
  const d=await r.json().catch(()=>({ok:false,message:'Invalid server response'})); if(!r.ok) throw new Error(d.message||'Request failed'); return d;
 }
 async function refreshServerTickets(){try{const d=await apiCall('/api/support',null,'GET');if(d.tickets){state.tickets=d.tickets;save();const a=document.activeElement;if(!(a&&a.matches&&a.matches('input,textarea,select'))&&state.nav==='support')render();}}catch(e){}}
@@ -1587,28 +1720,13 @@ async function syncServerWithdrawals(){
     }
   }catch(e){console.error('Withdrawal sync failed:',e);}
 }
-const legacyDoLogin=doLogin;
-const legacyDoSignup=doSignup;
-const legacyLogout=logout;
-// Demo mode deliberately uses browser-local accounts instead of the server auth API.
-doLogin=legacyDoLogin;
-doSignup=legacyDoSignup;
-logout=legacyLogout;
-const legacySendGlobal=sendGlobal;
-const legacySendDM=sendDM;
-sendGlobal=legacySendGlobal;
-sendDM=legacySendDM;
-setInterval(()=>{},5000);
-const legacyRequestWd=requestWd;
-requestWd=legacyRequestWd;
-
 window.addEventListener('error',e=>{
   if(window.__tracknestBootFallback) window.__tracknestBootFallback();
 });
 window.addEventListener('unhandledrejection',()=>{});
 async function restoreServerSession(){
   const token=apiToken();
-  if(!token){ state.session=null; return; }
+  if(!token){ state.session=null; state.serverUser=null; render(); return; }
   try{
     const d=await apiCall('/api/auth',{action:'me'});
     if(!d.user){
@@ -1621,11 +1739,13 @@ async function restoreServerSession(){
     }
     state.session={userId:d.user.id};
     state.serverUser=d.user;
+    state.offers=[];state.withdrawals=[];state.chatGlobal=[];state.dms={};state.tickets=[];state.userWallets={};
     state.impersonating=null;
     await syncServerUsers();
     await syncServerOffers();
     await syncServerWithdrawals();
     await loadServerWallet();
+    await Promise.all([refreshServerStats(),refreshServerNotifications(),refreshServerTickets()]);
     render();
     checkAndShowNotice();
   }catch(e){
@@ -1651,11 +1771,11 @@ async function refreshServerSecurity(){
   }catch(e){}
 }
 
-localStorage.removeItem(API_TOKEN_KEY);
 state.serverUser=null;
 state.session=null;
+state.impersonating=null;
 render();
-if(state.nav==='dashboard') checkAndShowNotice();
+restoreServerSession();
 </script>
 </body>
 </html>

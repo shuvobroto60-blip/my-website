@@ -24,12 +24,73 @@ test('all server-side JavaScript parses', async () => {
   }
 });
 
-test('demo mode remains explicit in both frontend entrypoints', async () => {
+test('inline JavaScript in both frontend entrypoints parses', async () => {
+  for (const file of ['index.html', 'public/index.html']) {
+    const html = await readFile(path.join(root, file), 'utf8');
+    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+      .filter(([, attrs, code]) => !/\bsrc\s*=/.test(attrs) && code.trim());
+    assert.ok(scripts.length > 0, file + ' should contain application scripts');
+    for (const [index, match] of scripts.entries()) {
+      const result = spawnSync(process.execPath, ['--check'], { input: match[2], encoding: 'utf8' });
+      assert.equal(result.status, 0, file + ' inline script ' + index + ' failed syntax check:\n' + result.stderr);
+    }
+  }
+});
+
+test('both entrypoints require server auth and support a configurable staging API origin', async () => {
   for (const file of ['index.html', 'public/index.html']) {
     const source = await readFile(path.join(root, file), 'utf8');
-    assert.match(source, /DEMO_MODE|demo mode|Demo mode/i, `${file} should clearly retain demo-mode handling`);
-    assert.match(source, /LS_KEY/);
+    assert.match(source, /API_BASE_URL/);
+    assert.match(source, /action:'login'/);
+    assert.match(source, /action:'signup'/);
+    assert.match(source, /action:'logout'/);
+    assert.match(source, /restoreServerSession\(\)/);
+    assert.match(source, /if\(!state\.session\)[\s\S]*renderAuthScreen\(\)/);
+    assert.doesNotMatch(source, /Auth is intentionally deferred/);
+    assert.doesNotMatch(source, /Full demo mode: skip login\/signup/);
   }
+});
+test('dashboard, offers, wallet, chat, and support mutations call authenticated APIs', async () => {
+  for (const file of ['index.html', 'public/index.html']) {
+    const source = await readFile(path.join(root, file), 'utf8');
+    for (const marker of [
+      "apiCall('/api/offers',{action:'create'",
+      "apiCall('/api/offers',{action:'join'",
+      "apiCall('/api/wallet',{action:'withdraw'",
+      "apiCall('/api/wallet',{action:'cancel'",
+      "apiCall('/api/wallet',{action:'update'",
+      "apiCall('/api/chat',{kind:'global'",
+      "apiCall('/api/support',{action:'create'"
+    ]) assert.ok(source.includes(marker), file + ' missing server action ' + marker);
+    assert.ok(source.includes('@media (max-width:767px)') || source.includes('@media(max-width:767px)'), file + ' missing mobile breakpoint');
+  }
+});
+
+test('tracking links are signed server-side and clicks are recorded only on redirect', async () => {
+  const api = await readFile(path.join(root, 'api/clicks.js'), 'utf8');
+  const redirect = await readFile(path.join(root, 'backend/click-redirect.js'), 'utf8');
+  for (const file of ['index.html', 'public/index.html']) {
+    const source = await readFile(path.join(root, file), 'utf8');
+    assert.ok(source.includes("apiCall('/api/clicks',{action:'create'"), file + ' must request a signed tracking link');
+    assert.ok(source.includes('A click is recorded when the link opens'), file + ' must explain click semantics');
+  }
+  assert.ok(api.includes("createHmac('sha256'"));
+  assert.ok(api.includes('offer_memberships'));
+  assert.ok(redirect.includes('timingSafeEqual'));
+  assert.ok(redirect.includes("db('clicks'"));
+  assert.ok(redirect.includes("target.searchParams.set('click_id', clickId)"));
+});
+
+test('owner-only withdrawal cancellation migration is atomic and service-role only', async () => {
+  const migration = await readFile(path.join(root, 'supabase/migrations/20261014_tracknest_user_withdrawal_cancel.sql'), 'utf8');
+  const api = await readFile(path.join(root, 'api/wallet.js'), 'utf8');
+  assert.ok(migration.includes('create or replace function public.cancel_manual_withdrawal'));
+  assert.ok(migration.includes('wd.user_id <> p_user_id'));
+  assert.ok(migration.includes("wd.status <> 'pending'"));
+  assert.ok(migration.includes('for update'));
+  assert.ok(migration.includes('revoke all on function public.cancel_manual_withdrawal'));
+  assert.ok(migration.includes('grant execute on function public.cancel_manual_withdrawal'));
+  assert.ok(api.includes('rpc/cancel_manual_withdrawal'));
 });
 
 test('postback endpoint authenticates and never stores the supplied token', async () => {

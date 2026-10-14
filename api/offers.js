@@ -18,14 +18,16 @@ export default async function handler(req,res){
   }
   if(me.role!=='admin')return json(res,403,{ok:false,message:'Admin only'});
   if(b.action==='create'){
-   if(!b.name||!b.url||!/^https?:\/\//i.test(String(b.url)))return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});
+   let parsedUrl;
+   try{parsedUrl=new URL(String(b.url||''));}catch{return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});}
+   if(!b.name||!['http:','https:'].includes(parsedUrl.protocol)||!parsedUrl.hostname.includes('.'))return json(res,400,{ok:false,message:'Offer name and a valid http(s) URL are required'});
    const payout=Number(b.payout||0);if(!Number.isFinite(payout)||payout<0)return json(res,400,{ok:false,message:'Offer payout must be a non-negative number'});
-   const row=(await db('offers',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),name:String(b.name).slice(0,200),url:String(b.url),payout,category:String(b.category||'General'),country:String(b.country||'Any'),device:String(b.device||'Any'),daily_cap:b.dailyCap?Number(b.dailyCap):null,s2s:String(b.s2s||''),status:'active'})}))[0];
+   const row=(await db('offers',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({id:crypto.randomUUID(),name:String(b.name).slice(0,200),url:parsedUrl.href,payout,category:String(b.category||'General').slice(0,100),country:String(b.country||'Any').slice(0,100),device:String(b.device||'Any').slice(0,100),daily_cap:b.dailyCap?Math.max(1,Math.min(1000000,Number(b.dailyCap))):null,s2s:String(b.s2s||'').slice(0,1000),status:'active'})}))[0];
    await auditLog(me.id,'offer.created',{offer_id:row?.id,name:row?.name});
    return json(res,201,{ok:true,offer:row});
   }
   if(b.action==='status'){const status=b.status==='paused'?'paused':'active';await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status})});await auditLog(me.id,'offer.status_changed',{offer_id:b.id,status});return json(res,200,{ok:true});}
   if(b.action==='delete'){await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'DELETE'});await auditLog(me.id,'offer.deleted',{offer_id:b.id});return json(res,200,{ok:true});}
   return json(res,400,{ok:false,message:'Unknown action'});
- }catch(e){return json(res,500,{ok:false,message:e.message});}
+ }catch{return json(res,500,{ok:false,message:'Offer request could not be completed'});}
 }

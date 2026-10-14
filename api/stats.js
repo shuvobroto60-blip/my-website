@@ -18,5 +18,5 @@ export default async function handler(req,res){
   const paidOut=withdrawals.filter(x=>x.status==='approved').reduce((a,x)=>a+Number(x.amount||0),0);
   const pendingWithdrawals=withdrawals.filter(x=>x.status==='pending').reduce((a,x)=>a+Number(x.amount||0),0);
   return json(res,200,{ok:true,totalClicks:clicks.length,totalConversions:conv.length,totalConversionValue:allConv.reduce((a,x)=>a+Number(x.payout||0),0),paidOut,pendingWithdrawals,daily,byOffer:Object.fromEntries(Object.entries(byOffer).map(([k,v])=>[k,{...v,name:names[k]||k}])),conversions:allConv.map(x=>({...x,offer_name:names[String(x.offer_id)]||String(x.offer_id||'')}))});
- }catch(e){return json(res,500,{ok:false,message:e.message});}
+ }catch{return json(res,500,{ok:false,message:'Statistics request could not be completed'});}
 }

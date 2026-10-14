@@ -33,7 +33,7 @@ async function creditApprovedConversion(click,conversion,payout){
 export default async function handler(req,res){
  if(req.method!=='GET'&&req.method!=='POST'){res.setHeader('Allow','GET, POST');return json(res,405,{ok:false,message:'Method not allowed'});}
  try{
-  const input=req.method==='GET'?(req.query||{}):(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
+  const input=req.method==='GET'?{...(req.query||{}),...(req.params?.token?{token:req.params.token}:{})}:(typeof req.body==='string'?JSON.parse(req.body||'{}'):(req.body||{}));
   const safeInput={...input};delete safeInput.token;
   if(req.method==='GET' && input.health==='1'){
    const configured=Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_SERVICE_ROLE_KEY);
