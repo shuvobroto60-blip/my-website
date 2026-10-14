@@ -27,5 +27,5 @@ export default async function handler(req,res){
   if(b.action==='status'){const status=b.status==='paused'?'paused':'active';await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status})});await auditLog(me.id,'offer.status_changed',{offer_id:b.id,status});return json(res,200,{ok:true});}
   if(b.action==='delete'){await db('offers?id=eq.'+encodeURIComponent(b.id),{method:'DELETE'});await auditLog(me.id,'offer.deleted',{offer_id:b.id});return json(res,200,{ok:true});}
   return json(res,400,{ok:false,message:'Unknown action'});
- }catch(e){return json(res,500,{ok:false,message:e.message});}
+ }catch{return json(res,500,{ok:false,message:'Offer request could not be completed'});}
 }
