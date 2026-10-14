@@ -58,5 +58,5 @@ export default async function handler(req,res){
    return json(res,200,{ok:true});
   }
   return json(res,400,{ok:false,message:'Unknown action'});
- }catch(e){return json(res,500,{ok:false,message:e.message||'Server error'});}
+ }catch{return json(res,500,{ok:false,message:'Authentication request could not be completed'});}
 }
