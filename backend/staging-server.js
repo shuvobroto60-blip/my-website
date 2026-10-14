@@ -15,8 +15,10 @@ import paymentsHandler from '../api/payments.js';
 import supportHandler from '../api/support.js';
 import securityHandler from '../api/security.js';
 import postbackHandler from '../api/postback.js';
+import clicksHandler from '../api/clicks.js';
+import { handleClickRedirect } from './click-redirect.js';
 
-const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'FRONTEND_ORIGIN'];
+const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'FRONTEND_ORIGIN', 'CLICK_SIGNING_SECRET'];
 for (const name of required) {
   if (!String(process.env[name] || '').trim()) {
     throw new Error('Missing required server environment variable: ' + name);
@@ -68,10 +70,12 @@ for (const [path, handler] of [
   ['/api/payments', paymentsHandler],
   ['/api/support', supportHandler],
   ['/api/security', securityHandler],
-  ['/api/postback', postbackHandler]
+  ['/api/postback', postbackHandler],
+  ['/api/clicks', clicksHandler]
 ]) app.all(path, adapt(handler));
 
 app.all('/api/postback/:token', adapt(postbackHandler));
+app.get('/go/:token', handleClickRedirect);
 
 app.use((error, _req, res, _next) => {
   if (res.headersSent) return;
