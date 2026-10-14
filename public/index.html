@@ -1541,17 +1541,17 @@ function getLink(id){
 async function buildTrackLink(id){
   const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
   const me=currentUserId(),key=me+'_'+id;
-  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached');return;}
+  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){showToast('Daily cap reached in this browser; server also enforces the cap');return;}
   const subs={};for(let i=1;i<=8;i++){const v=document.getElementById('trkSub'+i)?.value.trim();if(v)subs['sub'+i]=v;}
-  const clickId='demo_click_'+uid();
-  const params=new URLSearchParams({demo_click:clickId,offer_id:String(o.id),user_id:String(me),...subs});
-  const link=location.origin+'/?'+params.toString();
   const box=document.getElementById('generatedTrackLink');
-  state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
-  if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Demo tracking URL — not signed and does not record real advertiser conversions</div><input data-demo-link readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value).then(()=>showToast(\'Demo link copied\'))">Copy</span><span class="btn2" onclick="window.open(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value,\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are included as demo parameters only. Add the real tracking API later.</div>';
+  if(box)box.innerHTML='<div class="text-xs" style="color:var(--muted)">Creating signed staging tracking link…</div>';
+  try{
+    const d=await apiCall('/api/clicks',{action:'create',offerId:String(o.id),subs});
+    if(!d.url)throw new Error('Tracking link was not returned by the server');
+    state.lastClick[key]=Date.now();incOfferUsage(me,id);save();
+    if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Signed staging tracking URL. A click is recorded when the link opens; conversions require a valid postback.</div><input data-demo-link readonly value="'+escapeHtml(d.url)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(this.closest(\\'.card\\').querySelector(\\'[data-demo-link]\\').value).then(()=>showToast(\\'Tracking link copied\\'))">Copy</span><span class="btn2" onclick="window.open(this.closest(\\'.card\\').querySelector(\\'[data-demo-link]\\').value,\\'_blank\\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are forwarded to the offer URL. Actual advertiser conversion approval depends on its postback setup.</div>';
+  }catch(e){if(box)box.innerHTML='<div class="text-xs" style="color:var(--danger)">'+escapeHtml(e?.message||'Could not create tracking link')+'</div>';}
 }
-
-// Server-backed staging wallet. Manual payout confirmation records an external transfer; it does not send money.
 async function requestWd(){
   const amt=Number(document.getElementById('wdAmt')?.value||0);
   const number=String(document.getElementById('wdNumber')?.value||'').trim();
