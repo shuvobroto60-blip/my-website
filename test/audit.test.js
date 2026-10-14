@@ -66,6 +66,21 @@ test('dashboard, offers, wallet, chat, and support mutations call authenticated 
   }
 });
 
+test('tracking links are signed server-side and clicks are recorded only on redirect', async () => {
+  const api = await readFile(path.join(root, 'api/clicks.js'), 'utf8');
+  const redirect = await readFile(path.join(root, 'backend/click-redirect.js'), 'utf8');
+  for (const file of ['index.html', 'public/index.html']) {
+    const source = await readFile(path.join(root, file), 'utf8');
+    assert.ok(source.includes("apiCall('/api/clicks',{action:'create'"), file + ' must request a signed tracking link');
+    assert.ok(source.includes('A click is recorded when the link opens'), file + ' must explain click semantics');
+  }
+  assert.ok(api.includes("createHmac('sha256'"));
+  assert.ok(api.includes('offer_memberships'));
+  assert.ok(redirect.includes('timingSafeEqual'));
+  assert.ok(redirect.includes("db('clicks'"));
+  assert.ok(redirect.includes("target.searchParams.set('click_id', clickId)"));
+});
+
 test('owner-only withdrawal cancellation migration is atomic and service-role only', async () => {
   const migration = await readFile(path.join(root, 'supabase/migrations/20261014_tracknest_user_withdrawal_cancel.sql'), 'utf8');
   const api = await readFile(path.join(root, 'api/wallet.js'), 'utf8');
