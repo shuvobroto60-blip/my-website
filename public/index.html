@@ -428,6 +428,7 @@ async function completeServerAuth(d){
   if(!d?.ok || !d.token || !d.user) throw new Error(d?.message || 'Authentication response was incomplete');
   localStorage.setItem(API_TOKEN_KEY,d.token);
   state.serverUser=d.user;
+  state.offers=[];state.withdrawals=[];state.chatGlobal=[];state.dms={};state.tickets=[];state.userWallets={};
   state.session={userId:d.user.id};
   state.impersonating=null;
   state.nav='dashboard';
@@ -598,8 +599,18 @@ function showToast(text){
 }
 
 function setNav(nav,sub=''){ state.nav=nav; state.sub=sub; if(nav!=='chat') state.chatContact=null; if(isMobile()) state.sidebarOpen=false; save(); render(); if(nav==='dashboard') checkAndShowNotice(); if(nav==='chat') refreshServerChat(); }
-function startImpersonate(){ const v=document.getElementById('impersonateSelect').value; state.impersonating=v; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
-function startImpersonateByPublicId(){ const el=document.getElementById('impersonatePublicId'); const pid=(el?el.value:'').trim(); const u=state.users.find(x=>x.role==='user' && String(x.publicId)===pid); if(!/^\d{5}$/.test(pid) || !u){ state.authError='User ID not found.'; save(); render(); return; } state.authError=''; state.impersonating=u.id; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
+function startImpersonate(){
+  if(state.serverUser)return showToast('Server-account impersonation is disabled for safety');
+  const v=document.getElementById('impersonateSelect')?.value;if(!v)return;
+  state.impersonating=v;state.nav='dashboard';save();render();checkAndShowNotice();
+}
+function startImpersonateByPublicId(){
+  if(state.serverUser)return showToast('Server-account impersonation is disabled for safety');
+  const el=document.getElementById('impersonatePublicId');const pid=(el?el.value:'').trim();
+  const u=state.users.find(x=>x.role!=='admin'&&String(x.publicId)===pid);
+  if(!u)return showToast('User not found');
+  state.impersonating=u.id;state.nav='dashboard';save();render();checkAndShowNotice();
+}
 function exitImpersonate(){ state.impersonating=null; state.nav='dashboard'; save(); render(); checkAndShowNotice(); }
 function toggleSidebar(){ state.sidebarOpen=!state.sidebarOpen; save(); render(); }
 function toggleTheme(){ state.theme = state.theme==='dark'?'light':'dark'; save(); render(); }
@@ -738,23 +749,18 @@ function topbar(title){
 
 function sparkline(){
   const serverDays=state.serverStats&&state.serverStats.daily||null;
-  const days=serverDays?Object.keys(serverDays):Object.keys(state.clicksByDay);
-  const clicks=days.map(d=>serverDays?Number(serverDays[d].clicks||0):state.clicksByDay[d].clicks);
-  const conv=days.map(d=>serverDays?Number(serverDays[d].conversions||0):state.clicksByDay[d].conv);
-  const W=560,H=160,pad=20, maxC=Math.max(...clicks,1);
-  const pts=arr=>arr.map((v,i)=>`${pad+i*((W-2*pad)/(arr.length-1))},${H-pad-(v/maxC)*(H-2*pad)}`).join(' ');
-  const dots=(arr,color)=>arr.map((v,i)=>`<circle cx="${pad+i*((W-2*pad)/(arr.length-1))}" cy="${H-pad-(v/maxC)*(H-2*pad)}" r="3.5" fill="${color}"/>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" class="w-full h-36 sm:h-40">
-    <polyline points="${pts(clicks)}" fill="none" stroke="var(--accent2)" stroke-width="2.5"/>
-    <polyline points="${pts(conv)}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
-    ${dots(clicks,'#818CF8')}${dots(conv,'#5EEAD4')}
-  </svg>
-  <div class="flex gap-4 text-xs mt-1" style="color:var(--muted)">
-    <span><span style="color:var(--accent2)">●</span> Clicks</span>
-    <span><span style="color:var(--accent)">●</span> Conversions</span>
-  </div>`;
+  if(!serverDays)return '<div class="text-sm py-8 text-center" style="color:var(--muted)">No server analytics loaded yet.</div>';
+  const days=Object.keys(serverDays);
+  if(!days.length)return '<div class="text-sm py-8 text-center" style="color:var(--muted)">No analytics data yet.</div>';
+  const clicks=days.map(d=>Number(serverDays[d].clicks||0));
+  const conv=days.map(d=>Number(serverDays[d].conversions||0));
+  const W=560,H=160,pad=20,maxC=Math.max(...clicks,...conv,1);
+  const x=i=>pad+i*(W-2*pad)/Math.max(days.length-1,1);
+  const y=v=>H-pad-(v/maxC)*(H-2*pad);
+  const pts=arr=>arr.map((v,i)=>x(i)+','+y(v)).join(' ');
+  const dots=(arr,color)=>arr.map((v,i)=>'<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+color+'"/>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="w-full h-36 sm:h-40"><polyline points="'+pts(clicks)+'" fill="none" stroke="var(--accent2)" stroke-width="2.5"/><polyline points="'+pts(conv)+'" fill="none" stroke="var(--accent)" stroke-width="2.5"/>'+dots(clicks,'#818CF8')+dots(conv,'#5EEAD4')+'</svg><div class="flex gap-4 text-xs mt-1" style="color:var(--muted)"><span><span style="color:var(--accent2)">●</span> Clicks</span><span><span style="color:var(--accent)">●</span> Conversions</span></div>';
 }
-
 function maskName(name){ if(!name||name.length<2) return name||'User'; return name[0]+'***'+name[name.length-1]; }
 function paymentProofFeed(){
   const approved = state.withdrawals.filter(w=>w.status==='approved').slice().reverse().slice(0,6);
@@ -798,8 +804,8 @@ function statCard(label,val,color){
 
 function dashboardView(){
   const w = walletOf(currentUserId());
-  const totalClicks=Object.values(state.clicksByDay).reduce((a,d)=>a+d.clicks,0);
-  const totalConv=Object.values(state.clicksByDay).reduce((a,d)=>a+d.conv,0);
+  const totalClicks=Number(state.serverStats?.totalClicks||0);
+  const totalConv=Number(state.serverStats?.totalConversions||0);
   const noticeComposer = (state.role==='admin' && !state.impersonating) ? `
     <div class="card p-4 sm:p-5 mb-5">
       <div class="font-semibold mb-2">Send Notice to All Users</div>
@@ -1073,8 +1079,19 @@ function paymentView(){
   return '<div class="p-4 sm:p-8"><div class="flex gap-3 flex-wrap mb-5">'+statCard('Main Balance',fmt(w.main),'var(--accent)')+statCard('Pending Balance',fmt(w.pending),'#FBBF24')+'</div><div class="card p-4 sm:p-5 max-w-md mb-5"><div class="font-semibold mb-2">Request Manual Withdrawal</div><div class="text-xs mb-3" style="color:var(--muted)">Payments are processed manually by TrackNest admin.</div><input id="wdAmt" type="number" min="1" step="0.01" placeholder="Amount ($)"><select id="wdMethod" class="mt-2"><option>bKash</option><option>Nagad</option><option>Rocket</option></select><input id="wdNumber" class="mt-2" inputmode="numeric" placeholder="bKash/Nagad/Rocket number"><div class="mt-3"><span class="btn" onclick="requestWd()">Request Payment</span></div></div><div class="card p-4 sm:p-5"><div class="font-semibold mb-3">Withdrawal History</div><div class="overflow-x-auto"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Account</th><th>Status</th><th>Reference</th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" style="color:var(--muted)">No requests yet.</td></tr>')+'</tbody></table></div></div></div>';
 }
 function toggleEmailSms(){ state.emailSmsEnabled=!state.emailSmsEnabled; save(); render(); }
-function toggleUserStatus(id){if(effRole()!=='admin')return showToast('Admin access required');const u=state.users.find(x=>x.id===id);if(!u||u.role==='admin')return;u.status=u.status==='active'?'suspended':'active';save();showToast('Demo user status updated');render();}
-function setSubRole(id,val){if(effRole()!=='admin')return showToast('Admin access required');const u=state.users.find(x=>x.id===id);if(!u||!['none','manager','support'].includes(val))return;u.subRole=val;save();showToast('Demo sub-role updated');render();}
+async function toggleUserStatus(id){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  const u=state.users.find(x=>String(x.id)===String(id));if(!u||u.role==='admin')return;
+  const status=u.status==='active'?'suspended':'active';
+  try{await apiCall('/api/users',{action:'status',userId:id,status});await syncServerUsers();showToast('User status updated on server');render();}
+  catch(e){showToast(e?.message||'Could not update user status');}
+}
+async function setSubRole(id,val){
+  if(effRole()!=='admin')return showToast('Admin access required');
+  if(!['none','manager','support'].includes(val))return;
+  try{await apiCall('/api/users',{action:'subrole',userId:id,subRole:val});await syncServerUsers();showToast('User role updated on server');render();}
+  catch(e){showToast(e?.message||'Could not update user role');}
+}
 function setAdminUserFilter(value){ state.userStatusFilter=value||'all'; save(); render(); }
 function filteredAdminUsers(){
   const q=String(state.userSearch||'').trim().toLowerCase();
@@ -1304,12 +1321,13 @@ function chatGlobalView(){
     </div>
   </div>`;
 }
-function editGlobalMsg(i){
-  const m=state.chatGlobal[i]; if(!m)return;
-  const t=prompt('Edit message:', m.text); if(t===null || !t.trim())return;
-  m.text=t.trim(); m.edited=true; save(); render();
+async function editGlobalMsg(i){
+  const m=state.chatGlobal[i];if(!m)return;
+  const text=prompt('Edit message:',m.text);if(text===null||!text.trim())return;
+  if(!m.id)return showToast('Reload server chat before editing this message');
+  try{await apiCall('/api/chat',{kind:'global',action:'edit',id:m.id,text:text.trim()});await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not edit message');}
 }
-
 function chatPersonalView(){
   const me=currentUserId();
   const contacts=state.users.filter(u=>u.id!==me);
@@ -1494,7 +1512,7 @@ async function addOffer(){
     await syncServerOffers();showToast('Offer saved to staging database');render();
   }catch(e){showToast(e?.message||'Could not create offer');}
 }
-function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">Demo mode is active. Real postback/API is intentionally not connected yet; this is expected. Demo offer, chat, wallet and withdrawal data stays in this browser.</div>';}
+function testPostback(){const box=document.getElementById('pbTestResult');if(!box)return;box.innerHTML='<div class="text-xs mt-2" style="color:var(--muted)">This button does not send a postback. Configure the staging POSTBACK_TOKEN and test the endpoint separately; no conversion is recorded here.</div>';}
 async function delOffer(id){
   if(effRole()!=='admin')return showToast('Admin access required');
   if(!confirm('Delete this offer from the staging database?'))return;
@@ -1518,7 +1536,7 @@ function getLink(id){
  const me=currentUserId(),key=me+'_'+id,last=state.lastClick[key]||0;
  if(state.antiFraud&&Date.now()-last<15000){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Please wait a few seconds before generating another link.</div></div>';return;}
  if(o.dailyCap&&offerUsageToday(me,id)>=o.dailyCap){document.getElementById('linkBox').innerHTML='<div class="card p-4" style="border-color:var(--danger)"><div class="text-sm" style="color:var(--danger)">⚠ Daily cap reached for this offer ('+o.dailyCap+'/day).</div></div>';return;}
- document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · server-side click ID</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
+ document.getElementById('linkBox').innerHTML='<div class="card p-4"><div class="font-semibold mb-2">Tracking Link Generator</div><div class="text-xs mb-3" style="color:var(--muted)">'+escapeHtml(o.name)+' · staging link preview</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'+Array.from({length:8},(_,i)=>'<input id="trkSub'+(i+1)+'" placeholder="Sub'+(i+1)+' (optional)">').join('')+'</div><div class="mt-3"><span class="btn" onclick="buildTrackLink(\''+String(id).replace(/'/g,"\\'")+'\')">Generate Link</span></div><div id="generatedTrackLink" class="mt-3"></div></div>';
 }
 async function buildTrackLink(id){
   const o=state.offers.find(x=>String(x.id)===String(id));if(!o)return;
@@ -1533,7 +1551,7 @@ async function buildTrackLink(id){
   if(box)box.innerHTML='<div class="text-xs mb-1" style="color:var(--muted)">Demo tracking URL — not signed and does not record real advertiser conversions</div><input data-demo-link readonly value="'+escapeHtml(link)+'" onclick="this.select()"><div class="mt-2 flex gap-2"><span class="btn2" onclick="navigator.clipboard.writeText(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value).then(()=>showToast(\'Demo link copied\'))">Copy</span><span class="btn2" onclick="window.open(this.closest(\'.card\').querySelector(\'[data-demo-link]\').value,\'_blank\')">Open</span></div><div class="text-xs mt-2" style="color:var(--muted)">Sub1–Sub8 are included as demo parameters only. Add the real tracking API later.</div>';
 }
 
-// Browser-local demo payments. No real payment or server wallet is used in demo mode.
+// Server-backed staging wallet. Manual payout confirmation records an external transfer; it does not send money.
 async function requestWd(){
   const amt=Number(document.getElementById('wdAmt')?.value||0);
   const number=String(document.getElementById('wdNumber')?.value||'').trim();
@@ -1634,12 +1652,13 @@ async function sendDM(){
   catch(e){showToast(e?.message||'Could not send direct message');}
 }
 function sidebarBadgeRefresh(){ const el=document.getElementById('app'); if(el) render(); }
-function editMsg(key,msgId){
-  const arr=state.dms[key]; const m=arr.find(x=>x.id===msgId); if(!m)return;
-  const t=prompt('Edit message:', m.text); if(t===null || !t.trim())return;
-  m.text=t.trim(); m.edited=true; save(); render();
+async function editMsg(key,msgId){
+  const arr=state.dms[key]||[];const m=arr.find(x=>String(x.id)===String(msgId));if(!m)return;
+  const text=prompt('Edit message:',m.text);if(text===null||!text.trim())return;
+  if(!state.chatContact||!m.id)return showToast('Reload server chat before editing this message');
+  try{await apiCall('/api/chat',{kind:'dm',action:'edit',userId:state.chatContact,id:m.id,text:text.trim()});await refreshServerChat();render();}
+  catch(e){showToast(e?.message||'Could not edit message');}
 }
-
 async function loadServerWallet(){try{const d=await apiCall('/api/wallet',{action:'get'});if(d.wallet){const me=currentUserId();state.userWallets[me]={main:Number(d.wallet.balance||0),withdrawal:Number(d.wallet.available??Math.max(0,Number(d.wallet.balance||0)-Number(d.wallet.pending||0))),pending:Number(d.wallet.pending||0)};render();}}catch(e){}}
 
 function showAuthErrorInline(message){
@@ -1713,6 +1732,7 @@ async function restoreServerSession(){
     }
     state.session={userId:d.user.id};
     state.serverUser=d.user;
+    state.offers=[];state.withdrawals=[];state.chatGlobal=[];state.dms={};state.tickets=[];state.userWallets={};
     state.impersonating=null;
     await syncServerUsers();
     await syncServerOffers();
