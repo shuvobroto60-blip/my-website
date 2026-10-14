@@ -137,13 +137,14 @@ html,body,#app{width:100%;min-width:0}body{overscroll-behavior-x:none;-webkit-te
   .main{padding-bottom:78px!important}
 }
 </style>
+<script src="/runtime-config.js"></script>
 </head>
 <body>
 <script>
 (function(){
   function bootPublicPreview(){
     var app=document.getElementById('app'); if(!app || app.children.length) return;
-    app.innerHTML=`<main style="min-height:100vh;background:linear-gradient(135deg,#07111f,#102b35);color:#f8fafc;padding:clamp(20px,5vw,56px);font-family:system-ui,sans-serif"><div style="max-width:1120px;margin:0 auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:clamp(42px,8vh,84px)"><div style="font-weight:850;font-size:23px">◈ TrackNest</div><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #35505b;border-radius:999px;padding:8px 12px;color:#b8c7d9">Public preview</span></header><section style="max-width:760px;margin-bottom:42px"><div style="color:#5eead4;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px">Affiliate management, simplified</div><h1 style="font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:850">Your affiliate network. <span style="color:#5eead4">One clear view.</span></h1><p style="font-size:clamp(16px,2vw,19px);line-height:1.75;color:#b8c7d9;max-width:650px;margin:0">Track offers, clicks, conversions and payouts from one workspace. The sign-in screen is temporarily hidden while the demo experience is being prepared.</p></section><section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin:30px 0 38px"><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🎯</div><h2 style="font-size:17px;margin:0 0 9px">Offer Marketplace</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Browse campaigns and manage offer links.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">📈</div><h2 style="font-size:17px;margin:0 0 9px">Clicks & Conversions</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Review performance and conversion activity.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">💳</div><h2 style="font-size:17px;margin:0 0 9px">Wallet & Payouts</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">View earnings and request manual withdrawals.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🛡️</div><h2 style="font-size:17px;margin:0 0 9px">Postback & Security</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Organize server-to-server events and security signals.</p></article></section><footer style="padding-top:22px;border-top:1px solid #29424c;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#9fb0bf;font-size:12px"><span>TrackNest © ${new Date().getFullYear()}</span><span>Demo preview · Authentication remains protected on the server</span></footer></div></main>`;
+    app.innerHTML=`<main style="min-height:100vh;background:linear-gradient(135deg,#07111f,#102b35);color:#f8fafc;padding:clamp(20px,5vw,56px);font-family:system-ui,sans-serif"><div style="max-width:1120px;margin:0 auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:clamp(42px,8vh,84px)"><div style="font-weight:850;font-size:23px">◈ TrackNest</div><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid #35505b;border-radius:999px;padding:8px 12px;color:#b8c7d9">Public preview</span></header><section style="max-width:760px;margin-bottom:42px"><div style="color:#5eead4;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px">Affiliate management, simplified</div><h1 style="font-size:clamp(38px,7vw,72px);line-height:1.02;letter-spacing:-.055em;margin:0 0 22px;font-weight:850">Your affiliate network. <span style="color:#5eead4">One clear view.</span></h1><p style="font-size:clamp(16px,2vw,19px);line-height:1.75;color:#b8c7d9;max-width:650px;margin:0">Track offers, clicks, conversions and payouts from one workspace. The sign-in screen is temporarily hidden while the demo experience is being prepared.</p></section><section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:14px;margin:30px 0 38px"><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🎯</div><h2 style="font-size:17px;margin:0 0 9px">Offer Marketplace</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Browse campaigns and manage offer links.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">📈</div><h2 style="font-size:17px;margin:0 0 9px">Clicks & Conversions</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Review performance and conversion activity.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">💳</div><h2 style="font-size:17px;margin:0 0 9px">Wallet & Payouts</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">View earnings and request manual withdrawals.</p></article><article style="padding:24px;border:1px solid #29424c;border-radius:18px;background:#10232c"><div style="font-size:26px;margin-bottom:18px">🛡️</div><h2 style="font-size:17px;margin:0 0 9px">Postback & Security</h2><p style="font-size:14px;line-height:1.65;color:#b8c7d9;margin:0">Organize server-to-server events and security signals.</p></article></section><footer style="padding-top:22px;border-top:1px solid #29424c;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#9fb0bf;font-size:12px"><span>TrackNest © ${new Date().getFullYear()}</span><span>Staging preview · Account and session data are server-managed</span></footer></div></main>`;
   }
   window.__tracknestBootFallback=bootPublicPreview;
   window.addEventListener('error',function(){setTimeout(bootPublicPreview,0);});
@@ -423,58 +424,62 @@ async function hashDemoPassword(password){
   const digest=await window.crypto.subtle.digest('SHA-256',bytes);
   return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
+async function completeServerAuth(d){
+  if(!d?.ok || !d.token || !d.user) throw new Error(d?.message || 'Authentication response was incomplete');
+  localStorage.setItem(API_TOKEN_KEY,d.token);
+  state.serverUser=d.user;
+  state.session={userId:d.user.id};
+  state.impersonating=null;
+  state.nav='dashboard';
+  state.authError='';
+  const u={id:d.user.id,name:d.user.name||d.user.username,username:d.user.username,email:d.user.email,phone:d.user.phone||'',online:true,role:d.user.role||'user',status:'active',subRole:d.user.subRole||'none',publicId:String(d.user.publicId||''),device:'Server account'};
+  state.users=[...(state.users||[]).filter(x=>x.id!==u.id),u];
+  if(!state.userWallets[d.user.id]) state.userWallets[d.user.id]={main:0,withdrawal:0,pending:0};
+  save();
+  await Promise.all([syncServerUsers(),syncServerOffers(),syncServerWithdrawals(),loadServerWallet()]);
+  render();
+  checkAndShowNotice();
+}
 async function doLogin(){
-  const idf=document.getElementById('authLoginId').value.trim().toLowerCase();
-  const pw=document.getElementById('authLoginPw').value;
-  const acc=state.accounts.find(a=>String(a.username||'').toLowerCase()===idf || String(a.email||'').toLowerCase()===idf);
-  let matches=false;
-  if(acc){
-    try {
-      if(acc.passwordHash) matches=(await hashDemoPassword(pw))===acc.passwordHash;
-      else if(typeof acc.password==='string' && acc.password===pw){
-        acc.passwordHash=await hashDemoPassword(pw);
-        delete acc.password;
-        matches=true;
-      }
-    } catch(error) {
-      state.authError='Unable to verify the password in this browser. Please use a modern browser.';
-      save(); render(); return;
-    }
-  }
-  if(!acc || !matches){ state.authError='Invalid username/email or password.'; save(); render(); return; }
-  state.session={userId:acc.id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
-  if(!state.users.some(u=>u.id===acc.id)) state.users.push({id:acc.id,name:acc.username,username:acc.username,email:acc.email,phone:acc.phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId()});
-  if(!state.userWallets[acc.id]) state.userWallets[acc.id]={main:0,withdrawal:0,pending:0};
-  save(); render(); checkAndShowNotice();
+  const idf=document.getElementById('authLoginId')?.value.trim()||'';
+  const pw=document.getElementById('authLoginPw')?.value||'';
+  if(!idf||!pw){state.authError='Enter your username/email and password.';render();return;}
+  const btn=document.querySelector('.auth-card .auth-submit');
+  setActionBusy(btn,true,'Signing in…');
+  try{
+    const d=await apiCall('/api/auth',{action:'login',identifier:idf,password:pw});
+    await completeServerAuth(d);
+  }catch(e){
+    state.authError=e?.message||'Unable to sign in. Please try again.';
+    render();
+  }finally{setActionBusy(btn,false);}
 }
 async function doSignup(){
-  const username=document.getElementById('authSuUser').value.trim();
-  const email=document.getElementById('authSuEmail').value.trim().toLowerCase();
-  const phone=document.getElementById('authSuPhone').value.trim();
-  const pw=document.getElementById('authSuPw').value;
-  if(username.length<3){ state.authError='Username must be at least 3 characters.'; save(); render(); return; }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ state.authError='Enter a valid email address.'; save(); render(); return; }
-  if(!phone){ state.authError='Phone number is required.'; save(); render(); return; }
-  if(pw.length<6){ state.authError='Password must be at least 6 characters.'; save(); render(); return; }
-  if(state.accounts.some(a=>String(a.username||'').toLowerCase()===username.toLowerCase()||String(a.email||'').toLowerCase()===email)){
-    state.authError='Username or email already exists in this browser.'; save(); render(); return;
-  }
-  const id=uid();
-  let passwordHash;
-  try {
-    passwordHash=await hashDemoPassword(pw);
-  } catch(error) {
-    state.authError='Unable to create an account in this browser. Please use a modern browser.';
-    save(); render(); return;
-  }
-  state.accounts.push({id,username,email,phone,passwordHash,role:'user'});
-  state.users.push({id,name:username,username,email,phone,online:true,role:'user',status:'active',subRole:'none',publicId:generatePublicUserId(),device:'This browser'});
-  state.userWallets[id]={main:0,withdrawal:0,pending:0};
-  state.session={userId:id}; state.impersonating=null; state.nav='dashboard'; state.authError='';
-  save(); render(); checkAndShowNotice();
+  const username=document.getElementById('authSuUser')?.value.trim()||'';
+  const email=document.getElementById('authSuEmail')?.value.trim().toLowerCase()||'';
+  const phone=document.getElementById('authSuPhone')?.value.trim()||'';
+  const pw=document.getElementById('authSuPw')?.value||'';
+  if(username.length<3){state.authError='Username must be at least 3 characters.';render();return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){state.authError='Enter a valid email address.';render();return;}
+  if(!/^[0-9+ -]{8,25}$/.test(phone)){state.authError='Enter a valid phone number.';render();return;}
+  if(pw.length<6||pw.length>200){state.authError='Password must be between 6 and 200 characters.';render();return;}
+  const btn=document.querySelector('.auth-card .auth-submit');
+  setActionBusy(btn,true,'Creating account…');
+  try{
+    const d=await apiCall('/api/auth',{action:'signup',username,email,phone,password:pw});
+    await completeServerAuth(d);
+  }catch(e){
+    state.authError=e?.message||'Unable to create your account. Please try again.';
+    render();
+  }finally{setActionBusy(btn,false);}
 }
-function logout(){ state.session={userId:'you'}; state.impersonating=null; state.authError=''; state.authTab='login'; document.getElementById('noticeHost').innerHTML=''; save(); render(); }
-
+async function logout(){
+  try{if(apiToken())await apiCall('/api/auth',{action:'logout'});}catch(e){}
+  localStorage.removeItem(API_TOKEN_KEY);
+  state.serverUser=null;state.session=null;state.impersonating=null;state.authError='';state.authTab='login';
+  state.nav='dashboard';document.getElementById('noticeHost').innerHTML='';
+  render();
+}
 function renderAuthScreen(){
   const err = state.authError ? `<div class="text-sm mb-3" style="color:var(--danger)">${state.authError}</div>` : '';
   const tabs = `<div class="flex rounded-lg overflow-hidden mb-5" style="border:1px solid var(--line)">
@@ -485,7 +490,7 @@ function renderAuthScreen(){
     <input id="authLoginId" placeholder="Username or Email" class="mb-3">
     <input id="authLoginPw" type="password" placeholder="Password" class="mb-4" onkeydown="if(event.key==='Enter')doLogin()">
     <span class="btn w-full text-center" style="display:block" onclick="doLogin()">Login</span>
-    <div class="text-xs mt-3" style="color:var(--muted)">Demo mode: no email or phone verification. This account stays in this browser.</div>
+    <div class="text-xs mt-3" style="color:var(--muted)">Sign in with an account registered on this TrackNest server.</div>
   ` : `
     <input id="authSuUser" placeholder="Username" class="mb-3">
     <input id="authSuEmail" placeholder="Email" class="mb-3">
@@ -517,7 +522,7 @@ function renderAuthScreen(){
         <input id="authLoginId" placeholder="Username or email" autocomplete="username">
         <input id="authLoginPw" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
         <button class="auth-submit" onclick="doLogin()">Sign in</button>
-        <div class="auth-links"><a onclick="alert('Demo mode has no password reset. Use an account created in this browser.')">Forgot password?</a><span></span></div>
+        <div class="auth-links"><a onclick="alert('Password reset is not configured yet.')">Forgot password?</a><span></span></div>
       ` : `
         <input id="authSuUser" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.username)}" oninput="authDraft.username=this.value">
         <input id="authSuEmail" type="email" placeholder="Email address" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" value="${escapeHtml(authDraft.email)}" oninput="authDraft.email=this.value">
@@ -1391,10 +1396,9 @@ function renderPublicPreview(){
 function render(){
   document.documentElement.setAttribute('data-theme', state.theme);
   if(!state.session){
-    // Auth is intentionally deferred: the public demo always opens as a non-admin demo user.
-    state.session={userId:'you'};
-    state.impersonating=null;
-    save();
+    window.__tracknestAuthRendered=true;
+    renderAuthScreen();
+    return;
   }
   window.__tracknestAuthRendered=false;
   const titleMap={dashboard:t('dashboard'),offers:t('offers'),statistics:t('statistics'),users:t('users'),security:t('security'),payment:t('payment'),chat:t('chat'),support:'Support'};
@@ -1618,9 +1622,10 @@ function setActionBusy(el,busy,label){
 
 /* TrackNest production API bridge */
 const API_TOKEN_KEY='tracknest_api_token';
+const API_BASE_URL=String(window.TRACKNEST_API_BASE||'').replace(/\/+$/,'');
 const apiToken=()=>localStorage.getItem(API_TOKEN_KEY)||'';
 async function apiCall(path,body,method='POST'){
- const r=await fetch(path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
+ const r=await fetch(API_BASE_URL+path,{method,headers:{'content-type':'application/json',...(apiToken()?{Authorization:'Bearer '+apiToken()}: {})},body:method==='GET'?undefined:JSON.stringify(body||{})});
  const d=await r.json().catch(()=>({ok:false,message:'Invalid server response'})); if(!r.ok) throw new Error(d.message||'Request failed'); return d;
 }
 async function refreshServerTickets(){try{const d=await apiCall('/api/support',null,'GET');if(d.tickets){state.tickets=d.tickets;save();const a=document.activeElement;if(!(a&&a.matches&&a.matches('input,textarea,select'))&&state.nav==='support')render();}}catch(e){}}
@@ -1637,21 +1642,13 @@ async function syncServerWithdrawals(){
     }
   }catch(e){console.error('Withdrawal sync failed:',e);}
 }
-// Demo mode deliberately uses browser-local accounts and browser-local chat/payment state.
-const legacyDoLogin=doLogin;
-const legacyDoSignup=doSignup;
-const legacyLogout=logout;
-doLogin=legacyDoLogin;
-doSignup=legacyDoSignup;
-logout=legacyLogout;
-
 window.addEventListener('error',e=>{
   if(window.__tracknestBootFallback) window.__tracknestBootFallback();
 });
 window.addEventListener('unhandledrejection',()=>{});
 async function restoreServerSession(){
   const token=apiToken();
-  if(!token){ state.session=null; return; }
+  if(!token){ state.session=null; state.serverUser=null; render(); return; }
   try{
     const d=await apiCall('/api/auth',{action:'me'});
     if(!d.user){
@@ -1694,18 +1691,11 @@ async function refreshServerSecurity(){
   }catch(e){}
 }
 
-localStorage.removeItem(API_TOKEN_KEY);
 state.serverUser=null;
-// Full demo mode: skip login/signup and open the dashboard with a browser-local user.
-if(!state.users.some(u=>u.id==='you')) state.users.unshift({id:'you',name:'Demo User',username:'demo_user',online:true,role:'user',status:'active',subRole:'none',publicId:'10001',device:'This browser'});
-const demoUser=state.users.find(u=>u.id==='you');
-demoUser.role='user'; demoUser.status='active';
-if(!state.userWallets.you) state.userWallets.you={main:0,withdrawal:0,pending:0};
-state.session={userId:'you'};
+state.session=null;
 state.impersonating=null;
-state.role='user';
 render();
-if(state.nav==='dashboard') checkAndShowNotice();
+restoreServerSession();
 </script>
 </body>
 </html>
