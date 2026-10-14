@@ -37,6 +37,32 @@ test('both entrypoints require server auth and support a configurable staging AP
     assert.doesNotMatch(source, /Full demo mode: skip login\/signup/);
   }
 });
+test('dashboard, offers, wallet, chat, and support mutations call authenticated APIs', async () => {
+  for (const file of ['index.html', 'public/index.html']) {
+    const source = await readFile(path.join(root, file), 'utf8');
+    assert.match(source, /apiCall\('\\/api\\/offers',\\{action:'create'/);
+    assert.match(source, /apiCall\('\\/api\\/offers',\\{action:'join'/);
+    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'withdraw'/);
+    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'cancel'/);
+    assert.match(source, /apiCall\('\\/api\\/wallet',\\{action:'update'/);
+    assert.match(source, /apiCall\('\\/api\\/chat',\\{kind:'global'/);
+    assert.match(source, /apiCall\('\\/api\\/support',\\{action:'create'/);
+    assert.match(source, /@media\\(max-width:767px\\)/);
+  }
+});
+
+test('owner-only withdrawal cancellation migration is atomic and service-role only', async () => {
+  const migration = await readFile(path.join(root, 'supabase/migrations/20261014_tracknest_user_withdrawal_cancel.sql'), 'utf8');
+  const api = await readFile(path.join(root, 'api/wallet.js'), 'utf8');
+  assert.match(migration, /create or replace function public\\.cancel_manual_withdrawal/);
+  assert.match(migration, /wd\\.user_id <> p_user_id/);
+  assert.match(migration, /wd\\.status <> 'pending'/);
+  assert.match(migration, /for update/);
+  assert.match(migration, /revoke all on function public\\.cancel_manual_withdrawal[\\s\\S]*from public, anon, authenticated/);
+  assert.match(migration, /grant execute on function public\\.cancel_manual_withdrawal[\\s\\S]*to service_role/);
+  assert.match(api, /rpc\\/cancel_manual_withdrawal/);
+});
+
 test('postback endpoint authenticates and never stores the supplied token', async () => {
   const source = await readFile(path.join(root, 'api/postback.js'), 'utf8');
   assert.match(source, /POSTBACK_TOKEN/);
