@@ -24,6 +24,19 @@ test('all server-side JavaScript parses', async () => {
   }
 });
 
+test('inline JavaScript in both frontend entrypoints parses', async () => {
+  for (const file of ['index.html', 'public/index.html']) {
+    const html = await readFile(path.join(root, file), 'utf8');
+    const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+      .filter(([, attrs, code]) => !/\\bsrc\\s*=/.test(attrs) && code.trim());
+    assert.ok(scripts.length > 0, file + ' should contain application scripts');
+    for (const [index, match] of scripts.entries()) {
+      const result = spawnSync(process.execPath, ['--check'], { input: match[2], encoding: 'utf8' });
+      assert.equal(result.status, 0, file + ' inline script ' + index + ' failed syntax check:\\n' + result.stderr);
+    }
+  }
+});
+
 test('both entrypoints require server auth and support a configurable staging API origin', async () => {
   for (const file of ['index.html', 'public/index.html']) {
     const source = await readFile(path.join(root, file), 'utf8');
