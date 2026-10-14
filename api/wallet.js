@@ -79,6 +79,22 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, withdrawals: (await db(query)).map(normalizeWithdrawal) });
     }
 
+    if (body.action === 'cancel') {
+      const id = String(body.id || '').trim();
+      if (!id) return json(res, 400, { ok: false, message: 'Withdrawal id is required' });
+      const result = rpcPayload(await db('rpc/cancel_manual_withdrawal', {
+        method: 'POST',
+        body: JSON.stringify({ p_withdrawal_id: id, p_user_id: me.id })
+      }));
+      if (!result?.ok) {
+        const status = Number(result?.status || 400);
+        return json(res, status >= 400 && status <= 599 ? status : 400,
+          { ok: false, message: result?.message || 'Withdrawal cancellation failed' });
+      }
+      await auditLog(me.id, 'withdrawal.cancelled_by_user', { withdrawal_id: id });
+      return json(res, 200, { ok: true, withdrawal: normalizeWithdrawal(result.withdrawal) });
+    }
+
     if (body.action === 'update') {
       if (me.role !== 'admin') return json(res, 403, { ok: false, message: 'Admin only' });
       const id = String(body.id || '').trim();
